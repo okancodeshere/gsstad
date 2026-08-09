@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GS Catwalk - GSM Altyapı Planlayıcısı (Alan 1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo" style="display: flex; align-items: center; gap: 12px;">
+        <div>
+          <span class="gs-red">GS</span><span class="gs-yellow">STAD</span>
+          <span class="subtitle">CATWALK PLANNER</span>
+        </div>
+        <div class="area-selector" style="margin-left: 20px;">
+          <label for="select-area" style="color: #cbd5e1; font-weight: 600; font-size: 13px; margin-right: 6px;">Çalışma Alanı:</label>
+          <select id="select-area" style="background: #1e293b; color: #f8fafc; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <option value="alan1" selected>📍 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
+            <option value="alan2">📍 ALAN 2 (Yelpaze / V-Makas Düğüm Noktası - 1)</option>
+            <option value="alan3">📍 ALAN 3 (Yelpaze / V-Makas Düğüm Noktası - 2)</option>
+          </select>
+        </div>
+      </div>
+      <div class="controls-top" style="display: flex; gap: 8px;">
+        <button id="btn-export-json" class="btn btn-secondary">💾 Projeyi Kaydet</button>
+        <button id="btn-import-json" class="btn btn-secondary">📂 Proje Yükle</button>
+        <input type="file" id="input-import-file" style="display: none;" accept=".json">
+        <button id="btn-reset-project" class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
+        <button id="btn-export-bom" class="btn btn-secondary">Ekipman Listesi (BOQ)</button>
+        <button id="btn-screenshot" class="btn btn-primary">Görsel Kaydet</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="main-container">
+      <!-- Left Control Panel -->
+      <aside class="sidebar-left">
+
+
+        <div class="panel-section" id="section-properties" style="display: none;">
+          <h3>3. Seçili Öğe Özellikleri</h3>
+          <div id="properties-content">
+            <!-- Dinamik doldurulacak -->
+          </div>
+          <button id="btn-delete-selected" class="btn btn-danger btn-full" style="margin-top: 10px;">Öğeyi Sil</button>
+        </div>
+      </aside>
+
+      <!-- 3D Canvas Viewport -->
+      <main class="viewport-container">
+        <div id="canvas-container"></div>
+        <div class="viewport-overlay">
+          <div class="view-modes">
+            <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">平面 (2D)</button>
+            <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif">立體 (3D)</button>
+          </div>
+          <div class="helper-text">
+            <span>Sol Tık: Döndür / Seç | Sağ Tık: Sürükle | Tekerlek: Yakınlaş</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Info & BOQ Panel -->
+      <aside class="sidebar-right">
+        <!-- Right Main Navigation Tabs -->
+        <div class="right-main-tabs">
+          <button id="tab-btn-layout" class="right-tab-btn active">
+            🏗️ Yerleşim & Rapor
+          </button>
+          <button id="tab-btn-devices" class="right-tab-btn">
+            📱 RRU & POI Verileri
+          </button>
+        </div>
+
+        <!-- SEKME 1: Yerleşim Öğeleri & Rapor -->
+        <div id="tab-content-layout" class="right-tab-content active">
+          <div class="panel-section">
+            <h3>Yerleşim Öğeleri</h3>
+            <div class="equipment-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <button class="btn-eq" id="btn-add-kiris1">
+                <span class="icon">🔗</span>
+                <span class="name">Kiriş-1</span>
+              </button>
+              <button class="btn-eq" id="btn-add-kiris2">
+                <span class="icon">🗼</span>
+                <span class="name">Kiriş-2</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla1">
+                <span class="icon">📏</span>
+                <span class="name">Tabla-1 (Sol Çentik)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla3">
+                <span class="icon">📐</span>
+                <span class="name">Tabla-3 (Sağ Çentik)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla2" style="grid-column: span 2;">
+                <span class="icon">⬜</span>
+                <span class="name">Tabla-2 (Düz Panel)</span>
+              </button>
+
+              <button class="btn-eq" id="btn-add-rru-blok" style="background: linear-gradient(135deg, #2b6cb0, #3182ce); color: white; border: none;">
+                <span class="icon">📦</span>
+                <span class="name" style="color: white; font-weight: bold;">RRU Blok</span>
+              </button>
+              <button class="btn-eq" id="btn-add-rack-blok" style="background: linear-gradient(135deg, #2f855a, #38a169); color: white; border: none;">
+                <span class="icon">🗄️</span>
+                <span class="name" style="color: white; font-weight: bold;">Rack Blok</span>
+              </button>
+              <button class="btn-eq" id="btn-add-rru-blok-korkuluklu" style="background: linear-gradient(135deg, #1a365d, #2b6cb0); color: white; border: none;">
+                <span class="icon">📦🚧</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">RRU Blok (Korkuluklu)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-rack-blok-korkuluklu" style="background: linear-gradient(135deg, #1c4532, #2f855a); color: white; border: none;">
+                <span class="icon">🗄️🚧</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Rack Blok (Korkuluklu)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-rru-saha-blok-alan2" style="background: linear-gradient(135deg, #6b46c1, #805ad5); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">📦🏗️</span>
+                <span class="name" style="color: white; font-weight: bold;">RRU Saha Blok (Alan 2)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-offset-arm-right" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; display: none;">
+                <span class="icon">↗️📐</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Ofset & 2.5" Boru (Sağ)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-offset-arm-left" style="background: linear-gradient(135deg, #0d9488, #059669); color: white; border: none; display: none;">
+                <span class="icon">↖️📐</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Ofset & 2.5" Boru (Sol)</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3>Yerleşim Raporu</h3>
+            <div class="stat-box">
+              <span class="stat-label">Toplam Öğe</span>
+              <span class="stat-val" id="stat-platforms">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Toplam Anten</span>
+              <span class="stat-val" id="stat-antennas">0</span>
+            </div>
+            <div class="stat-box" style="display: none;">
+              <span class="stat-label">Toplam RRU</span>
+              <span class="stat-val" id="stat-rrus">0</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Tahmini Toplam Ağırlık</span>
+              <span class="stat-val" id="stat-weight">0 kg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEKME 2: RRU & POI Cihaz Verileri -->
+        <div id="tab-content-devices" class="right-tab-content">
+          <div class="panel-section">
+            <h3>📱 RRU & POI Ölçülü Cihaz Modülleri</h3>
+            
+            <!-- Operator Category Filter Tabs (Tümü kaldırıldı) -->
+            <div class="eq-tabs" style="display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px;">
+              <button class="eq-tab active" data-cat="Turkcell">Turkcell</button>
+              <button class="eq-tab" data-cat="Vodafone">Vodafone</button>
+              <button class="eq-tab" data-cat="Türk Telekom">Türk Telekom</button>
+              <button class="eq-tab" data-cat="POI">POI</button>
+            </div>
+
+            <!-- Equipment Grid Container -->
+            <div class="equipment-grid" id="excel-equipment-grid" style="grid-template-columns: 1fr; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
+              <!-- Dinamik Doldurulacak -->
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- BOQ Modal -->
+    <div id="bom-modal" class="modal">
+      <div class="modal-content">
+        <h2>Malzeme Listesi (BOQ) & Kurulum Detayları</h2>
+        <div class="bom-table-container">
+          <table id="bom-table">
+            <thead>
+              <tr>
+                <th>Ekipman Adı</th>
+                <th>Tipi / Modeli</th>
+                <th>Adet</th>
+                <th>Ölçüler (cm)</th>
+                <th>Tahmini Ağırlık (Tek / Toplam)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dinamik olarak doldurulacaktır -->
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-close-modal" class="btn btn-secondary">Kapat</button>
+          <button id="btn-print-bom" class="btn btn-primary">PDF / Yazdır</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
