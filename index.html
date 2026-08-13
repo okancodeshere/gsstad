@@ -27,13 +27,14 @@
           </select>
         </div>
       </div>
-      <div class="controls-top" style="display: flex; gap: 8px;">
+      <div class="controls-top" style="display: flex; gap: 8px; align-items: center;">
         <button id="btn-export-json" class="btn btn-secondary">💾 Projeyi Kaydet</button>
         <button id="btn-import-json" class="btn btn-secondary">📂 Proje Yükle</button>
         <input type="file" id="input-import-file" style="display: none;" accept=".json">
         <button id="btn-reset-project" class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
         <button id="btn-export-bom" class="btn btn-secondary">Ekipman Listesi (BOQ)</button>
         <button id="btn-screenshot" class="btn btn-primary">Görsel Kaydet</button>
+        <button id="btn-settings" class="btn btn-secondary" style="font-size: 15px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;" title="Uygulama Ayarları">⚙️ <span>Ayarlar</span></button>
       </div>
     </header>
 
@@ -57,8 +58,8 @@
         <div id="canvas-container"></div>
         <div class="viewport-overlay">
           <div class="view-modes">
-            <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">平面 (2D)</button>
-            <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif">立體 (3D)</button>
+            <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">📐 2D Görünüm</button>
+            <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif Görünüm">🧊 3D Perspektif</button>
           </div>
           <div class="helper-text">
             <span>Sol Tık: Döndür / Seç | Sağ Tık: Sürükle | Tekerlek: Yakınlaş</span>
@@ -71,39 +72,21 @@
         <!-- Right Main Navigation Tabs -->
         <div class="right-main-tabs">
           <button id="tab-btn-layout" class="right-tab-btn active">
-            🏗️ Yerleşim & Rapor
+            🏗️ Yerleşim Blokları
           </button>
           <button id="tab-btn-devices" class="right-tab-btn">
             📱 RRU & POI Verileri
           </button>
+          <button id="tab-btn-components" class="right-tab-btn">
+            🧩 Bileşenler
+          </button>
         </div>
 
-        <!-- SEKME 1: Yerleşim Öğeleri & Rapor -->
+        <!-- SEKME 1: Yerleşim Blokları -->
         <div id="tab-content-layout" class="right-tab-content active">
           <div class="panel-section">
-            <h3>Yerleşim Öğeleri</h3>
+            <h3>Yerleşim Blokları</h3>
             <div class="equipment-grid" style="grid-template-columns: repeat(2, 1fr);">
-              <button class="btn-eq" id="btn-add-kiris1">
-                <span class="icon">🔗</span>
-                <span class="name">Kiriş-1</span>
-              </button>
-              <button class="btn-eq" id="btn-add-kiris2">
-                <span class="icon">🗼</span>
-                <span class="name">Kiriş-2</span>
-              </button>
-              <button class="btn-eq" id="btn-add-tabla1">
-                <span class="icon">📏</span>
-                <span class="name">Tabla-1 (Sol Çentik)</span>
-              </button>
-              <button class="btn-eq" id="btn-add-tabla3">
-                <span class="icon">📐</span>
-                <span class="name">Tabla-3 (Sağ Çentik)</span>
-              </button>
-              <button class="btn-eq" id="btn-add-tabla2" style="grid-column: span 2;">
-                <span class="icon">⬜</span>
-                <span class="name">Tabla-2 (Düz Panel)</span>
-              </button>
-
               <button class="btn-eq" id="btn-add-rru-blok" style="background: linear-gradient(135deg, #2b6cb0, #3182ce); color: white; border: none;">
                 <span class="icon">📦</span>
                 <span class="name" style="color: white; font-weight: bold;">RRU Blok</span>
@@ -111,6 +94,30 @@
               <button class="btn-eq" id="btn-add-rack-blok" style="background: linear-gradient(135deg, #2f855a, #38a169); color: white; border: none;">
                 <span class="icon">🗄️</span>
                 <span class="name" style="color: white; font-weight: bold;">Rack Blok</span>
+              </button>
+              <button class="btn-eq" id="btn-add-42u-poi-blok" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; grid-column: span 2;">
+                <span class="icon">🗄️⚡</span>
+                <span class="name" style="color: white; font-weight: bold;">42U Rack + 6 POI Blok</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tt-5li-5527-blok" style="background: linear-gradient(135deg, #0891b2, #06b6d4); color: white; border: none;">
+                <span class="icon">📡5️⃣</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">TT 5'li RRU5527</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tt-5li-5818w-blok" style="background: linear-gradient(135deg, #0284c7, #0891b2); color: white; border: none;">
+                <span class="icon">📡5️⃣</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">TT 5'li RRU5818W</span>
+              </button>
+              <button class="btn-eq" id="btn-add-voda-3li-rru-blok" style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border: none;">
+                <span class="icon">📡3️⃣</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Vodafone 3'lü RRU5526t</span>
+              </button>
+              <button class="btn-eq" id="btn-add-voda-5li-rru-blok" style="background: linear-gradient(135deg, #991b1b, #dc2626); color: white; border: none;">
+                <span class="icon">📡5️⃣</span>
+                <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Vodafone 5'li RRU5526t</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tcell-offset-blok" style="background: linear-gradient(135deg, #1d4ed8, #2563eb); color: white; border: none; grid-column: span 2;">
+                <span class="icon">📡📐</span>
+                <span class="name" style="color: white; font-weight: bold;">Turkcell 10'lu (5 Üst - 5 Alt) Ofset Blok</span>
               </button>
               <button class="btn-eq" id="btn-add-rru-blok-korkuluklu" style="background: linear-gradient(135deg, #1a365d, #2b6cb0); color: white; border: none;">
                 <span class="icon">📦🚧</span>
@@ -134,26 +141,6 @@
               </button>
             </div>
           </div>
-
-          <div class="panel-section">
-            <h3>Yerleşim Raporu</h3>
-            <div class="stat-box">
-              <span class="stat-label">Toplam Öğe</span>
-              <span class="stat-val" id="stat-platforms">0</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-label">Toplam Anten</span>
-              <span class="stat-val" id="stat-antennas">0</span>
-            </div>
-            <div class="stat-box" style="display: none;">
-              <span class="stat-label">Toplam RRU</span>
-              <span class="stat-val" id="stat-rrus">0</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-label">Tahmini Toplam Ağırlık</span>
-              <span class="stat-val" id="stat-weight">0 kg</span>
-            </div>
-          </div>
         </div>
 
         <!-- SEKME 2: RRU & POI Cihaz Verileri -->
@@ -161,17 +148,47 @@
           <div class="panel-section">
             <h3>📱 RRU & POI Ölçülü Cihaz Modülleri</h3>
             
-            <!-- Operator Category Filter Tabs (Tümü kaldırıldı) -->
+            <!-- Operator Category Filter Tabs -->
             <div class="eq-tabs" style="display: flex; gap: 4px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px;">
               <button class="eq-tab active" data-cat="Turkcell">Turkcell</button>
               <button class="eq-tab" data-cat="Vodafone">Vodafone</button>
               <button class="eq-tab" data-cat="Türk Telekom">Türk Telekom</button>
               <button class="eq-tab" data-cat="POI">POI</button>
+              <button class="eq-tab" data-cat="Canovate">Canovate Rack</button>
             </div>
 
             <!-- Equipment Grid Container -->
             <div class="equipment-grid" id="excel-equipment-grid" style="grid-template-columns: 1fr; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
               <!-- Dinamik Doldurulacak -->
+            </div>
+          </div>
+        </div>
+
+        <!-- SEKME 3: Yapısal Bileşenler (Kiriş ve Tablalar) -->
+        <div id="tab-content-components" class="right-tab-content">
+          <div class="panel-section">
+            <h3>🧩 Kiriş & Tabla Bileşenleri</h3>
+            <div class="equipment-grid" style="grid-template-columns: repeat(2, 1fr);">
+              <button class="btn-eq" id="btn-add-kiris1">
+                <span class="icon">🔗</span>
+                <span class="name">Kiriş-1</span>
+              </button>
+              <button class="btn-eq" id="btn-add-kiris2">
+                <span class="icon">🗼</span>
+                <span class="name">Kiriş-2</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla1">
+                <span class="icon">📏</span>
+                <span class="name">Tabla-1 (Sol Çentik)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla3">
+                <span class="icon">📐</span>
+                <span class="name">Tabla-3 (Sağ Çentik)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-tabla2" style="grid-column: span 2;">
+                <span class="icon">⬜</span>
+                <span class="name">Tabla-2 (Düz Panel)</span>
+              </button>
             </div>
           </div>
         </div>
@@ -201,6 +218,34 @@
         <div class="modal-actions">
           <button id="btn-close-modal" class="btn btn-secondary">Kapat</button>
           <button id="btn-print-bom" class="btn btn-primary">PDF / Yazdır</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal Popup -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content" style="max-width: 480px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 16px;">
+          <h2 style="margin: 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">⚙️ Uygulama Ayarları</h2>
+          <button id="btn-close-settings-x" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; padding: 0 4px;" title="Kapat">✕</button>
+        </div>
+        
+        <div class="settings-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Setting Item 1: Axes Helper Toggle -->
+          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #1e293b; border-radius: 8px; border: 1px solid #334155;">
+            <div>
+              <div style="font-weight: bold; font-size: 13px; color: #f8fafc;">🎯 3D Koordinat Eksen Okları (X/Y/Z)</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Sahnede X (kırmızı), Y (yeşil), Z (mavi) yön oklarını gösterir</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-toggle-axes" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+          <button id="btn-close-settings" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px;">Tamam</button>
         </div>
       </div>
     </div>
