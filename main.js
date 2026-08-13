@@ -1999,9 +1999,9 @@ function spawnTT5li5527Blok() {
     weight: 125,
     interactive: true,
     locked: false,
-    lockedX: false,
+    lockedX: true,
     lockedY: false,
-    lockedZ: true, // Z-axis locked
+    lockedZ: false,
     allowPassThrough: true
   };
 
@@ -2062,9 +2062,9 @@ function spawnTT5li5818WBlok() {
     weight: 125,
     interactive: true,
     locked: false,
-    lockedX: false,
+    lockedX: true,
     lockedY: false,
-    lockedZ: true, // Z-axis locked
+    lockedZ: false,
     allowPassThrough: true
   };
 
@@ -2125,9 +2125,9 @@ function spawnVoda3liRRUBlok() {
     weight: 84,
     interactive: true,
     locked: false,
-    lockedX: false,
+    lockedX: true,
     lockedY: false,
-    lockedZ: true, // Z-axis locked
+    lockedZ: false,
     allowPassThrough: true
   };
 
@@ -2192,9 +2192,9 @@ function spawnVoda5liRRUBlok() {
     weight: 140,
     interactive: true,
     locked: false,
-    lockedX: false,
+    lockedX: true,
     lockedY: false,
-    lockedZ: true, // Z-axis locked
+    lockedZ: false,
     allowPassThrough: true
   };
 
@@ -2259,9 +2259,9 @@ function spawnTCellOffsetBlok() {
     weight: 260,
     interactive: true,
     locked: false,
-    lockedX: false,
+    lockedX: true,
     lockedY: false,
-    lockedZ: true, // Z-axis locked
+    lockedZ: false,
     allowPassThrough: true
   };
 
@@ -2348,6 +2348,121 @@ function spawnTCellOffsetBlok() {
   addPlatformToActiveArea(blockGroup);
 }
 
+function spawnAlan2KarmaRRUBlok() {
+  const areaSuffix = state.currentArea === 'alan3' ? ' (Alan 3)' : (state.currentArea === 'alan2' ? ' (Alan 2)' : '');
+  
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    id: state.nextId++,
+    type: 'rru',
+    category: 'Karma',
+    name: `Alan 2 Karma RRU Blok (4 Borulu - 7 RRU)${areaSuffix}`,
+    width: 0.80,
+    height: 2.40,
+    depth: 0.50,
+    weight: 190,
+    interactive: true,
+    locked: false,
+    lockedX: true,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 });
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.1 });
+
+  // 4 Parallel Vertical Support Pipes side-by-side along X-axis
+  // Offsets: -0.24m, -0.08m, +0.08m, +0.24m (16cm spacing between pipes)
+  const pipePositionsX = [-0.24, -0.08, 0.08, 0.24];
+  const pipeHeight = 1.50; // 1.50m span
+
+  pipePositionsX.forEach((posX) => {
+    const vPipeGeo = new THREE.CylinderGeometry(0.025, 0.025, pipeHeight, 16);
+    const vPipe = new THREE.Mesh(vPipeGeo, pipeMat);
+    vPipe.position.set(posX, 0.75, -0.26);
+    blockGroup.add(vPipe);
+
+    // Bottom Flange (Rests at floor level Y = 0.01m)
+    const flangeGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16);
+    const botFlange = new THREE.Mesh(flangeGeo, clampMat);
+    botFlange.position.set(posX, 0.01, -0.26);
+    blockGroup.add(botFlange);
+
+    // Top Flange (Matches Flanged Pipe height Y = 1.49m)
+    const topFlange = new THREE.Mesh(flangeGeo, clampMat);
+    topFlange.position.set(posX, 1.49, -0.26);
+    blockGroup.add(topFlange);
+  });
+
+  // Horizontal Cross Tie Bars at Alt Kot (+0.75m) and Üst Kot (+1.50m)
+  const levelsY = [1.50, 0.75];
+
+  levelsY.forEach((levelY) => {
+    const hPipeGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.65, 16);
+    hPipeGeo.rotateZ(Math.PI / 2);
+    const hPipe = new THREE.Mesh(hPipeGeo, pipeMat);
+    hPipe.position.set(0, levelY, -0.26);
+    blockGroup.add(hPipe);
+  });
+
+  // 3. Catalog Items
+  const tcell1 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5301') || { id: 'tcell-5301', category: 'Turkcell', name: 'RRU 5301', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tcell2 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5502') || { id: 'tcell-5502', category: 'Turkcell', name: 'RRU 5502', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tt1 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5527') || { id: 'tt-5527', category: 'Türk Telekom', name: '2G-3G-4G RRU5527', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
+
+  // ALT KAT (+0.75m Kot): 2 Turkcell RRU + 2 Türk Telekom RRU (Yan yana 4 dikey boru üzerinde)
+  const lowerEquipments = [
+    { item: tcell1, label: 'Turkcell RRU5301', posX: pipePositionsX[0] },
+    { item: tcell2, label: 'Turkcell RRU5502', posX: pipePositionsX[1] },
+    { item: tt1, label: 'TT RRU5527', posX: pipePositionsX[2] },
+    { item: tt2, label: 'TT RRU5818W', posX: pipePositionsX[3] }
+  ];
+
+  lowerEquipments.forEach(eq => {
+    const rruModel = buildCustomEquipmentModel(eq.item);
+    rruModel.userData.name = `${eq.label} (Alt Kot)`;
+    rruModel.userData.interactive = true;
+
+    // Rotate 90 deg around Y and 180 deg around Z so mounting feet align
+    rruModel.rotation.set(0, Math.PI / 2, Math.PI);
+    rruModel.position.set(eq.posX, 0.75, 0);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(eq.posX, 0.75, -0.22);
+    blockGroup.add(bracketMesh);
+
+    blockGroup.add(rruModel);
+  });
+
+  // ÜST KAT (+1.50m Kot): Toplam 3 Vodafone RRU (3 Dikey Boru üzerinde)
+  const upperPipePositionsX = [pipePositionsX[0], pipePositionsX[1], pipePositionsX[2]];
+
+  upperPipePositionsX.forEach((posX, idx) => {
+    const rruModel = buildCustomEquipmentModel(vodaItem);
+    rruModel.userData.name = `Vodafone RRU5526t (Üst Kot ${idx + 1})`;
+    rruModel.userData.interactive = true;
+
+    // Rotate 90 deg around Y and 180 deg around Z so mounting feet align
+    rruModel.rotation.set(0, Math.PI / 2, Math.PI);
+    rruModel.position.set(posX, 1.50, 0);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(posX, 1.50, -0.22);
+    blockGroup.add(bracketMesh);
+
+    blockGroup.add(rruModel);
+  });
+
+  setupPlatformTransform(blockGroup, 0, -2.0, false);
+  blockGroup.position.y = 0.0;
+  addPlatformToActiveArea(blockGroup);
+}
+
 // Custom Drag and Drop Engine
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -2419,11 +2534,11 @@ renderer.domElement.addEventListener('pointermove', (event) => {
         if (state.currentArea === 'alan2' || state.currentArea === 'alan3') {
           // Locked to Z-axis carrier pipe at X = 0
           if (!dragObject.userData.lockedX) targetX = 0;
-          if (!dragObject.userData.lockedZ) targetZ = Math.max(-3.8, Math.min(-1.1855, targetZ));
+          if (!dragObject.userData.lockedZ) targetZ = Math.max(-3.8, Math.min(-1.1855, dragIntersection.z + dragOffset.z));
         } else {
           // Locked to X-axis carrier pipe at Z = -1.1855
           if (!dragObject.userData.lockedZ) targetZ = -1.1855;
-          if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, targetX));
+          if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, dragIntersection.x + dragOffset.x));
         }
       }
 
@@ -2480,6 +2595,9 @@ if (btnVoda5liRRU) btnVoda5liRRU.addEventListener('click', spawnVoda5liRRUBlok);
 const btnTCellOffset = document.getElementById('btn-add-tcell-offset-blok');
 if (btnTCellOffset) btnTCellOffset.addEventListener('click', spawnTCellOffsetBlok);
 
+const btnAlan2Karma = document.getElementById('btn-add-alan2-karma-rru-blok');
+if (btnAlan2Karma) btnAlan2Karma.addEventListener('click', spawnAlan2KarmaRRUBlok);
+
 document.getElementById('btn-add-rru-blok-korkuluklu').addEventListener('click', spawnRRUBlokKorkuluklu);
 document.getElementById('btn-add-rack-blok-korkuluklu').addEventListener('click', spawnRackBlokKorkuluklu);
 
@@ -2505,6 +2623,7 @@ function updateAreaButtonVisibility() {
   const btnRruK = document.getElementById('btn-add-rru-blok-korkuluklu');
   const btnRackK = document.getElementById('btn-add-rack-blok-korkuluklu');
   const btnSaha = document.getElementById('btn-add-rru-saha-blok-alan2');
+  const btnKarma = document.getElementById('btn-add-alan2-karma-rru-blok');
   const btnOffsetRight = document.getElementById('btn-add-offset-arm-right');
   const btnOffsetLeft = document.getElementById('btn-add-offset-arm-left');
 
@@ -2514,20 +2633,24 @@ function updateAreaButtonVisibility() {
     if (nameSpan) nameSpan.textContent = areaTitle;
   }
 
+  const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
+
   if (isRotatedArea) {
     if (btnRru) btnRru.style.display = 'none';
     if (btnRack) btnRack.style.display = 'none';
-    if (btnPoiBlok) btnPoiBlok.style.display = 'none';
-    if (btnTT5527) btnTT5527.style.display = 'none';
-    if (btnTT5818w) btnTT5818w.style.display = 'none';
-    if (btnVoda3li) btnVoda3li.style.display = 'none';
-    if (btnVoda5li) btnVoda5li.style.display = 'none';
-    if (btnTCellOffset) btnTCellOffset.style.display = 'none';
+    if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
+    if (btnTT5527) btnTT5527.style.display = isAlan3 ? 'flex' : 'none';
+    if (btnTT5818w) btnTT5818w.style.display = isAlan3 ? 'flex' : 'none';
+    if (btnVoda3li) btnVoda3li.style.display = isAlan3 ? 'flex' : 'none';
+    if (btnVoda5li) btnVoda5li.style.display = isAlan3 ? 'flex' : 'none';
+    if (btnTCellOffset) btnTCellOffset.style.display = isAlan3 ? 'flex' : 'none';
     if (btnRruK) btnRruK.style.display = 'none';
     if (btnRackK) btnRackK.style.display = 'none';
     if (btnSaha) btnSaha.style.display = 'flex';
-    if (btnOffsetRight) btnOffsetRight.style.display = 'flex';
-    if (btnOffsetLeft) btnOffsetLeft.style.display = 'flex';
+    if (btnKarma) btnKarma.style.display = isAlan2 ? 'flex' : 'none';
+    if (btnOffsetRight) btnOffsetRight.style.display = isAlan3 ? 'flex' : 'none';
+    if (btnOffsetLeft) btnOffsetLeft.style.display = isAlan3 ? 'flex' : 'none';
   } else {
     if (btnRru) btnRru.style.display = 'flex';
     if (btnRack) btnRack.style.display = 'flex';
@@ -2540,6 +2663,7 @@ function updateAreaButtonVisibility() {
     if (btnRruK) btnRruK.style.display = 'flex';
     if (btnRackK) btnRackK.style.display = 'flex';
     if (btnSaha) btnSaha.style.display = 'none';
+    if (btnKarma) btnKarma.style.display = 'none';
     if (btnOffsetRight) btnOffsetRight.style.display = 'none';
     if (btnOffsetLeft) btnOffsetLeft.style.display = 'none';
   }
@@ -2931,10 +3055,10 @@ function renderProperties(obj) {
   const isLockedZ = !!obj.userData.lockedZ;
   
   let html = `
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
       <div>
-        <strong style="font-size: 14px; color: #f8fafc; display: block;">${obj.userData.name}</strong>
-        <span style="font-size: 11px; color: #94a3b8;">${obj.userData.type.toUpperCase()} | ID: #${obj.userData.id}</span>
+        <strong style="font-size: 14px; color: var(--text-primary); display: block;">${obj.userData.name}</strong>
+        <span style="font-size: 11px; color: var(--text-secondary);">${obj.userData.type.toUpperCase()} | ID: #${obj.userData.id}</span>
       </div>
       <span style="background: ${(isLockedX && isLockedY && isLockedZ) ? '#ef4444' : '#10b981'}; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold;">
         ${(isLockedX && isLockedY && isLockedZ) ? '🔒 TAM KİLİTLİ' : '🔓 SERBEST'}
@@ -2946,10 +3070,10 @@ function renderProperties(obj) {
   html += `
     <div class="input-group" style="margin-bottom: 10px;">
       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; margin-bottom: 4px;">
-        <label style="color: #cbd5e1;">Pozisyon X (m)</label>
+        <label style="color: var(--text-secondary);">Pozisyon X (m)</label>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span style="color: var(--gs-yellow); font-family: monospace;">${obj.position.x.toFixed(3)} m</span>
-          <label style="font-size: 11px; color: ${isLockedX ? '#ef4444' : '#94a3b8'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
+          <span style="color: var(--gs-red); font-family: monospace; font-weight: bold;">${obj.position.x.toFixed(3)} m</span>
+          <label style="font-size: 11px; color: ${isLockedX ? '#ef4444' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
             <input type="checkbox" class="lock-axis-cb" data-axis="x" ${isLockedX ? 'checked' : ''} style="cursor: pointer;">
             ${isLockedX ? '🔒 Kilitli' : '🔓 Kilitle'}
           </label>
@@ -2977,20 +3101,20 @@ function renderProperties(obj) {
     html += `
       <div class="input-group" style="margin-bottom: 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; margin-bottom: 6px;">
-          <label style="color: #cbd5e1;">Boru Üzeri Sabit Montaj Kotu (Y)</label>
+          <label style="color: var(--text-secondary);">Boru Üzeri Sabit Montaj Kotu (Y)</label>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="color: var(--gs-yellow); font-family: monospace;">${obj.position.y.toFixed(2)} m</span>
-            <label style="font-size: 11px; color: ${isLockedY ? '#ef4444' : '#94a3b8'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
+            <span style="color: var(--gs-red); font-family: monospace; font-weight: bold;">${obj.position.y.toFixed(2)} m</span>
+            <label style="font-size: 11px; color: ${isLockedY ? '#ef4444' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
               <input type="checkbox" class="lock-axis-cb" data-axis="y" ${isLockedY ? 'checked' : ''} style="cursor: pointer;">
               ${isLockedY ? '🔒 Kilitli' : '🔓 Kilitle'}
             </label>
           </div>
         </div>
         <div style="display: flex; gap: 6px;">
-          <button class="level-btn" data-y="0.75" ${isLockedY ? 'disabled' : ''} style="flex: 1; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid ${isLevel1 ? '#0284c7' : '#475569'}; background: ${isLevel1 ? '#0284c7' : '#1e293b'}; color: white; cursor: pointer;">
+          <button class="level-btn" data-y="0.75" ${isLockedY ? 'disabled' : ''} style="flex: 1; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid ${isLevel1 ? '#0284c7' : '#cbd5e1'}; background: ${isLevel1 ? '#0284c7' : '#f1f5f9'}; color: ${isLevel1 ? 'white' : '#1e293b'}; cursor: pointer;">
             🔻 Alt Seviye Kotu (+0.75m)
           </button>
-          <button class="level-btn" data-y="1.50" ${isLockedY ? 'disabled' : ''} style="flex: 1; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid ${isLevel2 ? '#0284c7' : '#475569'}; background: ${isLevel2 ? '#0284c7' : '#1e293b'}; color: white; cursor: pointer;">
+          <button class="level-btn" data-y="1.50" ${isLockedY ? 'disabled' : ''} style="flex: 1; padding: 8px; font-size: 11px; font-weight: bold; border-radius: 6px; border: 1px solid ${isLevel2 ? '#0284c7' : '#cbd5e1'}; background: ${isLevel2 ? '#0284c7' : '#f1f5f9'}; color: ${isLevel2 ? 'white' : '#1e293b'}; cursor: pointer;">
             🔺 Üst Seviye Kotu (+1.50m)
           </button>
         </div>
@@ -3000,10 +3124,10 @@ function renderProperties(obj) {
     html += `
       <div class="input-group" style="margin-bottom: 10px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; margin-bottom: 4px;">
-          <label style="color: #cbd5e1;">Pozisyon Y (Yükseklik - m)</label>
+          <label style="color: var(--text-secondary);">Pozisyon Y (Yükseklik - m)</label>
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="color: var(--gs-yellow); font-family: monospace;">${obj.position.y.toFixed(3)} m</span>
-            <label style="font-size: 11px; color: ${isLockedY ? '#ef4444' : '#94a3b8'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
+            <span style="color: var(--gs-red); font-family: monospace; font-weight: bold;">${obj.position.y.toFixed(3)} m</span>
+            <label style="font-size: 11px; color: ${isLockedY ? '#ef4444' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
               <input type="checkbox" class="lock-axis-cb" data-axis="y" ${isLockedY ? 'checked' : ''} style="cursor: pointer;">
               ${isLockedY ? '🔒 Kilitli' : '🔓 Kilitle'}
             </label>
@@ -3026,10 +3150,10 @@ function renderProperties(obj) {
   html += `
     <div class="input-group" style="margin-bottom: 12px;">
       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; margin-bottom: 4px;">
-        <label style="color: #cbd5e1;">Pozisyon Z (m)</label>
+        <label style="color: var(--text-secondary);">Pozisyon Z (m)</label>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span style="color: var(--gs-yellow); font-family: monospace;">${obj.position.z.toFixed(3)} m</span>
-          <label style="font-size: 11px; color: ${isLockedZ ? '#ef4444' : '#94a3b8'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
+          <span style="color: var(--gs-red); font-family: monospace; font-weight: bold;">${obj.position.z.toFixed(3)} m</span>
+          <label style="font-size: 11px; color: ${isLockedZ ? '#ef4444' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 2px;">
             <input type="checkbox" class="lock-axis-cb" data-axis="z" ${isLockedZ ? 'checked' : ''} style="cursor: pointer;">
             ${isLockedZ ? '🔒 Kilitli' : '🔓 Kilitle'}
           </label>
@@ -3050,19 +3174,19 @@ function renderProperties(obj) {
   // Action Buttons (Rotate 90 & Keyboard Shortcut Notice)
   html += `
     <div style="display: flex; gap: 8px; margin-top: 12px;">
-      <button id="btn-rotate-90" class="btn btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 12px; background: #334155; color: white;">
+      <button id="btn-rotate-90" class="btn btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 12px; background: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">
         🔄 90° Çevir
       </button>
     </div>
 
     <!-- Keyboard Arrow Keys Helper Notice -->
-    <div style="margin-top: 10px; padding: 8px; background: rgba(15, 23, 42, 0.6); border-radius: 6px; border: 1px solid #334155; font-size: 11px; color: #94a3b8;">
+    <div style="margin-top: 10px; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
       💡 <strong>Ok Tuşları İle Kaydırma:</strong> Seçili iken ⬅️ ➡️ (X) ve ⬆️ ⬇️ (Z) ok tuşları ile kaydırabilirsiniz. (Shift ile 10cm, normal 1cm).
     </div>
 
     <!-- Pass-Through (Clipping/Collision Toggle) -->
-    <div style="margin-top: 8px; padding: 8px 10px; background: #1e293b; border-radius: 6px; border: 1px solid #334155; display: flex; align-items: center; justify-content: space-between;">
-      <label for="prop-passthrough" style="cursor: pointer; font-size: 11px; color: #cbd5e1; font-weight: bold; margin: 0;">
+    <div style="margin-top: 8px; padding: 8px 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+      <label for="prop-passthrough" style="cursor: pointer; font-size: 11px; color: #1e293b; font-weight: bold; margin: 0;">
         ⚡ Serbest Konumlandırma (Çakışma Koruması Muafiyeti)
       </label>
       <input type="checkbox" id="prop-passthrough" ${obj.userData.allowPassThrough !== false ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px;">
@@ -3299,9 +3423,12 @@ document.getElementById('btn-screenshot').addEventListener('click', () => {
 
 // Modal BOQ Toggle
 const modal = document.getElementById('bom-modal');
-document.getElementById('btn-export-bom').addEventListener('click', () => {
-  modal.style.display = 'flex';
-});
+const btnExportBom = document.getElementById('btn-export-bom');
+if (btnExportBom) {
+  btnExportBom.addEventListener('click', () => {
+    modal.style.display = 'flex';
+  });
+}
 document.getElementById('btn-close-modal').addEventListener('click', () => {
   modal.style.display = 'none';
 });

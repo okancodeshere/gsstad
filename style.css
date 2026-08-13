@@ -40,7 +40,7 @@ body {
 /* Header */
 .app-header {
   height: var(--header-height);
-  background: rgba(10, 11, 13, 0.95);
+  background: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -64,7 +64,7 @@ body {
 .subtitle {
   font-size: 11px;
   font-weight: 400;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.06);
   padding: 4px 8px;
   border-radius: 4px;
   color: var(--text-secondary);
@@ -302,16 +302,17 @@ textarea#notes {
   display: flex;
   gap: 8px;
   pointer-events: auto;
-  background: rgba(20, 22, 28, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid var(--border-color);
   padding: 4px;
   border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .btn-icon {
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
@@ -326,12 +327,13 @@ textarea#notes {
 }
 
 .helper-text {
-  background: rgba(20, 22, 28, 0.85);
+  background: rgba(255, 255, 255, 0.95);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Modal */
@@ -342,7 +344,7 @@ textarea#notes {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   z-index: 100;
   justify-content: center;
@@ -350,7 +352,7 @@ textarea#notes {
 }
 
 .modal-content {
-  background: #111317;
+  background: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
@@ -359,6 +361,8 @@ textarea#notes {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  color: var(--text-primary);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .bom-table-container {
@@ -391,9 +395,9 @@ textarea#notes {
 
 /* Equipment Tabs & Card Styling */
 .eq-tab {
-  background: #1e293b;
-  color: #94a3b8;
-  border: 1px solid #334155;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
@@ -410,8 +414,8 @@ textarea#notes {
 }
 
 .eq-card {
-  background: #1e293b;
-  border: 1px solid #334155;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 10px;
   display: flex;
@@ -424,7 +428,7 @@ textarea#notes {
 .eq-card:hover {
   border-color: var(--gs-yellow);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .eq-card-header {
@@ -436,7 +440,7 @@ textarea#notes {
 .eq-card-title {
   font-size: 13px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #1e293b;
 }
 
 .eq-card-badge {
@@ -449,14 +453,14 @@ textarea#notes {
 
 .eq-card-specs {
   font-size: 11px;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 .eq-card-btn {
   margin-top: 4px;
-  background: #334155;
-  color: #f8fafc;
-  border: none;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 600;
@@ -468,7 +472,7 @@ textarea#notes {
 }
 
 .eq-card-btn:hover {
-  background: #475569;
+  background: #e2e8f0;
 }
 
 /* Stepper Buttons for X Y Z Position */
@@ -479,9 +483,9 @@ textarea#notes {
 }
 
 .step-btn {
-  background: #334155;
-  color: #cbd5e1;
-  border: 1px solid #475569;
+  background: #f1f5f9;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 11px;
@@ -506,8 +510,8 @@ textarea#notes {
 /* Right Sidebar Main Navigation Tabs */
 .right-main-tabs {
   display: flex;
-  background: #0f172a;
-  border-bottom: 2px solid #334155;
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--border-color);
   padding: 6px;
   gap: 6px;
   position: sticky;
@@ -518,9 +522,9 @@ textarea#notes {
 .right-tab-btn {
   flex: 1;
   padding: 8px 10px;
-  background: #1e293b;
-  color: #94a3b8;
-  border: 1px solid #334155;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
@@ -530,8 +534,8 @@ textarea#notes {
 }
 
 .right-tab-btn:hover {
-  background: #334155;
-  color: #f8fafc;
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
 .right-tab-btn.active {
