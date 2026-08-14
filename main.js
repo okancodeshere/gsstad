@@ -3871,11 +3871,11 @@ function deserializeItemToArea(item, targetArea) {
   if (itemName.includes('42U POI Rack') || blockType === '42u-poi-rack-blok') {
     group = build42UPoiRackBlok(targetArea);
   } else if (blockType === 'rectifier-20u-eltek' || itemName.includes('20U Outdoor')) {
-    group = buildRectifier20UModel(catalogItem);
+    group = buildRectifier20UModel(item);
   } else if (blockType === 'rectifier-turkcell-double' || itemName.includes('Turkcell Çift Bölmeli')) {
-    group = buildRectifierTurkcellDoubleModel(catalogItem);
+    group = buildRectifierTurkcellDoubleModel(item);
   } else if (blockType === 'rectifier-mts9304a' || itemName.includes('MTS9304A')) {
-    group = buildRectifierMTS9304AModel(catalogItem);
+    group = buildRectifierMTS9304AModel(item);
   } else if (blockType === 'tcell-offset-blok' || itemName.includes('Turkcell 10')) {
     group = buildTCellOffsetBlok(targetArea);
   } else if (blockType === 'tt-5li-5527-blok' || itemName.includes("5'li RRU5527")) {
