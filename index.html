@@ -31,6 +31,10 @@
         <button id="btn-export-json" class="btn btn-secondary">💾 Projeyi Kaydet</button>
         <button id="btn-import-json" class="btn btn-secondary">📂 Proje Yükle</button>
         <input type="file" id="input-import-file" style="display: none;" accept=".json">
+        <select id="select-preset-draft" class="btn btn-secondary" style="background: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
+          <option value="" disabled selected>📋 Hazır Taslaklar</option>
+          <option value="taslak-v1" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 1</option>
+        </select>
         <button id="btn-reset-project" class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
         <button id="btn-screenshot" class="btn btn-primary">Görsel Kaydet</button>
         <button id="btn-settings" class="btn btn-secondary" style="font-size: 15px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;" title="Uygulama Ayarları">⚙️ <span>Ayarlar</span></button>
@@ -247,6 +251,38 @@
 
         <div class="modal-actions" style="margin-top: 20px; display: flex; justify-content: flex-end;">
           <button id="btn-close-settings" class="btn btn-primary" style="padding: 6px 16px; font-size: 13px;">Tamam</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3D Ölçüler & Önizleme Popup Modal -->
+    <div id="dimensions-modal" class="modal">
+      <div class="modal-content" style="max-width: 760px; width: 92%; background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 0; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #1e293b; border-bottom: 1px solid #334155;">
+          <h3 id="modal-dim-title" style="margin: 0; font-size: 15px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px;">🔍 Ürün Ölçüleri & 3D Görünüm</h3>
+          <button id="btn-close-dim-modal" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;" title="Kapat">✕</button>
+        </div>
+
+        <!-- Modal Body Grid -->
+        <div style="display: grid; grid-template-columns: 360px 1fr; gap: 20px; padding: 20px; background: #0b1329;">
+          <!-- Left Column: Interactive 3D Preview Canvas -->
+          <div style="background: #020617; border: 1px solid #1e293b; border-radius: 10px; position: relative; width: 360px; height: 340px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <canvas id="dim-3d-canvas" style="width: 100%; height: 100%; cursor: grab;"></canvas>
+            <div style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); color: #94a3b8; font-size: 11px; text-align: center; padding: 6px 10px; border-radius: 6px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.05);">
+              🔄 Mouse ile 360° döndürebilir ve yakınlaştırabilirsiniz
+            </div>
+          </div>
+
+          <!-- Right Column: Dimensional Details & Technical Specifications -->
+          <div id="dim-specs-content" style="display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
+            <!-- Dinamik Doldurulacak -->
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding: 12px 20px; background: #1e293b; border-top: 1px solid #334155; display: flex; justify-content: flex-end;">
+          <button id="btn-close-dim-modal-footer" class="btn btn-secondary" style="padding: 6px 18px; font-size: 13px; font-weight: bold;">Kapat</button>
         </div>
       </div>
     </div>

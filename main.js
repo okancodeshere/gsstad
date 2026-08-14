@@ -2661,6 +2661,205 @@ function setPlatformGroupVisibility(platforms, isVisible) {
   });
 }
 
+// ----------------------------------------------------
+// 3D Dimensions Interactive Preview Modal System
+// ----------------------------------------------------
+let previewScene = null;
+let previewCamera = null;
+let previewRenderer = null;
+let previewControls = null;
+let previewModel = null;
+
+function initPreviewThree() {
+  const canvas = document.getElementById('dim-3d-canvas');
+  if (!canvas) return;
+
+  previewScene = new THREE.Scene();
+  previewScene.background = new THREE.Color(0x020617);
+
+  previewCamera = new THREE.PerspectiveCamera(45, 360 / 340, 0.1, 50);
+  previewCamera.position.set(1.8, 1.4, 2.2);
+
+  previewRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  previewRenderer.setSize(360, 340);
+  previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  previewRenderer.shadowMap.enabled = true;
+
+  const ambLight = new THREE.AmbientLight(0xffffff, 0.9);
+  previewScene.add(ambLight);
+
+  const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+  dirLight1.position.set(5, 8, 5);
+  previewScene.add(dirLight1);
+
+  const dirLight2 = new THREE.DirectionalLight(0x38bdf8, 0.5);
+  dirLight2.position.set(-5, -2, -5);
+  previewScene.add(dirLight2);
+
+  const grid = new THREE.GridHelper(4, 16, 0x0284c7, 0x1e293b);
+  grid.position.y = -0.005;
+  previewScene.add(grid);
+
+  previewControls = new OrbitControls(previewCamera, previewRenderer.domElement);
+  previewControls.enableDamping = true;
+  previewControls.dampingFactor = 0.05;
+  previewControls.autoRotate = true;
+  previewControls.autoRotateSpeed = 1.5;
+
+  function animatePreview() {
+    requestAnimationFrame(animatePreview);
+    if (previewControls) previewControls.update();
+    if (previewRenderer && previewScene && previewCamera) {
+      previewRenderer.render(previewScene, previewCamera);
+    }
+  }
+  animatePreview();
+}
+
+function openDimensionsModal(target) {
+  const modal = document.getElementById('dimensions-modal');
+  const container = document.getElementById('dim-specs-content');
+  const titleElem = document.getElementById('modal-dim-title');
+  if (!modal || !container) return;
+
+  if (!previewRenderer) {
+    initPreviewThree();
+  }
+
+  let name = target.userData ? target.userData.name : target.name;
+  let category = target.userData ? target.userData.category : target.category;
+  let blockType = target.userData ? target.userData.blockType : (target.blockType || target.id);
+  
+  let W = 0.60, H = 1.20, D = 0.60, weight = 50;
+
+  if (target.userData && target.userData.width) {
+    W = target.userData.width;
+    H = target.userData.height;
+    D = target.userData.depth;
+    weight = target.userData.weight || 50;
+  } else if (target.width) {
+    W = target.width;
+    H = target.height;
+    D = target.depth;
+    weight = target.weight || 50;
+  } else if (target.isMesh || target.isGroup) {
+    const box = new THREE.Box3().setFromObject(target);
+    const size = box.getSize(new THREE.Vector3());
+    W = size.x;
+    H = size.y;
+    D = size.z;
+  }
+
+  if (titleElem) {
+    titleElem.innerHTML = `🔍 ${name} - Ürün Ölçüleri & 3D Görünüm`;
+  }
+
+  // Clear previous preview model
+  if (previewModel) {
+    previewScene.remove(previewModel);
+    previewModel = null;
+  }
+
+  if (target.isGroup || target.isMesh) {
+    previewModel = target.clone(true);
+  } else {
+    previewModel = buildCustomEquipmentModel(target);
+  }
+
+  // Make all sub-children visible in preview
+  previewModel.visible = true;
+  previewModel.traverse(child => child.visible = true);
+
+  // Center model at origin
+  const box = new THREE.Box3().setFromObject(previewModel);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  previewModel.position.sub(center);
+  previewModel.position.y += size.y / 2;
+
+  previewScene.add(previewModel);
+
+  const maxDim = Math.max(size.x, size.y, size.z, 0.4);
+  previewCamera.position.set(maxDim * 1.6, maxDim * 1.2, maxDim * 1.8);
+  if (previewControls) {
+    previewControls.target.set(0, size.y / 2, 0);
+    previewControls.update();
+  }
+
+  const widthCm = (W * 100).toFixed(1);
+  const heightCm = (H * 100).toFixed(1);
+  const depthCm = (D * 100).toFixed(1);
+
+  let categoryBadge = category || 'Kabin / Blok';
+  let categoryColor = '#0284c7';
+  if (category === 'Turkcell') categoryColor = '#0284c7';
+  else if (category === 'Vodafone') categoryColor = '#dc2626';
+  else if (category === 'Türk Telekom') categoryColor = '#0891b2';
+  else if (category === 'POI') categoryColor = '#ea580c';
+  else if (category === 'Rectifier') categoryColor = '#38bdf8';
+
+  container.innerHTML = `
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h4 style="margin: 0; font-size: 15px; color: #f8fafc; font-weight: bold;">${name}</h4>
+        <span style="background: ${categoryColor}; color: #fff; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold;">
+          ${categoryBadge}
+        </span>
+      </div>
+      <div style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">
+        Modül Kodu / Tipi: <strong style="color: #cbd5e1;">${blockType || 'Standart Kabin / Blok'}</strong>
+      </div>
+    </div>
+
+    <!-- Dimension Spec Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      <div style="background: #1e293b; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155;">
+        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">↔️ Genişlik (X)</span>
+        <strong style="font-size: 15px; color: #38bdf8;">${widthCm} cm</strong> <span style="font-size: 11px; color: #64748b;">(${W.toFixed(3)} m)</span>
+      </div>
+
+      <div style="background: #1e293b; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155;">
+        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">↕️ Yükseklik (Y)</span>
+        <strong style="font-size: 15px; color: #38bdf8;">${heightCm} cm</strong> <span style="font-size: 11px; color: #64748b;">(${H.toFixed(3)} m)</span>
+      </div>
+
+      <div style="background: #1e293b; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155;">
+        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">↗️ Derinlik (Z)</span>
+        <strong style="font-size: 15px; color: #38bdf8;">${depthCm} cm</strong> <span style="font-size: 11px; color: #64748b;">(${D.toFixed(3)} m)</span>
+      </div>
+
+      <div style="background: #1e293b; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155;">
+        <span style="font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px;">⚖️ Ekipman Ağırlığı</span>
+        <strong style="font-size: 15px; color: #10b981;">${weight} kg</strong>
+      </div>
+    </div>
+
+    <!-- Technical Spec Info Box -->
+    <div style="background: rgba(2, 132, 199, 0.1); border: 1px solid rgba(2, 132, 199, 0.3); padding: 10px 12px; border-radius: 8px; font-size: 11px; color: #e2e8f0; line-height: 1.5;">
+      ℹ️ <strong>Ölçek & Statik Hesaplama Notları:</strong><br>
+      • 3D model, teknik çizim parametrelerine 1:1 ölçekli olarak uymaktadır.<br>
+      • Ekipmanın statik ağırlığı sahne BOQ listesine doğrudan yansıtılır.
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+const closeDimModalBtn = document.getElementById('btn-close-dim-modal');
+const closeDimModalFooterBtn = document.getElementById('btn-close-dim-modal-footer');
+
+const closeDimModal = () => {
+  const modal = document.getElementById('dimensions-modal');
+  if (modal) modal.style.display = 'none';
+  if (previewScene && previewModel) {
+    previewScene.remove(previewModel);
+    previewModel = null;
+  }
+};
+
+if (closeDimModalBtn) closeDimModalBtn.addEventListener('click', closeDimModal);
+if (closeDimModalFooterBtn) closeDimModalFooterBtn.addEventListener('click', closeDimModal);
+
 // Area Selection Handler (Alan-1 / Alan-2 / Alan-3)
 const selectAreaElem = document.getElementById('select-area');
 if (selectAreaElem) {
@@ -3368,9 +3567,22 @@ function renderExcelEquipmentGrid(selectedCat = 'Turkcell') {
       <div class="eq-card-specs">
         📐 ${(item.height * 100).toFixed(1)} x ${(item.width * 100).toFixed(1)} x ${(item.depth * 100).toFixed(1)} cm | ⚖️ ${item.weight} kg
       </div>
-      <button class="eq-card-btn">➕ Sahneye Ekle</button>
+      <div style="display: flex; gap: 6px; margin-top: 6px;">
+        <button class="eq-card-btn btn-spawn-eq" style="flex: 1;">➕ Sahneye Ekle</button>
+        <button class="eq-card-btn btn-dim-eq" style="background: #1e293b; color: #38bdf8; border: 1px solid #334155; padding: 6px 8px; font-size: 11px;">🔍 3D Ölçüler</button>
+      </div>
     `;
-    card.addEventListener('click', () => spawnCustomEquipment(item));
+
+    card.querySelector('.btn-spawn-eq').addEventListener('click', (e) => {
+      e.stopPropagation();
+      spawnCustomEquipment(item);
+    });
+
+    card.querySelector('.btn-dim-eq').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDimensionsModal(item);
+    });
+
     container.appendChild(card);
   });
 }
@@ -3591,9 +3803,24 @@ function renderProperties(obj) {
       </label>
       <input type="checkbox" id="prop-passthrough" ${obj.userData.allowPassThrough !== false ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px;">
     </div>
+
+    <!-- 3D Dimensions & Interactive Preview Button for RRU and Rack blocks -->
+    <div style="margin-top: 10px;">
+      <button id="btn-show-3d-dimensions" class="btn btn-secondary" style="width: 100%; background: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; padding: 8px 12px; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; border-radius: 6px;">
+        🔍 Ölçüler & 3D Görünüm
+      </button>
+    </div>
   `;
 
   content.innerHTML = html;
+
+  // Bind 3D Dimensions Modal Button
+  const btnShowDimensions = document.getElementById('btn-show-3d-dimensions');
+  if (btnShowDimensions) {
+    btnShowDimensions.addEventListener('click', () => {
+      openDimensionsModal(obj);
+    });
+  }
 
   // Bind Independent Axis Lock Checkboxes
   document.querySelectorAll('.lock-axis-cb').forEach(cb => {
@@ -4096,6 +4323,110 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
   downloadAnchor.remove();
 });
 
+// Preset Draft Templates Registry
+const PRESET_DRAFTS = {
+  'taslak-v1': {
+    "version": "2.0",
+    "savedAt": "2026-08-14T12:27:41.644Z",
+    "currentArea": "alan1",
+    "areas": {
+      "alan1": [
+        { "name": "RRU Blok (Korkuluklu)", "blockType": "rru-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -2.295145407456438, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "RRU Blok (Korkuluklu)", "blockType": "rru-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 2.670922501399333, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -4.900061062901976, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "Turkcell 10'lu (5 Dikey Boru 2 Kat) Blok", "blockType": "tcell-offset-blok", "catalogId": null, "type": "rru", "category": "Turkcell", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 2.046088244628467, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Türk Telekom 5'li RRU5527 Blok", "blockType": "tt-5li-5527-blok", "catalogId": null, "type": "rru", "category": "Türk Telekom", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 3.2869700859554434, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Türk Telekom 5'li RRU5818W Blok", "blockType": "tt-5li-5818w-blok", "catalogId": null, "type": "rru", "category": "Türk Telekom", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 3.2944827039688143, "y": 1.5, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Vodafone 3'lü RRU5526t Blok", "blockType": "voda-3li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -2.890639995254168, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Vodafone 5'li RRU5526t Blok", "blockType": "voda-5li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -1.6952168892768145, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Vodafone 5'li RRU5526t Blok", "blockType": "voda-5li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -1.7102878002086999, "y": 1.5, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
+        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 5.119058564096933, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.023352096690417296, "y": 0, "z": -1.688624436780009 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -0.6561372739989106, "y": 0, "z": -0.9737981000025636 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.5642749069576185, "y": 0, "z": -0.9711852491449924 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "Turkcell Çift Bölmeli Outdoor Güç Kabini (1500x1070x750)", "blockType": "rectifier-turkcell-double", "catalogId": "rectifier-turkcell-double", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 5.17012080690793, "y": 0, "z": -1.4040498760089049 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW)", "blockType": "rectifier-20u-eltek", "catalogId": "rectifier-20u-eltek", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -5.426622921854924, "y": 0, "z": -1.5176537070995237 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini", "blockType": "rectifier-mts9304a", "catalogId": "rectifier-mts9304a", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -4.452552658789933, "y": 0, "z": -1.5652529226819627 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
+      ],
+      "alan2": [
+        { "name": "Alan 2 Karma RRU Blok (4 Borulu - 7 RRU) (Alan 2)", "blockType": "alan2-karma-rru-blok", "catalogId": null, "type": "rru", "category": "Karma", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -2.9988460001254937 }, "rotation": { "x": 0, "y": 6.283185307179586, "z": 0 }, "locked": false, "lockedX": true, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "RRU Saha Blok (Alan 2)", "blockType": "rru-saha-blok", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -3.3915045073350853 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 2)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.12635916826471072, "y": 0, "z": -1.1939725002212356 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
+      ],
+      "alan3": [
+        { "name": "30cm Ofset & 2.5\" Boru (Sağ - Çift Kol) (Alan 3)", "blockType": null, "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": true, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": -0.4535, "z": -4.5 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": true, "lockedZ": false, "allowPassThrough": true },
+        { "name": "30cm Ofset & 2.5\" Boru (Sol - Çift Kol) (Alan 3)", "blockType": null, "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": true, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": -0.4535, "z": -4.5 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": true, "lockedZ": false, "allowPassThrough": true },
+        { "name": "RRU Saha Blok (Alan 3)", "blockType": "rru-saha-blok", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -3.2512388136492154 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.1963078487261432, "y": 0, "z": -2.608624899453891 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.2429354550466356, "y": 0, "z": -1.188157875725572 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
+        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.22012813026807526, "y": 0, "z": -1.9309626762980763 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
+      ]
+    }
+  }
+};
+
+function loadProjectFromData(importData) {
+  selectObject(null);
+
+  // 1. Clear scene and internal arrays for all 3 areas
+  [...state.alan1Platforms, ...state.alan2Platforms, ...state.alan3Platforms].forEach(p => scene.remove(p));
+  state.alan1Platforms = [];
+  state.alan2Platforms = [];
+  state.alan3Platforms = [];
+
+  // 2. Check if new format containing all areas
+  if (importData.areas) {
+    ['alan1', 'alan2', 'alan3'].forEach(areaKey => {
+      const items = importData.areas[areaKey] || [];
+      items.forEach(item => deserializeItemToArea(item, areaKey));
+    });
+
+    const activeArea = importData.currentArea || 'alan1';
+    const selectAreaElem = document.getElementById('select-area');
+    if (selectAreaElem) {
+      selectAreaElem.value = activeArea;
+      selectAreaElem.dispatchEvent(new Event('change'));
+    }
+  } else {
+    // 3. Fallback for legacy single-area project JSONs
+    let targetArea = state.currentArea;
+    let itemsToImport = [];
+
+    if (importData.area) {
+      targetArea = importData.area;
+      itemsToImport = importData.items || [];
+    } else if (Array.isArray(importData)) {
+      itemsToImport = importData;
+    }
+
+    itemsToImport.forEach(item => deserializeItemToArea(item, targetArea));
+
+    const selectAreaElem = document.getElementById('select-area');
+    if (selectAreaElem && targetArea !== state.currentArea) {
+      selectAreaElem.value = targetArea;
+      selectAreaElem.dispatchEvent(new Event('change'));
+    }
+  }
+
+  selectObject(null);
+  updateBOM();
+}
+
+// Bind Preset Draft Dropdown Event Listener
+const presetSelectElem = document.getElementById('select-preset-draft');
+if (presetSelectElem) {
+  presetSelectElem.addEventListener('change', (e) => {
+    const selectedPreset = e.target.value;
+    if (selectedPreset && PRESET_DRAFTS[selectedPreset]) {
+      loadProjectFromData(PRESET_DRAFTS[selectedPreset]);
+      const draftName = e.target.options[e.target.selectedIndex].text;
+      alert(`${draftName} hazır şablon tasarımı tüm alanlara başarıyla yüklendi!`);
+      e.target.value = ''; // Reset select placeholder to "📋 Hazır Taslaklar"
+    }
+  });
+}
+
 // Projeyi JSON Olarak Yükle (Import All Areas Together)
 const importBtn = document.getElementById('btn-import-json');
 const fileInput = document.getElementById('input-import-file');
@@ -4113,49 +4444,7 @@ if (importBtn && fileInput) {
     reader.onload = (e) => {
       try {
         const importData = JSON.parse(e.target.result);
-        selectObject(null);
-
-        // 1. Clear scene and internal arrays for all 3 areas
-        [...state.alan1Platforms, ...state.alan2Platforms, ...state.alan3Platforms].forEach(p => scene.remove(p));
-        state.alan1Platforms = [];
-        state.alan2Platforms = [];
-        state.alan3Platforms = [];
-
-        // 2. Check if new format containing all areas
-        if (importData.areas) {
-          ['alan1', 'alan2', 'alan3'].forEach(areaKey => {
-            const items = importData.areas[areaKey] || [];
-            items.forEach(item => deserializeItemToArea(item, areaKey));
-          });
-
-          const activeArea = importData.currentArea || 'alan1';
-          const selectAreaElem = document.getElementById('select-area');
-          if (selectAreaElem) {
-            selectAreaElem.value = activeArea;
-            selectAreaElem.dispatchEvent(new Event('change'));
-          }
-        } else {
-          // 3. Fallback for legacy single-area project JSONs
-          let targetArea = state.currentArea;
-          let itemsToImport = [];
-
-          if (importData.area) {
-            targetArea = importData.area;
-            itemsToImport = importData.items || [];
-          } else if (Array.isArray(importData)) {
-            itemsToImport = importData;
-          }
-
-          itemsToImport.forEach(item => deserializeItemToArea(item, targetArea));
-
-          const selectAreaElem = document.getElementById('select-area');
-          if (selectAreaElem && targetArea !== state.currentArea) {
-            selectAreaElem.value = targetArea;
-            selectAreaElem.dispatchEvent(new Event('change'));
-          }
-        }
-
-        updateBOM();
+        loadProjectFromData(importData);
         alert('Tüm alanları içeren proje tasarımı başarıyla yüklendi!');
       } catch (err) {
         alert('Hata: Dosya formatı geçerli bir yerleşim planı JSON\'ı değil.');
