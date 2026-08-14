@@ -2865,18 +2865,18 @@ function buildProsePoiModel(item) {
 
 function buildRectifier20UModel(item) {
   const group = new THREE.Group();
-  const W = item ? item.width : 0.60;
-  const H = item ? item.height : 1.30;
-  const D = item ? item.depth : 0.60;
-  const weight = item ? item.weight : 100;
+  const W = (item && item.width) ? item.width : 0.60;
+  const H = (item && item.height) ? item.height : 1.30;
+  const D = (item && item.depth) ? item.depth : 0.60;
+  const weight = (item && item.weight) ? item.weight : 100;
 
   group.userData = {
     id: state.nextId++,
     type: 'rru',
     blockType: 'rectifier-20u-eltek',
-    catalogId: item ? item.id : 'rectifier-20u-eltek',
+    catalogId: (item && item.id) ? item.id : 'rectifier-20u-eltek',
     category: 'Rectifier',
-    name: item ? item.name : '20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW)',
+    name: (item && item.name) ? item.name : '20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW)',
     width: W,
     height: H,
     depth: D,
@@ -2890,96 +2890,117 @@ function buildRectifier20UModel(item) {
     allowPassThrough: true
   };
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.4 });
-  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.7 });
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.4 });
-  const acMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4, metalness: 0.5 });
-  const moduleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.8 });
-  const ledMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-  const handleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 });
+  // Contrast High-Quality Materials
+  const chassisMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.3, metalness: 0.5 });
+  const doorPanelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.3 });
+  const darkBezelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.7 });
+  const basePlinthMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 });
+  const acHousingMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.6 });
+  const screenMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 }); // Blue LCD Backlight
+  const ledGreenMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.2, metalness: 0.9 });
 
   const cabinetGroup = new THREE.Group();
 
-  // A. Plinth Base (100mm)
+  // 1. Dark Base Plinth (Baza - 100mm)
   const baseH = 0.10;
-  const baseGeo = new THREE.BoxGeometry(W * 0.96, baseH, D * 0.96);
-  const baseMesh = new THREE.Mesh(baseGeo, darkMetalMat);
+  const baseGeo = new THREE.BoxGeometry(W * 0.98, baseH, D * 0.98);
+  const baseMesh = new THREE.Mesh(baseGeo, basePlinthMat);
   baseMesh.position.set(0, baseH / 2, 0);
   baseMesh.castShadow = true;
   baseMesh.receiveShadow = true;
   cabinetGroup.add(baseMesh);
 
-  // B. Main Body Enclosure
+  // Cable Entry Slot Accents on Plinth Front
+  const cableSlotGeo = new THREE.BoxGeometry(W * 0.4, 0.03, 0.01);
+  const cableSlot = new THREE.Mesh(cableSlotGeo, handleMat);
+  cableSlot.position.set(0, baseH / 2, D / 2 + 0.005);
+  cabinetGroup.add(cableSlot);
+
+  // 2. Main Enclosure Body
   const bodyH = H - baseH - 0.08;
   const bodyGeo = new THREE.BoxGeometry(W, bodyH, D);
-  const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+  const bodyMesh = new THREE.Mesh(bodyGeo, chassisMat);
+  bodyMesh.name = "rru_body";
   bodyMesh.position.set(0, baseH + bodyH / 2, 0);
   bodyMesh.castShadow = true;
   bodyMesh.receiveShadow = true;
   cabinetGroup.add(bodyMesh);
 
-  // C. Top Protective Rain Hood / Cap (Şapka)
+  // 3. Top Rain Hood / Cap (Şapka) - Overhanging Roof
   const hoodH = 0.08;
-  const hoodGeo = new THREE.BoxGeometry(W + 0.06, hoodH, D + 0.06);
-  const hoodMesh = new THREE.Mesh(hoodGeo, darkMetalMat);
+  const hoodGeo = new THREE.BoxGeometry(W + 0.08, hoodH, D + 0.08);
+  const hoodMesh = new THREE.Mesh(hoodGeo, darkBezelMat);
   hoodMesh.position.set(0, H - hoodH / 2, 0);
   hoodMesh.castShadow = true;
-  hoodMesh.receiveShadow = true;
   cabinetGroup.add(hoodMesh);
 
-  // Sloped hood top cap
   const roofGeo = new THREE.BoxGeometry(W + 0.04, 0.02, D + 0.04);
-  const roofMesh = new THREE.Mesh(roofGeo, bodyMat);
+  const roofMesh = new THREE.Mesh(roofGeo, chassisMat);
   roofMesh.position.set(0, H + 0.01, 0);
   cabinetGroup.add(roofMesh);
 
-  // D. Front Door Frame & Handle
-  const doorGeo = new THREE.BoxGeometry(W * 0.92, bodyH * 0.95, 0.02);
-  const doorMesh = new THREE.Mesh(doorGeo, doorMat);
-  doorMesh.position.set(0, baseH + bodyH / 2, D / 2 + 0.01);
+  // 4. Front Door Frame (Dark Bezel Outline around door)
+  const frameGeo = new THREE.BoxGeometry(W * 0.96, bodyH * 0.96, 0.02);
+  const frameMesh = new THREE.Mesh(frameGeo, darkBezelMat);
+  frameMesh.position.set(0, baseH + bodyH / 2, D / 2 + 0.01);
+  frameMesh.castShadow = true;
+  cabinetGroup.add(frameMesh);
+
+  // 5. Front White Door Panel Insert
+  const doorGeo = new THREE.BoxGeometry(W * 0.90, bodyH * 0.92, 0.015);
+  const doorMesh = new THREE.Mesh(doorGeo, doorPanelMat);
+  doorMesh.position.set(0, baseH + bodyH / 2, D / 2 + 0.02);
   doorMesh.castShadow = true;
   cabinetGroup.add(doorMesh);
 
-  // Door Handle Lock
-  const handleGeo = new THREE.BoxGeometry(0.03, 0.16, 0.03);
+  // 6. Door Lever Lock Handle & Keyhole
+  const handleGeo = new THREE.BoxGeometry(0.04, 0.18, 0.03);
   const handleMesh = new THREE.Mesh(handleGeo, handleMat);
-  handleMesh.position.set(W / 2 - 0.06, baseH + bodyH / 2, D / 2 + 0.03);
+  handleMesh.position.set(W / 2 - 0.07, baseH + bodyH / 2, D / 2 + 0.035);
   cabinetGroup.add(handleMesh);
 
-  // E. 500W AC Aircon / Vent Unit Grill on Front Door Top
-  const acVentGeo = new THREE.BoxGeometry(W * 0.70, 0.28, 0.04);
-  const acVentMesh = new THREE.Mesh(acVentGeo, acMat);
-  acVentMesh.position.set(0, baseH + bodyH * 0.75, D / 2 + 0.02);
+  // 7. 500W Outdoor Airco Unit Grill (Front Top Half)
+  const acVentGeo = new THREE.BoxGeometry(W * 0.72, 0.32, 0.05);
+  const acVentMesh = new THREE.Mesh(acVentGeo, acHousingMat);
+  acVentMesh.position.set(0, baseH + bodyH * 0.74, D / 2 + 0.035);
   acVentMesh.castShadow = true;
   cabinetGroup.add(acVentMesh);
 
-  // AC Grill Fin Lines
-  for (let y = -0.09; y <= 0.09; y += 0.03) {
-    const finGeo = new THREE.BoxGeometry(W * 0.62, 0.008, 0.01);
-    const finMesh = new THREE.Mesh(finGeo, darkMetalMat);
-    finMesh.position.set(0, baseH + bodyH * 0.75 + y, D / 2 + 0.042);
+  // AC Louver Fin Lines
+  for (let y = -0.11; y <= 0.11; y += 0.03) {
+    const finGeo = new THREE.BoxGeometry(W * 0.64, 0.01, 0.01);
+    const finMesh = new THREE.Mesh(finGeo, handleMat);
+    finMesh.position.set(0, baseH + bodyH * 0.74 + y, D / 2 + 0.062);
     cabinetGroup.add(finMesh);
   }
 
-  // F. Eltek Flatpack2 Rectifier Module Slots
-  const rectRackGeo = new THREE.BoxGeometry(W * 0.75, 0.18, 0.02);
-  const rectRackMesh = new THREE.Mesh(rectRackGeo, moduleMat);
-  rectRackMesh.position.set(0, baseH + bodyH * 0.40, D / 2 + 0.022);
-  cabinetGroup.add(rectRackMesh);
+  // 8. Eltek Flatpack2 Smartpack Controller LCD & Rectifier Module Rack
+  const rackBayGeo = new THREE.BoxGeometry(W * 0.75, 0.22, 0.03);
+  const rackBayMesh = new THREE.Mesh(rackBayGeo, darkBezelMat);
+  rackBayMesh.position.set(0, baseH + bodyH * 0.38, D / 2 + 0.03);
+  cabinetGroup.add(rackBayMesh);
 
+  // Smartpack Display Screen
+  const lcdGeo = new THREE.BoxGeometry(0.12, 0.05, 0.005);
+  const lcdMesh = new THREE.Mesh(lcdGeo, screenMat);
+  lcdMesh.position.set(-W * 0.22, baseH + bodyH * 0.42, D / 2 + 0.048);
+  cabinetGroup.add(lcdMesh);
+
+  // 6x Flatpack2 Rectifier Module Slots
   const slotW = (W * 0.70) / 6;
   for (let i = 0; i < 6; i++) {
-    const slotGeo = new THREE.BoxGeometry(slotW - 0.01, 0.14, 0.01);
-    const slotMat = i < 2 ? darkMetalMat : moduleMat;
-    const slotMesh = new THREE.Mesh(slotGeo, slotMat);
-    const slotX = -W * 0.35 + slotW / 2 + i * slotW;
-    slotMesh.position.set(slotX, baseH + bodyH * 0.40, D / 2 + 0.03);
+    const slotGeo = new THREE.BoxGeometry(slotW - 0.01, 0.12, 0.01);
+    const isPopulated = (i < 2);
+    const slotMesh = new THREE.Mesh(slotGeo, isPopulated ? acHousingMat : handleMat);
+    const slotX = -W * 0.32 + slotW / 2 + i * slotW;
+    slotMesh.position.set(slotX, baseH + bodyH * 0.35, D / 2 + 0.046);
     cabinetGroup.add(slotMesh);
 
-    if (i < 2) {
+    if (isPopulated) {
       const ledGeo = new THREE.BoxGeometry(0.008, 0.008, 0.005);
-      const ledMesh = new THREE.Mesh(ledGeo, ledMat);
-      ledMesh.position.set(slotX, baseH + bodyH * 0.43, D / 2 + 0.036);
+      const ledMesh = new THREE.Mesh(ledGeo, ledGreenMat);
+      ledMesh.position.set(slotX, baseH + bodyH * 0.38, D / 2 + 0.052);
       cabinetGroup.add(ledMesh);
     }
   }
@@ -2990,18 +3011,18 @@ function buildRectifier20UModel(item) {
 
 function buildRectifierTurkcellDoubleModel(item) {
   const group = new THREE.Group();
-  const W = item ? item.width : 1.50;
-  const H = item ? item.height : 1.07;
-  const D = item ? item.depth : 0.75;
-  const weight = item ? item.weight : 275;
+  const W = (item && item.width) ? item.width : 1.50;
+  const H = (item && item.height) ? item.height : 1.07;
+  const D = (item && item.depth) ? item.depth : 0.75;
+  const weight = (item && item.weight) ? item.weight : 275;
 
   group.userData = {
     id: state.nextId++,
     type: 'rru',
     blockType: 'rectifier-turkcell-double',
-    catalogId: item ? item.id : 'rectifier-turkcell-double',
+    catalogId: (item && item.id) ? item.id : 'rectifier-turkcell-double',
     category: 'Rectifier',
-    name: item ? item.name : 'Turkcell Çift Bölmeli Outdoor Güç Kabini (1500x1070x750)',
+    name: (item && item.name) ? item.name : 'Turkcell Çift Bölmeli Outdoor Güç Kabini (1500x1070x750)',
     width: W,
     height: H,
     depth: D,
@@ -3015,74 +3036,95 @@ function buildRectifierTurkcellDoubleModel(item) {
     allowPassThrough: true
   };
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, roughness: 0.3, metalness: 0.4 });
-  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.7 });
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.4 });
-  const turkcellBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.5 });
-  const fanMeshMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.4 });
+  const chassisMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.3, metalness: 0.5 });
+  const doorPanelMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.2, metalness: 0.3 });
+  const darkBezelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.7 });
+  const basePlinthMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 });
+  const turkcellBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.6 });
+  const fanMeshMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.6, metalness: 0.5 });
   const handleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 });
 
   const cabinetGroup = new THREE.Group();
 
+  // 1. Double Base Plinth (80mm)
   const baseH = 0.08;
   const baseGeo = new THREE.BoxGeometry(W * 0.98, baseH, D * 0.96);
-  const baseMesh = new THREE.Mesh(baseGeo, darkMetalMat);
+  const baseMesh = new THREE.Mesh(baseGeo, basePlinthMat);
   baseMesh.position.set(0, baseH / 2, 0);
   baseMesh.castShadow = true;
   baseMesh.receiveShadow = true;
   cabinetGroup.add(baseMesh);
 
+  // 2. Wide Main Cabinet Chassis
   const bodyH = H - baseH - 0.06;
   const bodyGeo = new THREE.BoxGeometry(W, bodyH, D);
-  const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+  const bodyMesh = new THREE.Mesh(bodyGeo, chassisMat);
+  bodyMesh.name = "rru_body";
   bodyMesh.position.set(0, baseH + bodyH / 2, 0);
   bodyMesh.castShadow = true;
   bodyMesh.receiveShadow = true;
   cabinetGroup.add(bodyMesh);
 
+  // 3. Top Protective Roof Hood
   const hoodH = 0.06;
-  const hoodGeo = new THREE.BoxGeometry(W + 0.06, hoodH, D + 0.06);
-  const hoodMesh = new THREE.Mesh(hoodGeo, darkMetalMat);
+  const hoodGeo = new THREE.BoxGeometry(W + 0.08, hoodH, D + 0.08);
+  const hoodMesh = new THREE.Mesh(hoodGeo, darkBezelMat);
   hoodMesh.position.set(0, H - hoodH / 2, 0);
   hoodMesh.castShadow = true;
   cabinetGroup.add(hoodMesh);
 
-  const compW = W / 2 - 0.03;
+  // 4. Turkcell Brand Header Badge
+  const badgeGeo = new THREE.BoxGeometry(W * 0.40, 0.05, 0.01);
+  const badgeMesh = new THREE.Mesh(badgeGeo, turkcellBlueMat);
+  badgeMesh.position.set(0, H - 0.09, D / 2 + 0.02);
+  cabinetGroup.add(badgeMesh);
 
-  const doorLeftGeo = new THREE.BoxGeometry(compW, bodyH * 0.94, 0.02);
-  const doorLeft = new THREE.Mesh(doorLeftGeo, doorMat);
-  doorLeft.position.set(-W / 4, baseH + bodyH / 2, D / 2 + 0.01);
+  // 5. Two Side-by-Side Compartment Door Assemblies
+  const compW = W / 2 - 0.04;
+
+  // Left Compartment Door (Climate & Battery Unit)
+  const doorLeftGeo = new THREE.BoxGeometry(compW, bodyH * 0.92, 0.02);
+  const doorLeft = new THREE.Mesh(doorLeftGeo, doorPanelMat);
+  doorLeft.position.set(-W / 4, baseH + bodyH / 2, D / 2 + 0.015);
   doorLeft.castShadow = true;
   cabinetGroup.add(doorLeft);
 
-  const fanRingGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.03, 32);
+  // Climate Circular Fan Intake Ring on Left Door
+  const fanRingGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.03, 32);
   fanRingGeo.rotateX(Math.PI / 2);
   const fanRing = new THREE.Mesh(fanRingGeo, fanMeshMat);
-  fanRing.position.set(-W / 4, baseH + bodyH * 0.70, D / 2 + 0.025);
+  fanRing.position.set(-W / 4, baseH + bodyH * 0.68, D / 2 + 0.03);
   cabinetGroup.add(fanRing);
 
-  const doorRightGeo = new THREE.BoxGeometry(compW, bodyH * 0.94, 0.02);
-  const doorRight = new THREE.Mesh(doorRightGeo, doorMat);
-  doorRight.position.set(W / 4, baseH + bodyH / 2, D / 2 + 0.01);
+  // Fan Grill Blades
+  for (let angle = 0; angle < Math.PI; angle += Math.PI / 4) {
+    const bladeGeo = new THREE.BoxGeometry(0.24, 0.015, 0.005);
+    const bladeMesh = new THREE.Mesh(bladeGeo, darkBezelMat);
+    bladeMesh.rotation.z = angle;
+    bladeMesh.position.set(-W / 4, baseH + bodyH * 0.68, D / 2 + 0.046);
+    cabinetGroup.add(bladeMesh);
+  }
+
+  // Right Compartment Door (Rectifier & Smart Controller Section)
+  const doorRightGeo = new THREE.BoxGeometry(compW, bodyH * 0.92, 0.02);
+  const doorRight = new THREE.Mesh(doorRightGeo, doorPanelMat);
+  doorRight.position.set(W / 4, baseH + bodyH / 2, D / 2 + 0.015);
   doorRight.castShadow = true;
   cabinetGroup.add(doorRight);
 
-  const perfGeo = new THREE.BoxGeometry(compW * 0.80, bodyH * 0.60, 0.015);
-  const perfMesh = new THREE.Mesh(perfGeo, darkMetalMat);
-  perfMesh.position.set(W / 4, baseH + bodyH * 0.45, D / 2 + 0.02);
+  // Perforated Ventilation Mesh Panel on Right Door
+  const perfGeo = new THREE.BoxGeometry(compW * 0.82, bodyH * 0.62, 0.015);
+  const perfMesh = new THREE.Mesh(perfGeo, darkBezelMat);
+  perfMesh.position.set(W / 4, baseH + bodyH * 0.44, D / 2 + 0.028);
   cabinetGroup.add(perfMesh);
 
-  [-W / 4 + compW / 2 - 0.04, W / 4 - compW / 2 + 0.04].forEach(hx => {
-    const handleGeo = new THREE.BoxGeometry(0.03, 0.14, 0.03);
+  // Handles & Keylocks for both doors
+  [-W / 4 + compW / 2 - 0.05, W / 4 - compW / 2 + 0.05].forEach(hx => {
+    const handleGeo = new THREE.BoxGeometry(0.04, 0.16, 0.03);
     const handleMesh = new THREE.Mesh(handleGeo, handleMat);
-    handleMesh.position.set(hx, baseH + bodyH / 2, D / 2 + 0.03);
+    handleMesh.position.set(hx, baseH + bodyH / 2, D / 2 + 0.035);
     cabinetGroup.add(handleMesh);
   });
-
-  const badgeGeo = new THREE.BoxGeometry(W * 0.35, 0.04, 0.005);
-  const badgeMesh = new THREE.Mesh(badgeGeo, turkcellBlueMat);
-  badgeMesh.position.set(0, H - 0.08, D / 2 + 0.02);
-  cabinetGroup.add(badgeMesh);
 
   group.add(cabinetGroup);
   return group;
@@ -3090,18 +3132,18 @@ function buildRectifierTurkcellDoubleModel(item) {
 
 function buildRectifierMTS9304AModel(item) {
   const group = new THREE.Group();
-  const W = item ? item.width : 0.65;
-  const H = item ? item.height : 1.25;
-  const D = item ? item.depth : 0.65;
-  const weight = item ? item.weight : 80;
+  const W = (item && item.width) ? item.width : 0.65;
+  const H = (item && item.height) ? item.height : 1.25;
+  const D = (item && item.depth) ? item.depth : 0.65;
+  const weight = (item && item.weight) ? item.weight : 80;
 
   group.userData = {
     id: state.nextId++,
     type: 'rru',
     blockType: 'rectifier-mts9304a',
-    catalogId: item ? item.id : 'rectifier-mts9304a',
+    catalogId: (item && item.id) ? item.id : 'rectifier-mts9304a',
     category: 'Rectifier',
-    name: item ? item.name : 'MTS9304A-HX10AX 12U Outdoor Rectifier Kabini',
+    name: (item && item.name) ? item.name : 'MTS9304A-HX10AX 12U Outdoor Rectifier Kabini',
     width: W,
     height: H,
     depth: D,
@@ -3115,60 +3157,86 @@ function buildRectifierMTS9304AModel(item) {
     allowPassThrough: true
   };
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.4 });
-  const darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.7 });
-  const hexMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.3, metalness: 0.5 });
-  const fanMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 });
-  const handleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.9 });
+  const chassisMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.3, metalness: 0.5 });
+  const doorPanelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.3 });
+  const darkBezelMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.7 });
+  const basePlinthMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.8 });
+  const hexHousingMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.6 });
+  const fanMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.5, metalness: 0.8 });
+  const handleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.9 });
+  const lcdScreenMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
 
   const cabinetGroup = new THREE.Group();
 
+  // 1. Dark Plinth Base (100mm)
   const baseH = 0.10;
   const baseGeo = new THREE.BoxGeometry(W * 0.96, baseH, D * 0.96);
-  const baseMesh = new THREE.Mesh(baseGeo, darkMetalMat);
+  const baseMesh = new THREE.Mesh(baseGeo, basePlinthMat);
   baseMesh.position.set(0, baseH / 2, 0);
   baseMesh.castShadow = true;
   baseMesh.receiveShadow = true;
   cabinetGroup.add(baseMesh);
 
+  // 2. Main 12U Cabinet Body
   const bodyH = 0.90;
   const bodyGeo = new THREE.BoxGeometry(W, bodyH, D);
-  const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+  const bodyMesh = new THREE.Mesh(bodyGeo, chassisMat);
+  bodyMesh.name = "rru_body";
   bodyMesh.position.set(0, baseH + bodyH / 2, 0);
   bodyMesh.castShadow = true;
   bodyMesh.receiveShadow = true;
   cabinetGroup.add(bodyMesh);
 
-  const hexH = H - baseH - bodyH;
+  // 3. Top Heat Exchanger Expansion Module Hood (250mm Height)
+  const hexH = H - baseH - bodyH; // 0.25m
   const hexGeo = new THREE.BoxGeometry(W + 0.04, hexH, D + 0.04);
-  const hexMesh = new THREE.Mesh(hexGeo, hexMat);
+  const hexMesh = new THREE.Mesh(hexGeo, hexHousingMat);
   hexMesh.position.set(0, H - hexH / 2, 0);
   hexMesh.castShadow = true;
   cabinetGroup.add(hexMesh);
 
+  // Twin Cooling Fan Grilles on Front of Heat Exchanger Top Hood
   [-W * 0.22, W * 0.22].forEach(fx => {
-    const fanRingGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.02, 32);
+    const fanRingGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.02, 32);
     fanRingGeo.rotateX(Math.PI / 2);
     const fanRing = new THREE.Mesh(fanRingGeo, fanMat);
-    fanRing.position.set(fx, H - hexH / 2, D / 2 + 0.022);
+    fanRing.position.set(fx, H - hexH / 2, D / 2 + 0.023);
     cabinetGroup.add(fanRing);
+
+    // Cross Fan Blade Guards
+    const guard1 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.01, 0.005), darkBezelMat);
+    guard1.position.set(fx, H - hexH / 2, D / 2 + 0.035);
+    cabinetGroup.add(guard1);
+
+    const guard2 = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.16, 0.005), darkBezelMat);
+    guard2.position.set(fx, H - hexH / 2, D / 2 + 0.035);
+    cabinetGroup.add(guard2);
   });
 
+  // 4. Front Access Door Frame with White Panel
   const doorGeo = new THREE.BoxGeometry(W * 0.92, bodyH * 0.94, 0.02);
-  const doorMesh = new THREE.Mesh(doorGeo, bodyMat);
-  doorMesh.position.set(0, baseH + bodyH / 2, D / 2 + 0.01);
+  const doorMesh = new THREE.Mesh(doorGeo, doorPanelMat);
+  doorMesh.position.set(0, baseH + bodyH / 2, D / 2 + 0.015);
   doorMesh.castShadow = true;
   cabinetGroup.add(doorMesh);
 
-  const radGeo = new THREE.BoxGeometry(W * 0.76, bodyH * 0.40, 0.03);
-  const radMesh = new THREE.Mesh(radGeo, darkMetalMat);
-  radMesh.position.set(0, baseH + bodyH * 0.50, D / 2 + 0.025);
+  // 5. Radiator Heat Dissipation Fins Panel on Door Center
+  const radGeo = new THREE.BoxGeometry(W * 0.78, bodyH * 0.44, 0.03);
+  const radMesh = new THREE.Mesh(radGeo, darkBezelMat);
+  radMesh.position.set(0, baseH + bodyH * 0.48, D / 2 + 0.028);
   radMesh.castShadow = true;
   cabinetGroup.add(radMesh);
 
-  const handleGeo = new THREE.BoxGeometry(0.03, 0.16, 0.03);
+  // LCD Controller Display Unit Screen (Huawei SMU Display)
+  const lcdGeo = new THREE.BoxGeometry(0.14, 0.06, 0.008);
+  const lcdMesh = new THREE.Mesh(lcdGeo, lcdScreenMat);
+  lcdMesh.position.set(0, baseH + bodyH * 0.82, D / 2 + 0.028);
+  cabinetGroup.add(lcdMesh);
+
+  // Door Lever Handle
+  const handleGeo = new THREE.BoxGeometry(0.04, 0.18, 0.03);
   const handleMesh = new THREE.Mesh(handleGeo, handleMat);
-  handleMesh.position.set(W / 2 - 0.05, baseH + bodyH / 2, D / 2 + 0.03);
+  handleMesh.position.set(W / 2 - 0.06, baseH + bodyH / 2, D / 2 + 0.035);
   cabinetGroup.add(handleMesh);
 
   group.add(cabinetGroup);
@@ -3176,16 +3244,24 @@ function buildRectifierMTS9304AModel(item) {
 }
 
 function buildCustomEquipmentModel(item) {
-  if (item.id === 'rectifier-20u-eltek' || (item.name && item.name.includes('20U Outdoor'))) {
+  const name = item.name || '';
+  const id = item.id || item.catalogId || '';
+  const cat = item.category || '';
+
+  if (id === 'rectifier-20u-eltek' || name.includes('20U Outdoor') || name.includes('Eltek') || name.includes('Flatpack')) {
     return buildRectifier20UModel(item);
   }
 
-  if (item.id === 'rectifier-turkcell-double' || (item.name && item.name.includes('Turkcell Çift Bölmeli'))) {
+  if (id === 'rectifier-turkcell-double' || name.includes('Turkcell Çift Bölmeli') || name.includes('Çift Bölmeli')) {
     return buildRectifierTurkcellDoubleModel(item);
   }
 
-  if (item.id === 'rectifier-mts9304a' || (item.name && item.name.includes('MTS9304A'))) {
+  if (id === 'rectifier-mts9304a' || name.includes('MTS9304A') || name.includes('12U Outdoor')) {
     return buildRectifierMTS9304AModel(item);
+  }
+
+  if (cat === 'Rectifier' || id.includes('rectifier') || name.includes('Rectifier') || name.includes('DC Güç')) {
+    return buildRectifier20UModel(item);
   }
 
   if (item.category === 'Canovate' || (item.id && item.id.includes('canovate'))) {
@@ -3870,12 +3946,30 @@ function deserializeItemToArea(item, targetArea) {
   // Matching itemName.includes('42U POI Rack') FIRST ensures POI Racks are built with all 6 POI modules inside!
   if (itemName.includes('42U POI Rack') || blockType === '42u-poi-rack-blok') {
     group = build42UPoiRackBlok(targetArea);
-  } else if (blockType === 'rectifier-20u-eltek' || itemName.includes('20U Outdoor')) {
+  } else if (
+    blockType === 'rectifier-20u-eltek' || 
+    item.catalogId === 'rectifier-20u-eltek' || 
+    itemName.includes('20U Outdoor') || 
+    itemName.includes('Eltek') || 
+    itemName.includes('Flatpack')
+  ) {
     group = buildRectifier20UModel(item);
-  } else if (blockType === 'rectifier-turkcell-double' || itemName.includes('Turkcell Çift Bölmeli')) {
+  } else if (
+    blockType === 'rectifier-turkcell-double' || 
+    item.catalogId === 'rectifier-turkcell-double' || 
+    itemName.includes('Turkcell Çift Bölmeli') || 
+    itemName.includes('Çift Bölmeli')
+  ) {
     group = buildRectifierTurkcellDoubleModel(item);
-  } else if (blockType === 'rectifier-mts9304a' || itemName.includes('MTS9304A')) {
+  } else if (
+    blockType === 'rectifier-mts9304a' || 
+    item.catalogId === 'rectifier-mts9304a' || 
+    itemName.includes('MTS9304A') || 
+    itemName.includes('12U Outdoor')
+  ) {
     group = buildRectifierMTS9304AModel(item);
+  } else if (item.category === 'Rectifier' || itemName.includes('Rectifier') || itemName.includes('DC Güç')) {
+    group = buildCustomEquipmentModel(item);
   } else if (blockType === 'tcell-offset-blok' || itemName.includes('Turkcell 10')) {
     group = buildTCellOffsetBlok(targetArea);
   } else if (blockType === 'tt-5li-5527-blok' || itemName.includes("5'li RRU5527")) {
