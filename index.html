@@ -21,10 +21,8 @@
         <div class="area-selector" style="margin-left: 20px;">
           <label for="select-area" style="color: #475569; font-weight: 600; font-size: 13px; margin-right: 6px;">Çalışma Alanı:</label>
           <select id="select-area" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-            <option value="alan1">📍 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
-            <option value="alan2">📍 ALAN 2 (Yelpaze / V-Makas Düğüm Noktası - 1)</option>
-            <option value="alan3">📍 ALAN 3 (Yelpaze / V-Makas Düğüm Noktası - 2)</option>
-            <option value="alan4" selected>📍 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
+            <option value="alan1" selected>📍 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
+            <option value="alan4">📍 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
           </select>
         </div>
       </div>
@@ -33,12 +31,16 @@
         <button id="btn-import-json" class="btn btn-secondary">📂 Proje Yükle</button>
         <input type="file" id="input-import-file" style="display: none;" accept=".json">
         <select id="select-preset-draft" class="btn btn-secondary" style="background: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
-          <option value="" disabled selected>📋 Hazır Taslaklar</option>
+          <option value="" disabled>📋 Hazır Taslaklar</option>
           <option value="taslak-v1" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 1</option>
-          <option value="taslak-v2" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 2 (Yeni Blok Düzeni)</option>
+          <option value="taslak-v2" selected style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 2 (Yeni Blok Düzeni)</option>
+          <option value="taslak-v3" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 3 (Alan 1 & Alan 4 Çift Kompleks)</option>
         </select>
         <button id="btn-reset-project" class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
         <button id="btn-screenshot" class="btn btn-primary">Görsel Kaydet</button>
+        <button id="btn-fullscreen-header" class="btn btn-accent" style="font-weight: bold; display: flex; align-items: center; gap: 6px;" title="Tam Ekran Sunum Modu (F / F11)">
+          <span>⛶</span> <span>Tam Ekran Sunum</span>
+        </button>
         <button id="btn-settings" class="btn btn-secondary" style="font-size: 15px; padding: 6px 12px; display: flex; align-items: center; gap: 6px;" title="Uygulama Ayarları">⚙️ <span>Ayarlar</span></button>
       </div>
     </header>
@@ -59,15 +61,39 @@
       </aside>
 
       <!-- 3D Canvas Viewport -->
-      <main class="viewport-container">
+      <main class="viewport-container" id="main-viewport-container">
         <div id="canvas-container"></div>
         <div class="viewport-overlay">
           <div class="view-modes">
             <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">📐 2D Görünüm</button>
             <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif Görünüm">🧊 3D Perspektif</button>
+            <button id="btn-toggle-fullscreen" class="btn-icon" title="Tam Ekran / Sunum Modu (F / F11)">⛶ Tam Ekran</button>
           </div>
           <div class="helper-text">
-            <span>Sol Tık: Döndür / Seç | Sağ Tık: Sürükle | Tekerlek: Yakınlaş</span>
+            <span>Sol Tık: Döndür / Seç | Sağ Tık: Sürükle | Tekerlek: Yakınlaş | F: Tam Ekran</span>
+          </div>
+        </div>
+
+        <!-- Sunum Modu Kayan Kontrol Paneli (Yalnızca Tam Ekran Sunumda Görünür) -->
+        <div id="presentation-hud" class="presentation-hud" style="display: none;">
+          <div class="presentation-hud-brand">
+            <span class="gs-red">GS</span><span class="gs-yellow">STAD</span> <span style="font-size: 11px; opacity: 0.8; letter-spacing: 1px;">SUNUM MODU</span>
+          </div>
+          <div class="presentation-hud-controls">
+            <!-- Alan Seçimi -->
+            <select id="pres-select-area" class="hud-select" title="Çalışma Alanı Değiştir">
+              <option value="alan1" selected>📍 Alan 1</option>
+              <option value="alan4">📍 Alan 4</option>
+            </select>
+            <!-- 2D / 3D Görünüm -->
+            <button id="pres-btn-2d" class="hud-btn" title="2D Üst Görünüm">📐 2D</button>
+            <button id="pres-btn-3d" class="hud-btn active" title="3D Perspektif">🧊 3D</button>
+            <!-- 360° Otomatik Döner Tur -->
+            <button id="pres-btn-autorotate" class="hud-btn" title="360° Otomatik Döner Tur (Sunum)">🔄 360° Dönüş</button>
+            <!-- Kamerayı Odakla / Sıfırla -->
+            <button id="pres-btn-reset-cam" class="hud-btn" title="Kamera Açısını Sıfırla">🎯 Odaklan</button>
+            <!-- Tam Ekrandan Çık -->
+            <button id="pres-btn-exit" class="hud-btn hud-btn-danger" title="Tam Ekrandan Çık (Esc / F)">✕ Çıkış (Esc)</button>
           </div>
         </div>
       </main>
@@ -102,17 +128,21 @@
                 <span class="icon">🗄️⚡</span>
                 <span class="name" style="color: white; font-weight: bold;">20U Rack + 3 POI Blok</span>
               </button>
-              <button class="btn-eq" id="btn-add-rru-saha-blok-120" style="background: linear-gradient(135deg, #6b46c1, #805ad5); color: white; border: none; grid-column: span 2; display: none;">
+              <button class="btn-eq" id="btn-add-rru-saha-blok-120" style="background: linear-gradient(135deg, #6b46c1, #805ad5); color: white; border: none; grid-column: span 2;">
                 <span class="icon">📦📏</span>
-                <span class="name" style="color: white; font-weight: bold;">RRU Saha Blok 120cm (Alan 2)</span>
+                <span class="name" style="color: white; font-weight: bold;">RRU Saha Blok 120cm (Alan 1)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan2-karma-rru-blok" style="background: linear-gradient(135deg, #7c3aed, #9333ea); color: white; border: none; grid-column: span 2; display: none;">
-                <span class="icon">📡🔀</span>
-                <span class="name" style="color: white; font-weight: bold;">Alan 2 Karma RRU Blok (4 Borulu - 7 RRU)</span>
+              <button class="btn-eq" id="btn-add-alan4-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">🚀🏗️</span>
+                <span class="name" style="color: white; font-weight: bold;">Özel Alan 4 Kompleksi (Platform + POI + RRU)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan4-cember-platform-blok" style="background: linear-gradient(135deg, #059669, #10b981); color: white; border: none; grid-column: span 2; display: none;">
-                <span class="icon">🏗️🗼</span>
-                <span class="name" style="color: white; font-weight: bold;">Çemberli H-Beam Platform & Flanşlı Borulu Tabla Bloğu (Alan 4)</span>
+              <button class="btn-eq" id="btn-add-alan4-cift-rru-kompleks" style="background: linear-gradient(135deg, #059669, #0d9488); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">🚀📡</span>
+                <span class="name" style="color: white; font-weight: bold;">Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)</span>
+              </button>
+              <button class="btn-eq" id="btn-add-alan4-kediyolu-42u-kompleks" style="background: linear-gradient(135deg, #0369a1, #1e40af); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">🚀🗄️</span>
+                <span class="name" style="color: white; font-weight: bold;">Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)</span>
               </button>
               <button class="btn-eq" id="btn-add-alan1-ozel-karma-blok" style="background: linear-gradient(135deg, #4338ca, #3730a3); color: white; border: none; grid-column: span 2;">
                 <span class="icon">🚀🧩</span>
@@ -161,10 +191,6 @@
               <button class="btn-eq" id="btn-add-rack-blok-korkuluklu" style="background: linear-gradient(135deg, #1c4532, #2f855a); color: white; border: none;">
                 <span class="icon">🗄️🚧</span>
                 <span class="name" style="color: white; font-weight: bold; font-size: 11px;">Rack Blok (Korkuluklu)</span>
-              </button>
-              <button class="btn-eq" id="btn-add-rru-saha-blok-alan2" style="background: linear-gradient(135deg, #6b46c1, #805ad5); color: white; border: none; grid-column: span 2; display: none;">
-                <span class="icon">📦🏗️</span>
-                <span class="name" style="color: white; font-weight: bold;">RRU Saha Blok (Alan 2)</span>
               </button>
               <button class="btn-eq" id="btn-add-offset-arm-right" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; display: none;">
                 <span class="icon">↗️📐</span>
@@ -290,7 +316,10 @@
         <!-- Modal Header -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #1e293b; border-bottom: 1px solid #334155;">
           <h3 id="modal-dim-title" style="margin: 0; font-size: 15px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 8px;">🔍 Ürün Ölçüleri & 3D Görünüm</h3>
-          <button id="btn-close-dim-modal" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;" title="Kapat">✕</button>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="btn-maximize-dim-modal" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0 4px;" title="Tam Ekran Büyüt">⛶</button>
+            <button id="btn-close-dim-modal" style="background: none; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;" title="Kapat">✕</button>
+          </div>
         </div>
 
         <!-- Modal Body Grid -->

@@ -25,7 +25,7 @@ const state = {
   viewMode: 'persp', // 'persp' or 'ortho'
   nextId: 1,
   axisLockZ: true, // Lock Z position by default for sliding along X axis
-  currentArea: 'alan4'
+  currentArea: 'alan1'
 };
 
 // Dimensions conversion (1 unit in 3D = 1 meter)
@@ -170,281 +170,7 @@ function createCatwalk() {
   scene.add(catwalkGroup);
 }
 
-// Generate Alan 2 Representation (Vertical Cylinder Column Support + Catwalk + Fan Roof Truss)
-function createAlan2Structure() {
-  const alan2Group = new THREE.Group();
-  alan2Group.name = 'alan2Structure';
-  alan2Group.visible = false; // Hidden by default, shown when Alan 2 is selected
 
-  // 1. Catwalk floor (grating style) - 100cm width (1.0m)
-  const floorGeo = new THREE.BoxGeometry(20, 0.05, 1.0);
-  const floorMat = new THREE.MeshStandardMaterial({ 
-    color: 0x2d323f, 
-    roughness: 0.8,
-    metalness: 0.6
-  });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.receiveShadow = true;
-  alan2Group.add(floor);
-
-  // Side beams (profiles) - aligned at Z = +/- 0.5m
-  const beamGeo = new THREE.BoxGeometry(20, 0.15, 0.08);
-  const beamMat = new THREE.MeshStandardMaterial({ color: 0x1f2228, metalness: 0.8, roughness: 0.2 });
-  
-  const leftBeam = new THREE.Mesh(beamGeo, beamMat);
-  leftBeam.position.set(0, 0.05, 0.5);
-  leftBeam.castShadow = true;
-  leftBeam.receiveShadow = true;
-  alan2Group.add(leftBeam);
-
-  const rightBeam = leftBeam.clone();
-  rightBeam.position.set(0, 0.05, -0.5);
-  alan2Group.add(rightBeam);
-
-  // Cable Tray (Kablo Tavası / Kanalları) along the catwalk edge
-  const trayMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
-  const cableTrayGeo = new THREE.BoxGeometry(20, 0.08, 0.20);
-  const cableTray = new THREE.Mesh(cableTrayGeo, trayMat);
-  cableTray.position.set(0, 0.12, 0.38);
-  alan2Group.add(cableTray);
-
-  // Handrails (Yellow)
-  const railMat = new THREE.MeshStandardMaterial({ color: 0xfdb913, metalness: 0.5, roughness: 0.3 });
-  const postGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.1);
-  const topRailGeo = new THREE.CylinderGeometry(0.025, 0.025, 20);
-
-  const topRailLeft = new THREE.Mesh(topRailGeo, railMat);
-  topRailLeft.rotation.z = Math.PI / 2;
-  topRailLeft.position.set(0, 1.1, 0.5);
-  alan2Group.add(topRailLeft);
-
-  const topRailRight = topRailLeft.clone();
-  topRailRight.position.set(0, 1.1, -0.5);
-  alan2Group.add(topRailRight);
-
-  for (let i = -9.5; i <= 9.5; i += 1.5) {
-    const postLeft = new THREE.Mesh(postGeo, railMat);
-    postLeft.position.set(i, 0.55, 0.5);
-    alan2Group.add(postLeft);
-
-    const postRight = postLeft.clone();
-    postRight.position.set(i, 0.55, -0.5);
-    alan2Group.add(postRight);
-  }
-
-  // --- ALAN 2: SINGLE CARRIER PIPE AT 90 DEGREE HORIZONTAL ANGLE (Z-EKSENİNDE YATAY BORU) ---
-  // Single Carrier Pipe (r = 0.2285m, length = 4.0m) lying horizontally along Z-axis (90 degrees to catwalk)
-  const pipeGeo = new THREE.CylinderGeometry(0.2285, 0.2285, 4.0, 32);
-  const pipeMat = new THREE.MeshStandardMaterial({ 
-    color: 0x9b9487, // Khaki/beige painted steel from photos
-    roughness: 0.5,
-    metalness: 0.5 
-  });
-  
-  // Placed horizontally along Z-axis at 90 degree angle to catwalk (X = 0, Y = -0.4535m)
-  const singlePipe = new THREE.Mesh(pipeGeo, pipeMat);
-  singlePipe.rotation.x = Math.PI / 2; // Horizontal along Z-axis
-  singlePipe.position.set(0, -0.4535, -2.5); // Extends horizontally from Z = -0.5 to Z = -4.5
-  singlePipe.castShadow = true;
-  singlePipe.receiveShadow = true;
-  alan2Group.add(singlePipe);
-
-  // Heavy Metal Mounting Collar / Bracket attached to catwalk at X = 0
-  const boxBracketGeo = new THREE.BoxGeometry(0.7, 0.4, 0.7);
-  const boxBracketMat = new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.8, roughness: 0.3 });
-  const boxBracket = new THREE.Mesh(boxBracketGeo, boxBracketMat);
-  boxBracket.position.set(0, -0.4535, -0.85);
-  boxBracket.castShadow = true;
-  boxBracket.receiveShadow = true;
-  alan2Group.add(boxBracket);
-
-  // Connecting horizontal beams bridging catwalk to vertical pipe mounting box
-  const bridgeBeamGeo = new THREE.BoxGeometry(0.12, 0.20, 0.4);
-  const bridgeBeamMat = new THREE.MeshStandardMaterial({ color: 0x1f2228, metalness: 0.8 });
-  
-  const bridgeLeft = new THREE.Mesh(bridgeBeamGeo, bridgeBeamMat);
-  bridgeLeft.position.set(-0.3, -0.4535, -0.65);
-  alan2Group.add(bridgeLeft);
-
-  const bridgeRight = new THREE.Mesh(bridgeBeamGeo, bridgeBeamMat);
-  bridgeRight.position.set(0.3, -0.4535, -0.65);
-  alan2Group.add(bridgeRight);
-  // --- ALAN 2: DUAL INCLINED 20CM CARRIER PIPES (SABİT DİKEY TAŞIYICI PAFTALAR) ---
-  const postRadius = 0.10;
-
-  // 1. Sağ Dikme (+20° +X, +20° +Z)
-  const verticalPostGeo1 = new THREE.CylinderGeometry(postRadius, postRadius, 4.0, 32);
-  const verticalPost1 = new THREE.Mesh(verticalPostGeo1, pipeMat);
-  verticalPost1.position.set(0, 2.0, 0);
-  verticalPost1.castShadow = true;
-  verticalPost1.receiveShadow = true;
-
-  const postJointGroup1 = new THREE.Group();
-  postJointGroup1.position.set(0, -0.4535, -4.5);
-  postJointGroup1.rotation.x = Math.PI / 9;   // +20° +Z
-  postJointGroup1.rotation.z = -Math.PI / 9;  // +20° +X
-  postJointGroup1.add(verticalPost1);
-  alan2Group.add(postJointGroup1);
-
-  // 2. Sol Dikme (-20° -X Simetrik, +20° +Z)
-  const verticalPostGeo2 = new THREE.CylinderGeometry(postRadius, postRadius, 4.0, 32);
-  const verticalPost2 = new THREE.Mesh(verticalPostGeo2, pipeMat);
-  verticalPost2.position.set(0, 2.0, 0);
-  verticalPost2.castShadow = true;
-  verticalPost2.receiveShadow = true;
-
-  const postJointGroup2 = new THREE.Group();
-  postJointGroup2.position.set(0, -0.4535, -4.5);
-  postJointGroup2.rotation.x = Math.PI / 9;  // +20° +Z
-  postJointGroup2.rotation.z = Math.PI / 9;   // 20° -X
-  postJointGroup2.add(verticalPost2);
-  alan2Group.add(postJointGroup2);
-
-  // Joint collar connecting vertical post to horizontal carrier pipe at Z = -4.5m
-  const jointCollarGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.5, 32);
-  const jointCollarMat = new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.8 });
-  const jointCollar = new THREE.Mesh(jointCollarGeo, jointCollarMat);
-  jointCollar.position.set(0, -0.4535, -4.5);
-  alan2Group.add(jointCollar);
-
-  scene.add(alan2Group);
-}
-
-// Generate Alan 3 Representation (Clone of Alan 2 Structure)
-function createAlan3Structure() {
-  const alan3Group = new THREE.Group();
-  alan3Group.name = 'alan3Structure';
-  alan3Group.visible = false; // Hidden by default, shown when Alan 3 is selected
-
-  // 1. Catwalk floor (grating style) - 100cm width (1.0m)
-  const floorGeo = new THREE.BoxGeometry(20, 0.05, 1.0);
-  const floorMat = new THREE.MeshStandardMaterial({ 
-    color: 0x2d323f, 
-    roughness: 0.8,
-    metalness: 0.6
-  });
-  const floor = new THREE.Mesh(floorGeo, floorMat);
-  floor.receiveShadow = true;
-  alan3Group.add(floor);
-
-  // Side beams (profiles) - aligned at Z = +/- 0.5m
-  const beamGeo = new THREE.BoxGeometry(20, 0.15, 0.08);
-  const beamMat = new THREE.MeshStandardMaterial({ color: 0x1f2228, metalness: 0.8, roughness: 0.2 });
-  
-  const leftBeam = new THREE.Mesh(beamGeo, beamMat);
-  leftBeam.position.set(0, 0.05, 0.5);
-  leftBeam.castShadow = true;
-  leftBeam.receiveShadow = true;
-  alan3Group.add(leftBeam);
-
-  const rightBeam = leftBeam.clone();
-  rightBeam.position.set(0, 0.05, -0.5);
-  alan3Group.add(rightBeam);
-
-  // Cable Tray (Kablo Tavası / Kanalları) along the catwalk edge
-  const trayMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
-  const cableTrayGeo = new THREE.BoxGeometry(20, 0.08, 0.20);
-  const cableTray = new THREE.Mesh(cableTrayGeo, trayMat);
-  cableTray.position.set(0, 0.12, 0.38);
-  alan3Group.add(cableTray);
-
-  // Handrails (Yellow)
-  const railMat = new THREE.MeshStandardMaterial({ color: 0xfdb913, metalness: 0.5, roughness: 0.3 });
-  const postGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.1);
-  const topRailGeo = new THREE.CylinderGeometry(0.025, 0.025, 20);
-
-  const topRailLeft = new THREE.Mesh(topRailGeo, railMat);
-  topRailLeft.rotation.z = Math.PI / 2;
-  topRailLeft.position.set(0, 1.1, 0.5);
-  alan3Group.add(topRailLeft);
-
-  const topRailRight = topRailLeft.clone();
-  topRailRight.position.set(0, 1.1, -0.5);
-  alan3Group.add(topRailRight);
-
-  for (let i = -9.5; i <= 9.5; i += 1.5) {
-    const postLeft = new THREE.Mesh(postGeo, railMat);
-    postLeft.position.set(i, 0.55, 0.5);
-    alan3Group.add(postLeft);
-
-    const postRight = postLeft.clone();
-    postRight.position.set(i, 0.55, -0.5);
-    alan3Group.add(postRight);
-  }
-
-  // --- ALAN 3: SINGLE CARRIER PIPE AT 90 DEGREE HORIZONTAL ANGLE ---
-  const pipeGeo = new THREE.CylinderGeometry(0.2285, 0.2285, 4.0, 32);
-  const pipeMat = new THREE.MeshStandardMaterial({ 
-    color: 0x9b9487,
-    roughness: 0.5,
-    metalness: 0.5 
-  });
-  
-  const singlePipe = new THREE.Mesh(pipeGeo, pipeMat);
-  singlePipe.rotation.x = Math.PI / 2;
-  singlePipe.position.set(0, -0.4535, -2.5);
-  singlePipe.castShadow = true;
-  singlePipe.receiveShadow = true;
-  alan3Group.add(singlePipe);
-
-  // Heavy Metal Mounting Collar / Bracket attached to catwalk at X = 0
-  const boxBracketGeo = new THREE.BoxGeometry(0.7, 0.4, 0.7);
-  const boxBracketMat = new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.8, roughness: 0.3 });
-  const boxBracket = new THREE.Mesh(boxBracketGeo, boxBracketMat);
-  boxBracket.position.set(0, -0.4535, -0.85);
-  boxBracket.castShadow = true;
-  boxBracket.receiveShadow = true;
-  alan3Group.add(boxBracket);
-
-  // Connecting horizontal beams bridging catwalk to vertical pipe mounting box
-  const bridgeBeamGeo = new THREE.BoxGeometry(0.12, 0.20, 0.4);
-  const bridgeBeamMat = new THREE.MeshStandardMaterial({ color: 0x1f2228, metalness: 0.8 });
-  
-  const bridgeLeft = new THREE.Mesh(bridgeBeamGeo, bridgeBeamMat);
-  bridgeLeft.position.set(-0.3, -0.4535, -0.65);
-  alan3Group.add(bridgeLeft);
-
-  const bridgeRight = new THREE.Mesh(bridgeBeamGeo, bridgeBeamMat);
-  bridgeRight.position.set(0.3, -0.4535, -0.65);
-  alan3Group.add(bridgeRight);
-
-  // --- ALAN 3: DUAL INCLINED 20CM CARRIER PIPES (SABİT DİKEY TAŞIYICI PAFTALAR) ---
-  const postRadius = 0.10;
-  // 1. Sağ Dikme (+20° +X, +20° +Z)
-  const vPost1 = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, 4.0, 32), pipeMat);
-  vPost1.position.set(0, 2.0, 0);
-  vPost1.castShadow = true;
-  vPost1.receiveShadow = true;
-
-  const joint1 = new THREE.Group();
-  joint1.position.set(0, -0.4535, -4.5);
-  joint1.rotation.x = Math.PI / 9;
-  joint1.rotation.z = -Math.PI / 9;
-  joint1.add(vPost1);
-  alan3Group.add(joint1);
-
-  // 2. Sol Dikme (-20° -X Simetrik, +20° +Z)
-  const vPost2 = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, 4.0, 32), pipeMat);
-  vPost2.position.set(0, 2.0, 0);
-  vPost2.castShadow = true;
-  vPost2.receiveShadow = true;
-
-  const joint2 = new THREE.Group();
-  joint2.position.set(0, -0.4535, -4.5);
-  joint2.rotation.x = Math.PI / 9;
-  joint2.rotation.z = Math.PI / 9;
-  joint2.add(vPost2);
-  alan3Group.add(joint2);
-
-  // Joint collar connecting vertical post to horizontal carrier pipe at Z = -4.5m
-  const jointCollarGeo = new THREE.CylinderGeometry(0.26, 0.26, 0.5, 32);
-  const jointCollarMat = new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.8 });
-  const jointCollar = new THREE.Mesh(jointCollarGeo, jointCollarMat);
-  jointCollar.position.set(0, -0.4535, -4.5);
-  alan3Group.add(jointCollar);
-
-  scene.add(alan3Group);
-}
 
 // Scoreboard High-Resolution Canvas Texture Generator (Galatasaray SK Rams Park Theme - 13m x 8m)
 function createScoreboardTexture() {
@@ -453,146 +179,146 @@ function createScoreboardTexture() {
   canvas.height = 1260; // 1.625:1 aspect ratio matching 13m x 8m
   const ctx = canvas.getContext('2d');
 
-  // Background - Deep charcoal dark LED screen matrix
-  ctx.fillStyle = '#0a0d14';
-  ctx.fillRect(0, 0, 2048, 1260);
+  function render(logoImg) {
+    // 1. Background - Derin lüks stadyum LED ekran matrisi
+    const bgGrad = ctx.createRadialGradient(1024, 630, 80, 1024, 630, 1200);
+    bgGrad.addColorStop(0, '#151b27');
+    bgGrad.addColorStop(0.5, '#0b0f17');
+    bgGrad.addColorStop(1, '#040609');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 2048, 1260);
 
-  // Subtle LED matrix grid pattern
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.lineWidth = 1;
-  for (let x = 0; x < 2048; x += 8) {
+    // İnce LED nokta matris deseni
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+    for (let x = 6; x < 2048; x += 12) {
+      for (let y = 6; y < 1260; y += 12) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Logo arkasında sıcak sarı-kırmızı stadyum aurası / ışıması
+    const glowGrad = ctx.createRadialGradient(1024, 610, 50, 1024, 610, 560);
+    glowGrad.addColorStop(0, 'rgba(253, 185, 19, 0.25)');
+    glowGrad.addColorStop(0.35, 'rgba(165, 0, 33, 0.20)');
+    glowGrad.addColorStop(0.7, 'rgba(165, 0, 33, 0.05)');
+    glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glowGrad;
     ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, 1260);
-    ctx.stroke();
-  }
-  for (let y = 0; y < 1260; y += 8) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(2048, y);
-    ctx.stroke();
-  }
+    ctx.arc(1024, 610, 560, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Outer Border Accent (Gold)
-  ctx.strokeStyle = '#fdb913';
-  ctx.lineWidth = 8;
-  ctx.strokeRect(12, 12, 2024, 1236);
+    // Dış Kenarlık - Çift Sıra Galatasaray Kırmızı & Altın Sarı Neon Çerçeve
+    ctx.strokeStyle = '#a50021';
+    ctx.lineWidth = 14;
+    ctx.strokeRect(16, 16, 2016, 1228);
 
-  // Top Header Banner: Red & Yellow Galatasaray Gradient Bar
-  const grad = ctx.createLinearGradient(16, 16, 2032, 16);
-  grad.addColorStop(0, '#a50021');
-  grad.addColorStop(0.5, '#fdb913');
-  grad.addColorStop(1, '#a50021');
-  ctx.fillStyle = grad;
-  ctx.fillRect(16, 16, 2016, 120);
+    ctx.strokeStyle = '#fdb913';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(26, 26, 1996, 1208);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 52px Arial, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('⚡ RAMS PARK — GALATASARAY SK STADYUM SKORBORDU ⚡', 1024, 76);
+    // Köşe Vurguları (Altın Sarı L-braketler)
+    const cSize = 60;
+    ctx.strokeStyle = '#fdb913';
+    ctx.lineWidth = 8;
+    // Sol Üst
+    ctx.beginPath(); ctx.moveTo(40, 40 + cSize); ctx.lineTo(40, 40); ctx.lineTo(40 + cSize, 40); ctx.stroke();
+    // Sağ Üst
+    ctx.beginPath(); ctx.moveTo(2008 - cSize, 40); ctx.lineTo(2008, 40); ctx.lineTo(2008, 40 + cSize); ctx.stroke();
+    // Sol Alt
+    ctx.beginPath(); ctx.moveTo(40, 1220 - cSize); ctx.lineTo(40, 1220); ctx.lineTo(40 + cSize, 1220); ctx.stroke();
+    // Sağ Alt
+    ctx.beginPath(); ctx.moveTo(2008 - cSize, 1220); ctx.lineTo(2008, 1220); ctx.lineTo(2008, 1220 - cSize); ctx.stroke();
 
-  // Match Time Section (Center Top)
-  ctx.fillStyle = '#1e293b';
-  ctx.beginPath();
-  ctx.roundRect(844, 160, 360, 110, 16);
-  ctx.fill();
-  ctx.strokeStyle = '#fdb913';
-  ctx.lineWidth = 4;
-  ctx.stroke();
+    // Logonun Üzerinde 5 Altın Şampiyonluk Yıldızı (5. Yıldız Zirvede)
+    const starCount = 5;
+    const starBaseY = 145;
+    const starSpacing = 88;
+    const startX = 1024 - ((starCount - 1) * starSpacing) / 2;
 
-  ctx.fillStyle = '#f59e0b';
-  ctx.font = '900 68px monospace';
-  ctx.fillText("74' : 15''", 1024, 215);
+    function drawStar(cx, cy, spikes, outerRadius, innerRadius) {
+      let rot = (Math.PI / 2) * 3;
+      let x = cx;
+      let y = cy;
+      const step = Math.PI / spikes;
 
-  // Home Team: GALATASARAY
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#ef4444';
-  ctx.font = '900 84px Arial, sans-serif';
-  ctx.fillText('GALATASARAY', 100, 420);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerRadius);
+      for (let i = 0; i < spikes; i++) {
+        x = cx + Math.cos(rot) * outerRadius;
+        y = cy + Math.sin(rot) * outerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 36px Arial, sans-serif';
-  ctx.fillText('EV SAHİBİ • SÜPER LİG', 100, 480);
+        x = cx + Math.cos(rot) * innerRadius;
+        y = cy + Math.sin(rot) * innerRadius;
+        ctx.lineTo(x, y);
+        rot += step;
+      }
+      ctx.lineTo(cx, cy - outerRadius);
+      ctx.closePath();
 
-  // Score Home
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#fdb913';
-  ctx.font = '900 240px Arial, sans-serif';
-  ctx.fillText('3', 760, 470);
+      const starGrad = ctx.createLinearGradient(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius);
+      starGrad.addColorStop(0, '#ffffff');
+      starGrad.addColorStop(0.25, '#fff0a6');
+      starGrad.addColorStop(0.65, '#fdb913');
+      starGrad.addColorStop(1, '#b45309');
+      ctx.fillStyle = starGrad;
+      ctx.shadowColor = 'rgba(253, 185, 19, 0.9)';
+      ctx.shadowBlur = 24;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
-  // Separator
-  ctx.fillStyle = '#64748b';
-  ctx.font = '900 140px Arial, sans-serif';
-  ctx.fillText('-', 1024, 460);
+    // 5 Yıldız Kavisli Dizilim (Merkezdeki 5. Yıldız hafif büyük ve zirvede)
+    for (let s = 0; s < starCount; s++) {
+      const sX = startX + s * starSpacing;
+      const distFromCenter = Math.abs(s - 2);
+      // Kavis hesaplama: Merkez (s=2) en yüksekte (-22px), dışlar aşağıda (+10px)
+      const arcOffset = distFromCenter === 0 ? -22 : (distFromCenter === 1 ? -8 : 10);
+      const starRadius = distFromCenter === 0 ? 32 : 27;
+      const innerRadius = distFromCenter === 0 ? 15 : 12.5;
+      drawStar(sX, starBaseY + arcOffset, 5, starRadius, innerRadius);
+    }
 
-  // Score Away
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = '900 240px Arial, sans-serif';
-  ctx.fillText('0', 1288, 470);
+    // Yüksek Çözünürlüklü Resmi Galatasaray Logosu
+    if (logoImg) {
+      const logoH = 880;
+      const logoW = logoH * (391.2 / 512.16); // ~672px
+      const logoX = 1024 - logoW / 2;
+      const logoY = 220;
 
-  // Away Team
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = '900 84px Arial, sans-serif';
-  ctx.fillText('RAKİP TAKIM', 1948, 420);
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 16;
+      ctx.drawImage(logoImg, logoX, logoY, logoW, logoH);
+      ctx.restore();
+    }
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '600 36px Arial, sans-serif';
-  ctx.fillText('DEPLASMAN', 1948, 480);
-
-  // Middle Section: Goal Scorers Box
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-  ctx.beginPath();
-  ctx.roundRect(80, 620, 1888, 200, 16);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(253, 185, 19, 0.4)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  ctx.fillStyle = '#f59e0b';
-  ctx.font = '900 38px Arial, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('⚽ GOLLER', 120, 675);
-
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '700 32px Arial, sans-serif';
-  ctx.fillText("18' Mauro ICARDI (P)    |    43' Barış Alper YILMAZ    |    67' Victor OSIMHEN", 120, 755);
-
-  // Stats Grid (Bottom Section)
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.95)';
-  ctx.beginPath();
-  ctx.roundRect(80, 850, 1888, 360, 16);
-  ctx.fill();
-
-  const stats = [
-    { label: 'TOPLA OYNAMA', v1: '%68', v2: '%32' },
-    { label: 'TOPLAM ŞUT', v1: '16', v2: '4' },
-    { label: 'İSABETLİ ŞUT', v1: '9', v2: '1' },
-    { label: 'KORNER', v1: '8', v2: '2' },
-    { label: 'PAS İSABETİ', v1: '%89', v2: '%74' }
-  ];
-
-  stats.forEach((st, idx) => {
-    const yPos = 910 + idx * 56;
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#fdb913';
-    ctx.font = '900 30px monospace';
-    ctx.fillText(st.v1, 140, yPos);
-
+    // Alt Kısımda Zarif Tipografi
+    ctx.fillStyle = 'rgba(253, 185, 19, 0.9)';
+    ctx.font = '800 36px Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = '700 24px Arial, sans-serif';
-    ctx.fillText(st.label, 1024, yPos);
+    ctx.textBaseline = 'middle';
+    ctx.fillText('GALATASARAY', 1024, 1150);
+  }
 
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = '900 30px monospace';
-    ctx.fillText(st.v2, 1908, yPos);
-  });
+  // İlk çizim (arka plan, yıldızlar, çerçeve)
+  render(null);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.anisotropy = 4;
+
+  // Logoyu /galatasaray_logo.svg üzerinden yüksek çözünürlüklü yükle
+  const img = new Image();
+  img.onload = () => {
+    render(img);
+    texture.needsUpdate = true;
+  };
+  img.src = '/galatasaray_logo.svg';
+
   return texture;
 }
 
@@ -1041,81 +767,98 @@ function buildAlan4CemberPlatformBlok() {
   const tableY = 0.02;       // Tabla yüzey Y
   const pipeZ  = -1.65;      // Flanşlı boru Z — ön korkuluktan (frontZ=-1.85) 20cm içeri
 
-  // 3.1 Enine taşıyıcı mini I-Beam'ler (tabla altı destek)
-  [-1.65, -0.90, -0.15, 0.60].forEach(zPos => {
+  // 3.1 Enine taşıyıcı mini I-Beam'ler (tabla altı destek profilleri)
+  [-1.80, -1.65, -1.05, -0.15, 0.70].forEach(zPos => {
     const tBeam = createIBeam(platWidth, 0.15, 0.12, 0.01, whiteSteelMat);
     tBeam.rotation.y = Math.PI / 2;
     tBeam.position.set(0, -0.01, zPos);
     group.add(tBeam);
   });
 
-  // 3.2 Alan 1 standart flanşlı boru donanımı (Kiriş-2 birebir)
-  const flangePostGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+  // 3.2 Alan 1 standart flanşlı boru donanımı (Kiriş-2 birebir - zemine tam oturtulmuş)
+  // Tabla altı mesnet dikmesi (I-Beam ile tabla arası)
+  const flangePostGeo = new THREE.BoxGeometry(0.08, 0.04, 0.08);
   const flangePost = new THREE.Mesh(flangePostGeo, whiteSteelMat);
-  flangePost.position.set(0, tableY + 0.03, pipeZ);
+  flangePost.position.set(0, 0.005, pipeZ);
   group.add(flangePost);
 
-  const flangePlateGeo = new THREE.BoxGeometry(0.20, 0.01, 0.20);
+  // Tabla üstü alt flanş plakası (tablaya tam oturan taban flanşı)
+  const flangePlateGeo = new THREE.BoxGeometry(0.20, 0.012, 0.20);
   const riserFlange = new THREE.Mesh(flangePlateGeo, whiteSteelMat);
-  riserFlange.position.set(0, tableY + 0.08, pipeZ);
+  riserFlange.position.set(0, tableY + 0.016, pipeZ);
   riserFlange.castShadow = true;
   group.add(riserFlange);
 
+  // Boru birleşim üst flanş plakası
   const pipeFlange = new THREE.Mesh(flangePlateGeo, whiteSteelMat);
-  pipeFlange.position.set(0, tableY + 0.09, pipeZ);
+  pipeFlange.position.set(0, tableY + 0.028, pipeZ);
   pipeFlange.castShadow = true;
   group.add(pipeFlange);
 
+  // Flanş cıvataları
   [-0.075, 0.075].forEach(dx => {
     [-0.075, 0.075].forEach(dz => {
-      const hexBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.015, 6), boltHeadMat);
-      hexBolt.position.set(dx, tableY + 0.10, pipeZ + dz);
+      const hexBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 6), boltHeadMat);
+      hexBolt.position.set(dx, tableY + 0.038, pipeZ + dz);
       group.add(hexBolt);
     });
   });
 
+  // Düşey 2m boru
   const verticalPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.03175, 0.03175, 2.0, 32), pipeMat);
-  verticalPipe.position.set(0, tableY + 1.09, pipeZ);
+  verticalPipe.position.set(0, tableY + 1.03, pipeZ);
   verticalPipe.castShadow = true;
   group.add(verticalPipe);
 
-  // 3.3 Platform tablası (boru çevresinde flanş çentiği bırakılarak)
-  // Ön panel (frontZ ile pipeZ arası, tam genişlikte)
-  const frontPanelGeo = new THREE.BoxGeometry(platWidth, 0.02, 0.17);
-  const frontPanel = new THREE.Mesh(frontPanelGeo, tableMat);
-  frontPanel.position.set(0, tableY, pipeZ - 0.105);  // frontZ=-1.85 ile pipeZ=-1.65 arasının ortası
-  frontPanel.receiveShadow = true;
-  group.add(frontPanel);
+  // 3.3 Platform tablaları (Zeminde sıfır boşluk — 3 modüler kapalı tabla: Ön, Orta, Arka)
+  // Tabla 1: Ön Tabla (Z: -1.85m -> -1.05m, Uzunluk: 0.80m, Genişlik: 1.20m, Merkez Z: -1.45m)
+  const t1Length = 0.80;
+  const t1CenterZ = -1.45;
+  const t1Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.02, t1Length), tableMat);
+  t1Mesh.position.set(0, tableY, t1CenterZ);
+  t1Mesh.receiveShadow = true;
+  group.add(t1Mesh);
 
-  // Boru sol kanadı
-  const wingGeo = new THREE.BoxGeometry(0.49, 0.02, 0.22);
-  const leftWing = new THREE.Mesh(wingGeo, tableMat);
-  leftWing.position.set(-0.355, tableY, pipeZ);
-  leftWing.receiveShadow = true;
-  group.add(leftWing);
+  // Tabla 2: Orta Tabla (Z: -1.05m -> -0.15m, Uzunluk: 0.90m, Genişlik: 1.20m, Merkez Z: -0.60m)
+  const t2Length = 0.90;
+  const t2CenterZ = -0.60;
+  const t2Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.02, t2Length), tableMat);
+  t2Mesh.position.set(0, tableY, t2CenterZ);
+  t2Mesh.receiveShadow = true;
+  group.add(t2Mesh);
 
-  // Boru sağ kanadı
-  const rightWing = new THREE.Mesh(wingGeo, tableMat);
-  rightWing.position.set(0.355, tableY, pipeZ);
-  rightWing.receiveShadow = true;
-  group.add(rightWing);
+  // Tabla 3: Arka Tabla (Z: -0.15m -> +0.75m, Uzunluk: 0.90m, Genişlik: 1.20m, Merkez Z: +0.30m)
+  const t3Length = 0.90;
+  const t3CenterZ = 0.30;
+  const t3Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.02, t3Length), tableMat);
+  t3Mesh.position.set(0, tableY, t3CenterZ);
+  t3Mesh.receiveShadow = true;
+  group.add(t3Mesh);
 
-  // Arka büyük tabla (pipeZ'den rearZ'ye kadar)
-  const rearPanelGeo = new THREE.BoxGeometry(platWidth, 0.02, 2.19);
-  const rearPanel = new THREE.Mesh(rearPanelGeo, tableMat);
-  rearPanel.position.set(0, tableY, -0.345);
-  rearPanel.receiveShadow = true;
-  group.add(rearPanel);
+  // Tablalar arası modüler ayrım ve kenar bordür profilleri (Alan 1 tarzı)
+  // Tabla 1, 2, 3 yan kenar bordürleri
+  [-0.59, 0.59].forEach(xBorder => {
+    const bSide1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, t1Length), borderMat);
+    bSide1.position.set(xBorder, tableY + 0.015, t1CenterZ);
+    group.add(bSide1);
 
-  // Flanş çentik bordürleri
-  const nbX = new THREE.BoxGeometry(0.22, 0.03, 0.015);
-  const nbZ = new THREE.BoxGeometry(0.015, 0.03, 0.22);
-  const nbFront = new THREE.Mesh(nbX, borderMat); nbFront.position.set(0, tableY, pipeZ - 0.11); group.add(nbFront);
-  const nbRear  = new THREE.Mesh(nbX, borderMat); nbRear.position.set(0, tableY, pipeZ + 0.11);  group.add(nbRear);
-  const nbLeft  = new THREE.Mesh(nbZ, borderMat); nbLeft.position.set(-0.11, tableY, pipeZ);     group.add(nbLeft);
-  const nbRight = new THREE.Mesh(nbZ, borderMat); nbRight.position.set(0.11, tableY, pipeZ);     group.add(nbRight);
+    const bSide2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, t2Length), borderMat);
+    bSide2.position.set(xBorder, tableY + 0.015, t2CenterZ);
+    group.add(bSide2);
 
-  // 3.4 Dış tekme levhaları (kickplates)
+    const bSide3 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, t3Length), borderMat);
+    bSide3.position.set(xBorder, tableY + 0.015, t3CenterZ);
+    group.add(bSide3);
+  });
+
+  // Tablalar arası enine birleşim çıtaları (Z = -1.05m ve Z = -0.15m)
+  [-1.05, -0.15].forEach(zSeam => {
+    const seamBorder = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.03, 0.02), borderMat);
+    seamBorder.position.set(0, tableY + 0.015, zSeam);
+    group.add(seamBorder);
+  });
+
+  // 3.4 Dış tekme levhaları (kickplates — tüm çevreyi kapatır)
   const kpX = new THREE.BoxGeometry(platWidth, 0.10, 0.02);
   const kpZ = new THREE.BoxGeometry(0.02, 0.10, platLength);
   const kpFront = new THREE.Mesh(kpX, borderMat); kpFront.position.set(0, tableY + 0.04, frontZ);         group.add(kpFront);
@@ -1288,8 +1031,6 @@ function spawnOffsetArmPipeLeft() {
 
 
 createCatwalk();
-createAlan2Structure();
-createAlan3Structure();
 createAlan4Structure();
 
 createGroundCoordinateGuide();
@@ -2063,8 +1804,6 @@ function spawnRRU(rruType) {
 // Helper to return platforms list for the active area
 function getActivePlatforms() {
   if (state.currentArea === 'alan4') return state.alan4Platforms;
-  if (state.currentArea === 'alan3') return state.alan3Platforms;
-  if (state.currentArea === 'alan2') return state.alan2Platforms;
   return state.alan1Platforms;
 }
 
@@ -2112,11 +1851,7 @@ function hasCollision(obj, newX, newY, newZ) {
 
 function setupPlatformTransform(group, defaultX = 0, defaultZ = -2.0, isStandaloneKiris = false) {
   const yPos = isStandaloneKiris ? 0.2465 : 0;
-  const isRotatedArea = (state.currentArea === 'alan2' || state.currentArea === 'alan3');
-  if (isRotatedArea) {
-    group.rotation.y = Math.PI / 2;
-    group.position.set(0, yPos, defaultZ);
-  } else if (state.currentArea === 'alan4') {
+  if (state.currentArea === 'alan4') {
     group.rotation.y = 0;
     const isKarmaBlok = (group.userData && group.userData.blockType === 'alan2-karma-rru-blok');
     const posX = isKarmaBlok ? 8.50 : defaultX;
@@ -2131,10 +1866,6 @@ function addPlatformToActiveArea(group) {
   scene.add(group);
   if (state.currentArea === 'alan4') {
     state.alan4Platforms.push(group);
-  } else if (state.currentArea === 'alan3') {
-    state.alan3Platforms.push(group);
-  } else if (state.currentArea === 'alan2') {
-    state.alan2Platforms.push(group);
   } else {
     state.alan1Platforms.push(group);
   }
@@ -3381,6 +3112,396 @@ function spawnAlan1OzelKarmaBlok() {
   addPlatformToActiveArea(blockGroup);
 }
 
+function buildAlan4OzelKarmaBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'alan4-ozel-karma-blok',
+    category: 'Karma',
+    name: 'Özel Alan 4 Kompleksi (Platform + POI + RRU)',
+    width: 1.20,
+    depth: 2.60,
+    height: 2.40,
+    weight: 750,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: true,
+    lockedZ: true,
+    allowPassThrough: true
+  };
+
+  // 1. Çemberli H-Beam Platform & Flanşlı Borulu Tabla Bloğu (Alan 4)
+  const subPlatform = buildAlan4CemberPlatformBlok();
+  subPlatform.userData.interactive = false;
+  subPlatform.position.set(0, 0, 0);
+  subPlatform.rotation.set(0, 0, 0);
+  blockGroup.add(subPlatform);
+
+  // 2. 42U POI Rack Blok (6x POI Dolu) - Ters yöne (Math.PI) dönük
+  const subPoi = build42UPoiRackBlok(targetArea);
+  subPoi.userData.interactive = false;
+  subPoi.position.set(0, 0, 0.2739927960368558);
+  subPoi.rotation.set(0, 3.141592653589793, 0);
+  blockGroup.add(subPoi);
+
+  // 3. Alan 2 Karma RRU Blok (4 Borulu - 7 RRU)
+  const subKarma = buildAlan2KarmaRRUBlok(targetArea);
+  subKarma.userData.interactive = false;
+  subKarma.position.set(0, 0, -1.3484016108318484);
+  subKarma.rotation.set(0, 0, 0);
+  blockGroup.add(subKarma);
+
+  return blockGroup;
+}
+
+function spawnAlan4OzelKarmaBlok() {
+  const blockGroup = buildAlan4OzelKarmaBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 8.3919, 0, false);
+  blockGroup.position.set(8.3919, 0, 0);
+  addPlatformToActiveArea(blockGroup);
+}
+
+// Cloned & Customized Alan 4 Complex: Çift Cephe Flanşlı Pol & Karma RRU Kompleksi (42U Kaldırılmış, İki Cephede Pol + RRU)
+function buildAlan4CiftRRUKompleksBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'alan4-cift-rru-kompleks',
+    category: 'Karma',
+    name: 'Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)',
+    width: 1.20,
+    depth: 2.60,
+    height: 2.40,
+    weight: 860,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: true,
+    lockedZ: true,
+    allowPassThrough: true
+  };
+
+  // 1. Çemberli H-Beam Platform (Alan 4)
+  const subPlatform = buildAlan4CemberPlatformBlok();
+  subPlatform.userData.interactive = false;
+  subPlatform.position.set(0, 0, 0);
+  subPlatform.rotation.set(0, 0, 0);
+  blockGroup.add(subPlatform);
+
+  // 2. Arka Cephe Flanşlı Boru Donanımı (rearZ = 0.75m'den 20cm içeri: rearPipeZ = 0.55m)
+  const whiteSteelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.4 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x718096, metalness: 0.9, roughness: 0.1 });
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const tableY = 0.02;
+  const rearPipeZ = 0.55;
+
+  // Arka flanş alt mesnet dikmesi
+  const flangePost = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.08), whiteSteelMat);
+  flangePost.position.set(0, 0.005, rearPipeZ);
+  blockGroup.add(flangePost);
+
+  // Arka alt flanş plakası
+  const flangePlateGeo = new THREE.BoxGeometry(0.20, 0.012, 0.20);
+  const riserFlange = new THREE.Mesh(flangePlateGeo, whiteSteelMat);
+  riserFlange.position.set(0, tableY + 0.016, rearPipeZ);
+  riserFlange.castShadow = true;
+  blockGroup.add(riserFlange);
+
+  // Arka üst flanş plakası
+  const pipeFlange = new THREE.Mesh(flangePlateGeo, whiteSteelMat);
+  pipeFlange.position.set(0, tableY + 0.028, rearPipeZ);
+  pipeFlange.castShadow = true;
+  blockGroup.add(pipeFlange);
+
+  // Flanş cıvataları (4 adet M20 cıvata)
+  [-0.075, 0.075].forEach(dx => {
+    [-0.075, 0.075].forEach(dz => {
+      const hexBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.02, 6), boltHeadMat);
+      hexBolt.position.set(dx, tableY + 0.038, rearPipeZ + dz);
+      blockGroup.add(hexBolt);
+    });
+  });
+
+  // Arka düşey 2m boru (Rear vertical equipment pipe)
+  const verticalPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.03175, 0.03175, 2.0, 32), pipeMat);
+  verticalPipe.position.set(0, tableY + 1.03, rearPipeZ);
+  verticalPipe.castShadow = true;
+  blockGroup.add(verticalPipe);
+
+  // 3. Ön Cephe Karma RRU Blok (4 Borulu - 7 RRU)
+  const subKarmaFront = buildAlan2KarmaRRUBlok(targetArea);
+  subKarmaFront.userData.interactive = false;
+  subKarmaFront.position.set(0, 0, -1.3484016108318484);
+  subKarmaFront.rotation.set(0, 0, 0);
+  blockGroup.add(subKarmaFront);
+
+  // 4. Arka Cephe Karma RRU Blok (4 Borulu - 7 RRU) - 42U kaldırılıp yerine konulan arka cepheye dönük RRU bloğu
+  const subKarmaRear = buildAlan2KarmaRRUBlok(targetArea);
+  subKarmaRear.userData.interactive = false;
+  subKarmaRear.position.set(0, 0, 0.2484016108318484);
+  subKarmaRear.rotation.set(0, Math.PI, 0);
+  blockGroup.add(subKarmaRear);
+
+  return blockGroup;
+}
+
+function spawnAlan4CiftRRUKompleksBlok() {
+  const blockGroup = buildAlan4CiftRRUKompleksBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 8.3919, 0, false);
+  blockGroup.position.set(8.3919, 0, 0);
+  addPlatformToActiveArea(blockGroup);
+}
+
+// Standalone Interactive Model Builder: Kedi Yolu İçi Korkuluksuz Montaj Tablası & Flanşlı Pol (120x200 cm, Alan 4)
+function buildAlan4KediyoluTablaBlok(withPole = true, platLength = withPole ? 2.00 : 1.10, rackZ = 0.40) {
+  const group = new THREE.Group();
+  const platWidth = 1.20;   // X ekseninde genişlik: 1.20m
+  const platCenterZ = withPole ? 0.0 : rackZ;
+
+  group.userData = {
+    type: 'platform',
+    blockType: withPole ? 'alan4-kediyolu-tabla-blok' : 'alan4-kediyolu-alt-tabla',
+    category: 'Platform',
+    name: withPole ? 'Kedi Yolu İçi Korkuluksuz Tabla & Flanşlı Pol (Alan 4)' : 'Kedi Yolu İçi Korkuluksuz Alt Tabla (Alan 4)',
+    width: platWidth,
+    depth: platLength,
+    height: withPole ? 2.50 : 0.10,
+    weight: withPole ? 145 : 60,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: true,
+    lockedZ: true,
+    allowPassThrough: true
+  };
+
+  // Malzemeler
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.6, roughness: 0.3 });
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3, transparent: true, opacity: 0.95 });
+  const borderMat = new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.5, roughness: 0.3 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.9, roughness: 0.1 });
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.4, roughness: 0.3 });
+  const guideMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.2 });
+  const darkSteelMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+
+  const baseThick = 0.05;   // 5cm NPU çelik çerçeve
+  const baseY = 0.025 + baseThick / 2; // Kedi yolu tabanına oturur (Y=0.025 üstü)
+  const surfaceY = 0.025 + baseThick;  // Tabla üst yüzeyi: Y=0.075m
+
+  // 1. KEDİ YOLU DÖŞEME OTURMA ŞASESİ (NPU 80 / Kutu Profil Dış Çerçeve)
+  [-0.585, 0.585].forEach(xPos => {
+    const sideBeam = new THREE.Mesh(new THREE.BoxGeometry(0.05, baseThick, platLength), frameMat);
+    sideBeam.position.set(xPos, baseY, platCenterZ);
+    sideBeam.castShadow = true;
+    sideBeam.receiveShadow = true;
+    group.add(sideBeam);
+  });
+
+  [platCenterZ - platLength / 2 + 0.025, platCenterZ + platLength / 2 - 0.025].forEach(zPos => {
+    const endBeam = new THREE.Mesh(new THREE.BoxGeometry(platWidth, baseThick, 0.05), frameMat);
+    endBeam.position.set(0, baseY, zPos);
+    endBeam.castShadow = true;
+    endBeam.receiveShadow = true;
+    group.add(endBeam);
+  });
+
+  const crossZ = withPole ? [-0.55, -0.10, 0.40] : [rackZ - 0.28, rackZ, rackZ + 0.28];
+  crossZ.forEach(zPos => {
+    const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(platWidth - 0.10, baseThick, 0.04), frameMat);
+    crossBeam.position.set(0, baseY, zPos);
+    group.add(crossBeam);
+  });
+
+  // Kedi yolu ızgarasına sabitleme pabuçları (Montaj kelepçeleri)
+  const clampZ = withPole ? [-0.85, 0.0, 0.85] : [platCenterZ - platLength / 2 + 0.15, platCenterZ + platLength / 2 - 0.15];
+  [-0.50, 0.50].forEach(xPos => {
+    clampZ.forEach(zPos => {
+      const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.025, 0.08), darkSteelMat);
+      clamp.position.set(xPos, 0.025, zPos);
+      group.add(clamp);
+
+      const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.04, 6), boltHeadMat);
+      bolt.position.set(xPos, 0.038, zPos);
+      group.add(bolt);
+    });
+  });
+
+  // 2. MODÜLER GALVANİZLİ IZGARA ZEMİN TABLASI (KORKULUKSUZ TEMİZ YÜZEY)
+  if (withPole) {
+    // Bölge 1: Ön Tabla (Z: -1.00m -> -0.10m, Merkez Z: -0.55m) - Flanşlı Pol Bölgesi
+    const t1Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth - 0.08, 0.025, 0.88), tableMat);
+    t1Mesh.position.set(0, surfaceY, -0.55);
+    t1Mesh.receiveShadow = true;
+    group.add(t1Mesh);
+
+    // Bölge 2: Arka Tabla (Z: -0.10m -> +1.00m, Merkez Z: +0.45m) - 42U Kabin Bölgesi
+    const t2Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth - 0.08, 0.025, 1.06), tableMat);
+    t2Mesh.position.set(0, surfaceY, 0.45);
+    t2Mesh.receiveShadow = true;
+    group.add(t2Mesh);
+  } else {
+    // Kesintisiz yekpare ızgara döşeme taban
+    const fullMesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth - 0.08, 0.025, platLength - 0.08), tableMat);
+    fullMesh.position.set(0, surfaceY, platCenterZ);
+    fullMesh.receiveShadow = true;
+    group.add(fullMesh);
+  }
+
+  // Çevre alçak bordür pahı (Ayak takılmasını önleyen 15mm eğik güvenlik bordürü)
+  [-0.58, 0.58].forEach(xBorder => {
+    const bSide = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.015, platLength - 0.04), borderMat);
+    bSide.position.set(xBorder, surfaceY + 0.015, platCenterZ);
+    group.add(bSide);
+  });
+  [platCenterZ - platLength / 2 + 0.01, platCenterZ + platLength / 2 - 0.01].forEach(zBorder => {
+    const bEnd = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.015, 0.02), borderMat);
+    bEnd.position.set(0, surfaceY + 0.015, zBorder);
+    group.add(bEnd);
+  });
+
+  // 3. FLANŞLI POL DONANIMI (Yalnızca withPole=true ise eklenir)
+  if (withPole) {
+    const pipeZ = -0.55;
+
+    const flangePlateGeo = new THREE.BoxGeometry(0.25, 0.016, 0.25);
+    const baseFlange = new THREE.Mesh(flangePlateGeo, frameMat);
+    baseFlange.position.set(0, surfaceY + 0.020, pipeZ);
+    baseFlange.castShadow = true;
+    group.add(baseFlange);
+
+    const upperFlange = new THREE.Mesh(flangePlateGeo, frameMat);
+    upperFlange.position.set(0, surfaceY + 0.036, pipeZ);
+    upperFlange.castShadow = true;
+    group.add(upperFlange);
+
+    // 4 Adet M20 Ağır Yük Flanş Cıvatası
+    [-0.09, 0.09].forEach(dx => {
+      [-0.09, 0.09].forEach(dz => {
+        const hexBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.035, 6), boltHeadMat);
+        hexBolt.position.set(dx, surfaceY + 0.048, pipeZ + dz);
+        group.add(hexBolt);
+      });
+    });
+
+    // 4 Adet Berkitme Sacı (Gusset Stiffeners)
+    const gussetGeo = new THREE.BoxGeometry(0.01, 0.12, 0.08);
+    const gussetF = new THREE.Mesh(gussetGeo, frameMat);
+    gussetF.position.set(0, surfaceY + 0.09, pipeZ - 0.07);
+    group.add(gussetF);
+    const gussetB = new THREE.Mesh(gussetGeo, frameMat);
+    gussetB.position.set(0, surfaceY + 0.09, pipeZ + 0.07);
+    group.add(gussetB);
+
+    const gussetGeoLR = new THREE.BoxGeometry(0.08, 0.12, 0.01);
+    const gussetL = new THREE.Mesh(gussetGeoLR, frameMat);
+    gussetL.position.set(-0.07, surfaceY + 0.09, pipeZ);
+    group.add(gussetL);
+    const gussetR = new THREE.Mesh(gussetGeoLR, frameMat);
+    gussetR.position.set(0.07, surfaceY + 0.09, pipeZ);
+    group.add(gussetR);
+
+    // Düşey 2.40m Ekipman Borusu (Pol - Ø 76.1mm)
+    const poleHeight = 2.40;
+    const poleRadius = 0.0381;
+    const poleMesh = new THREE.Mesh(new THREE.CylinderGeometry(poleRadius, poleRadius, poleHeight, 32), pipeMat);
+    poleMesh.position.set(0, surfaceY + 0.04 + poleHeight / 2, pipeZ);
+    poleMesh.castShadow = true;
+    group.add(poleMesh);
+
+    const poleCap = new THREE.Mesh(new THREE.CylinderGeometry(poleRadius + 0.005, poleRadius + 0.005, 0.02, 32), darkSteelMat);
+    poleCap.position.set(0, surfaceY + 0.04 + poleHeight + 0.01, pipeZ);
+    group.add(poleCap);
+  }
+
+  // 4. 42U KABİN YERLEŞİM KAİDESİ
+  const rackW = 0.60;
+  const rackD = 0.70;
+
+  // 42U Montaj Kaidesi / Şablon Çerçevesi
+  const rackFrameGeo = new THREE.BoxGeometry(rackW + 0.04, 0.015, rackD + 0.04);
+  const rackFrame = new THREE.Mesh(rackFrameGeo, guideMat);
+  rackFrame.position.set(0, surfaceY + 0.015, rackZ);
+  rackFrame.receiveShadow = true;
+  group.add(rackFrame);
+
+  // 42U Taban oturma sacı
+  const rackPlateGeo = new THREE.BoxGeometry(rackW, 0.018, rackD);
+  const rackPlate = new THREE.Mesh(rackPlateGeo, darkSteelMat);
+  rackPlate.position.set(0, surfaceY + 0.020, rackZ);
+  rackPlate.receiveShadow = true;
+  group.add(rackPlate);
+
+  // 4 Köşe Ankraj / Sabitleme Delikleri
+  [-rackW / 2 + 0.04, rackW / 2 - 0.04].forEach(dx => {
+    [-rackD / 2 + 0.04, rackD / 2 - 0.04].forEach(dz => {
+      const anchor = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 6), boltHeadMat);
+      anchor.position.set(dx, surfaceY + 0.030, rackZ + dz);
+      group.add(anchor);
+    });
+  });
+
+  return group;
+}
+
+// Standalone Interactive Model Builder: Kedi Yolu İçi Tabla + 42U POI Rack Kompleksi (Alan 4) (Pol ve Flanşsız, Geriye Çekilmiş 42U + Kısaltılmış Alt Tabla)
+function buildAlan4Kediyolu42UKompleksBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  const rackZ = 0.40;
+  const platLength = 1.10;
+
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'alan4-kediyolu-42u-kompleks',
+    category: 'Karma',
+    name: 'Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)',
+    width: 1.20,
+    depth: platLength,
+    height: 2.15,
+    weight: 295,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: true,
+    lockedZ: true,
+    allowPassThrough: true
+  };
+
+  // 1. Kedi Yolu İçi Korkuluksuz Kısaltılmış Alt Tabla (Pol ve Flanş Yok, Sadece 42U Kaideli Kısaltılmış Tabla)
+  const subPlatform = buildAlan4KediyoluTablaBlok(false, platLength, rackZ);
+  subPlatform.userData.interactive = false;
+  subPlatform.position.set(0, 0, 0);
+  subPlatform.rotation.set(0, 0, 0);
+  blockGroup.add(subPlatform);
+
+  // 2. 42U POI Rack Blok (6x POI Dolu) - Alt tabla üzerindeki kaideye tam oturur (Geriye çekilmiş Z = 0.40m)
+  const subPoi = build42UPoiRackBlok(targetArea);
+  subPoi.userData.interactive = false;
+  subPoi.position.set(0, 0.095, rackZ);
+  subPoi.rotation.set(0, Math.PI, 0);
+  blockGroup.add(subPoi);
+
+  return blockGroup;
+}
+
+function spawnAlan4KediyoluTablaBlok() {
+  const blockGroup = buildAlan4KediyoluTablaBlok();
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0.0, 0.0, false);
+  blockGroup.position.set(0.0, 0, 0);
+  addPlatformToActiveArea(blockGroup);
+}
+
+function spawnAlan4Kediyolu42UKompleksBlok() {
+  const blockGroup = buildAlan4Kediyolu42UKompleksBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0.0, 0.0, false);
+  blockGroup.position.set(0.0, 0, 0);
+  addPlatformToActiveArea(blockGroup);
+}
+
 // Custom Drag and Drop Engine
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -3449,18 +3570,14 @@ renderer.domElement.addEventListener('pointermove', (event) => {
       let targetZ = dragObject.userData.lockedZ ? dragObject.position.z : (dragIntersection.z + dragOffset.z);
       let targetY = dragObject.position.y;
       if ((dragObject.userData.type === 'platform' || dragObject.userData.type === 'rru') && !dragObject.userData.isOffsetArmModule && !dragObject.userData.isInclinedPipe && !dragObject.userData.isOffsetCarrier && !dragObject.userData.isFreestanding) {
-        if (state.currentArea === 'alan2' || state.currentArea === 'alan3') {
-          // Locked to Z-axis carrier pipe at X = 0
-          if (!dragObject.userData.lockedX) targetX = 0;
-          if (!dragObject.userData.lockedZ) targetZ = Math.max(-3.8, Math.min(-1.1855, dragIntersection.z + dragOffset.z));
-        } else if (state.currentArea === 'alan1') {
-          // Locked to X-axis carrier pipe at Z = -1.1855
-          if (!dragObject.userData.lockedZ) targetZ = -1.1855;
-          if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, dragIntersection.x + dragOffset.x));
-        } else if (state.currentArea === 'alan4') {
+        if (state.currentArea === 'alan4') {
           // Locked to X-axis dual carrier cylinders at Z = 0
           if (dragObject.userData.lockedZ) targetZ = 0;
           if (!dragObject.userData.lockedX) targetX = Math.max(-12.0, Math.min(12.0, dragIntersection.x + dragOffset.x));
+        } else {
+          // Alan 1: Locked to X-axis carrier pipe at Z = -1.1855
+          if (!dragObject.userData.lockedZ) targetZ = -1.1855;
+          if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, dragIntersection.x + dragOffset.x));
         }
       }
 
@@ -3529,6 +3646,18 @@ if (btnAlan1OzelKarma) btnAlan1OzelKarma.addEventListener('click', spawnAlan1Oze
 const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
 if (btnAlan4Plat) btnAlan4Plat.addEventListener('click', spawnAlan4CemberPlatformBlok);
 
+const btnAlan4OzelKarma = document.getElementById('btn-add-alan4-ozel-karma-blok');
+if (btnAlan4OzelKarma) btnAlan4OzelKarma.addEventListener('click', spawnAlan4OzelKarmaBlok);
+
+const btnAlan4CiftRRU = document.getElementById('btn-add-alan4-cift-rru-kompleks');
+if (btnAlan4CiftRRU) btnAlan4CiftRRU.addEventListener('click', spawnAlan4CiftRRUKompleksBlok);
+
+const btnAlan4KediyoluTabla = document.getElementById('btn-add-alan4-kediyolu-tabla-blok');
+if (btnAlan4KediyoluTabla) btnAlan4KediyoluTabla.addEventListener('click', spawnAlan4KediyoluTablaBlok);
+
+const btnAlan4Kediyolu42U = document.getElementById('btn-add-alan4-kediyolu-42u-kompleks');
+if (btnAlan4Kediyolu42U) btnAlan4Kediyolu42U.addEventListener('click', spawnAlan4Kediyolu42UKompleksBlok);
+
 document.getElementById('btn-add-rru-blok-korkuluklu').addEventListener('click', spawnRRUBlokKorkuluklu);
 document.getElementById('btn-add-rack-blok-korkuluklu').addEventListener('click', spawnRackBlokKorkuluklu);
 
@@ -3545,7 +3674,7 @@ const btnOffsetLeft = document.getElementById('btn-add-offset-arm-left');
 if (btnOffsetLeft) btnOffsetLeft.addEventListener('click', spawnOffsetArmPipeLeft);
 
 function updateAreaButtonVisibility() {
-  const isRotatedArea = (state.currentArea === 'alan2' || state.currentArea === 'alan3');
+  const isAlan4 = (state.currentArea === 'alan4');
   const btnRru = document.getElementById('btn-add-rru-blok');
   const btnRack = document.getElementById('btn-add-rack-blok');
   const btnPoiBlok = document.getElementById('btn-add-42u-poi-blok');
@@ -3556,80 +3685,37 @@ function updateAreaButtonVisibility() {
   const btnTCellOffset = document.getElementById('btn-add-tcell-offset-blok');
   const btnRruK = document.getElementById('btn-add-rru-blok-korkuluklu');
   const btnRackK = document.getElementById('btn-add-rack-blok-korkuluklu');
-  const btnSaha = document.getElementById('btn-add-rru-saha-blok-alan2');
   const btnSaha120 = document.getElementById('btn-add-rru-saha-blok-120');
-  const btnKarma = document.getElementById('btn-add-alan2-karma-rru-blok');
-  const btnOffsetRight = document.getElementById('btn-add-offset-arm-right');
-  const btnOffsetLeft = document.getElementById('btn-add-offset-arm-left');
-
-  if (btnSaha) {
-    let areaTitle = 'RRU Saha Blok (Alan 2)';
-    if (state.currentArea === 'alan4') areaTitle = 'RRU Saha Blok (Alan 4)';
-    if (state.currentArea === 'alan3') areaTitle = 'RRU Saha Blok (Alan 3)';
-    if (state.currentArea === 'alan1') areaTitle = 'RRU Saha Blok (Alan 1)';
-    const nameSpan = btnSaha.querySelector('.name');
-    if (nameSpan) nameSpan.textContent = areaTitle;
-  }
+  const btnAlan1OzelKarma = document.getElementById('btn-add-alan1-ozel-karma-blok');
 
   if (btnSaha120) {
-    let areaTitle = 'RRU Saha Blok 120cm (Alan 2)';
-    if (state.currentArea === 'alan4') areaTitle = 'RRU Saha Blok 120cm (Alan 4)';
-    if (state.currentArea === 'alan3') areaTitle = 'RRU Saha Blok 120cm (Alan 3)';
-    if (state.currentArea === 'alan1') areaTitle = 'RRU Saha Blok 120cm (Alan 1)';
     const nameSpan = btnSaha120.querySelector('.name');
-    if (nameSpan) nameSpan.textContent = areaTitle;
+    if (nameSpan) nameSpan.textContent = 'RRU Saha Blok 120cm (Alan 1)';
+    btnSaha120.style.display = isAlan4 ? 'none' : 'flex';
   }
 
-  if (btnKarma) {
-    let areaTitle = 'Alan 2 Karma RRU Blok (4 Borulu - 7 RRU)';
-    if (state.currentArea === 'alan4') areaTitle = 'Alan 4 Karma RRU Blok (4 Borulu - 7 RRU)';
-    if (state.currentArea === 'alan3') areaTitle = 'Alan 3 Karma RRU Blok (4 Borulu - 7 RRU)';
-    if (state.currentArea === 'alan1') areaTitle = 'Alan 1 Karma RRU Blok (4 Borulu - 7 RRU)';
-    const nameSpan = btnKarma.querySelector('.name');
-    if (nameSpan) nameSpan.textContent = areaTitle;
-  }
-
-  const isAlan2 = (state.currentArea === 'alan2');
-  const isAlan3 = (state.currentArea === 'alan3');
-  const isAlan1 = (state.currentArea === 'alan1');
-  const isAlan4 = (state.currentArea === 'alan4');
-
-  if (isRotatedArea) {
-    if (btnRru) btnRru.style.display = 'none';
-    if (btnRack) btnRack.style.display = 'none';
-    if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
-    if (btnTT5527) btnTT5527.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnTT5818w) btnTT5818w.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnVoda3li) btnVoda3li.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnVoda5li) btnVoda5li.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnTCellOffset) btnTCellOffset.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnRruK) btnRruK.style.display = 'none';
-    if (btnRackK) btnRackK.style.display = 'none';
-    if (btnSaha) btnSaha.style.display = 'flex';
-    if (btnSaha120) btnSaha120.style.display = 'flex';
-    if (btnKarma) btnKarma.style.display = isAlan2 ? 'flex' : 'none';
-    if (btnOffsetRight) btnOffsetRight.style.display = isAlan3 ? 'flex' : 'none';
-    if (btnOffsetLeft) btnOffsetLeft.style.display = isAlan3 ? 'flex' : 'none';
-  } else {
-    if (btnRru) btnRru.style.display = 'flex';
-    if (btnRack) btnRack.style.display = 'flex';
-    if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
-    if (btnTT5527) btnTT5527.style.display = 'flex';
-    if (btnTT5818w) btnTT5818w.style.display = 'flex';
-    if (btnVoda3li) btnVoda3li.style.display = 'flex';
-    if (btnVoda5li) btnVoda5li.style.display = 'flex';
-    if (btnTCellOffset) btnTCellOffset.style.display = 'flex';
-    if (btnRruK) btnRruK.style.display = 'flex';
-    if (btnRackK) btnRackK.style.display = 'flex';
-    if (btnSaha) btnSaha.style.display = 'flex';
-    if (btnSaha120) btnSaha120.style.display = 'flex';
-    if (btnKarma) btnKarma.style.display = 'flex';
-    if (btnOffsetRight) btnOffsetRight.style.display = 'none';
-    if (btnOffsetLeft) btnOffsetLeft.style.display = 'none';
-  }
+  if (btnRru) btnRru.style.display = 'flex';
+  if (btnRack) btnRack.style.display = 'flex';
+  if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
+  if (btnTT5527) btnTT5527.style.display = 'flex';
+  if (btnTT5818w) btnTT5818w.style.display = 'flex';
+  if (btnVoda3li) btnVoda3li.style.display = 'flex';
+  if (btnVoda5li) btnVoda5li.style.display = 'flex';
+  if (btnTCellOffset) btnTCellOffset.style.display = 'flex';
+  if (btnRruK) btnRruK.style.display = 'flex';
+  if (btnRackK) btnRackK.style.display = 'flex';
+  if (btnAlan1OzelKarma) btnAlan1OzelKarma.style.display = isAlan4 ? 'none' : 'flex';
 
   const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
-  if (btnAlan4Plat) btnAlan4Plat.style.display = isAlan4 ? 'flex' : 'none';
+  if (btnAlan4Plat) btnAlan4Plat.style.display = 'none';
+  const btnAlan4OzelKarma = document.getElementById('btn-add-alan4-ozel-karma-blok');
+  if (btnAlan4OzelKarma) btnAlan4OzelKarma.style.display = isAlan4 ? 'flex' : 'none';
+  const btnAlan4CiftRRU = document.getElementById('btn-add-alan4-cift-rru-kompleks');
+  if (btnAlan4CiftRRU) btnAlan4CiftRRU.style.display = isAlan4 ? 'flex' : 'none';
+  const btnAlan4KediyoluTabla = document.getElementById('btn-add-alan4-kediyolu-tabla-blok');
+  if (btnAlan4KediyoluTabla) btnAlan4KediyoluTabla.style.display = 'none';
+  const btnAlan4Kediyolu42U = document.getElementById('btn-add-alan4-kediyolu-42u-kompleks');
+  if (btnAlan4Kediyolu42U) btnAlan4Kediyolu42U.style.display = isAlan4 ? 'flex' : 'none';
 }
 
 function setPlatformGroupVisibility(platforms, isVisible) {
@@ -3827,10 +3913,21 @@ function openDimensionsModal(target) {
 
 const closeDimModalBtn = document.getElementById('btn-close-dim-modal');
 const closeDimModalFooterBtn = document.getElementById('btn-close-dim-modal-footer');
+const maxDimModalBtn = document.getElementById('btn-maximize-dim-modal');
 
 const closeDimModal = () => {
   const modal = document.getElementById('dimensions-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent && modalContent.classList.contains('maximized')) {
+      modalContent.classList.remove('maximized');
+      if (maxDimModalBtn) {
+        maxDimModalBtn.textContent = '⛶';
+        maxDimModalBtn.title = 'Tam Ekran Büyüt';
+      }
+    }
+  }
   if (previewScene && previewModel) {
     previewScene.remove(previewModel);
     previewModel = null;
@@ -3840,7 +3937,29 @@ const closeDimModal = () => {
 if (closeDimModalBtn) closeDimModalBtn.addEventListener('click', closeDimModal);
 if (closeDimModalFooterBtn) closeDimModalFooterBtn.addEventListener('click', closeDimModal);
 
-// Area Selection Handler (Alan-1 / Alan-2 / Alan-3 / Alan-4)
+if (maxDimModalBtn) {
+  maxDimModalBtn.addEventListener('click', () => {
+    const modalContent = maxDimModalBtn.closest('.modal-content');
+    if (modalContent) {
+      modalContent.classList.toggle('maximized');
+      const isMax = modalContent.classList.contains('maximized');
+      maxDimModalBtn.textContent = isMax ? '🗗' : '⛶';
+      maxDimModalBtn.title = isMax ? 'Küçült' : 'Tam Ekran Büyüt';
+      if (previewRenderer && previewCamera) {
+        const canvas = document.getElementById('dim-3d-canvas');
+        if (canvas && canvas.parentElement) {
+          const w = canvas.parentElement.clientWidth;
+          const h = canvas.parentElement.clientHeight;
+          previewCamera.aspect = w / h;
+          previewCamera.updateProjectionMatrix();
+          previewRenderer.setSize(w, h);
+        }
+      }
+    }
+  });
+}
+
+// Area Selection Handler (Alan-1 / Alan-4)
 const selectAreaElem = document.getElementById('select-area');
 if (selectAreaElem) {
   selectAreaElem.addEventListener('change', (e) => {
@@ -3850,38 +3969,16 @@ if (selectAreaElem) {
     updateAreaButtonVisibility();
 
     const catwalkGroup = scene.getObjectByName('catwalk');
-    const alan2Group = scene.getObjectByName('alan2Structure');
-    const alan3Group = scene.getObjectByName('alan3Structure');
     const alan4Group = scene.getObjectByName('alan4Structure');
 
     if (selectedArea === 'alan4') {
       if (catwalkGroup) catwalkGroup.visible = false;
-      if (alan2Group) alan2Group.visible = false;
-      if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = true;
       camera.position.set(16, 7, 16);
       controls.target.set(0, 2.5, -0.7);
       controls.update();
-    } else if (selectedArea === 'alan3') {
-      if (catwalkGroup) catwalkGroup.visible = false;
-      if (alan2Group) alan2Group.visible = false;
-      if (alan3Group) alan3Group.visible = true;
-      if (alan4Group) alan4Group.visible = false;
-      camera.position.set(5, 5, 8);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    } else if (selectedArea === 'alan2') {
-      if (catwalkGroup) catwalkGroup.visible = false;
-      if (alan2Group) alan2Group.visible = true;
-      if (alan3Group) alan3Group.visible = false;
-      if (alan4Group) alan4Group.visible = false;
-      camera.position.set(5, 5, 8);
-      controls.target.set(0, 0, 0);
-      controls.update();
     } else {
       if (catwalkGroup) catwalkGroup.visible = true;
-      if (alan2Group) alan2Group.visible = false;
-      if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
       camera.position.set(5, 5, 8);
       controls.target.set(0, 0, 0);
@@ -3889,8 +3986,6 @@ if (selectAreaElem) {
     }
 
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
-    setPlatformGroupVisibility(state.alan2Platforms, selectedArea === 'alan2');
-    setPlatformGroupVisibility(state.alan3Platforms, selectedArea === 'alan3');
     setPlatformGroupVisibility(state.alan4Platforms, selectedArea === 'alan4');
 
     selectObject(null);
@@ -4954,6 +5049,10 @@ function updateBOM() {
     else if (p.userData.name.includes('RRU Blok')) totalWeight += 205;
     else if (p.userData.name.includes('Rack Blok')) totalWeight += 149;
     else if (p.userData.name.includes('Çemberli H-Beam')) totalWeight += 480;
+    else if (p.userData.name.includes('Çift RRU Kompleksi')) totalWeight += 860;
+    else if (p.userData.name.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U')) totalWeight += 385;
+    else if (p.userData.name.includes('Kedi Yolu Tabla + 42U')) totalWeight += 295;
+    else if (p.userData.name.includes('Kedi Yolu İçi Korkuluksuz Tabla') || p.userData.name.includes('Kedi Yolu Korkuluksuz Tabla')) totalWeight += 145;
 
     p.children.forEach(child => {
       if (child.userData && child.userData.interactive) {
@@ -5000,6 +5099,10 @@ function updateBOM() {
       else if (p.userData.name.includes('RRU Blok')) rowWeightText = '205 kg / 205 kg';
       else if (p.userData.name.includes('Rack Blok')) rowWeightText = '149 kg / 149 kg';
       else if (p.userData.name.includes('Çemberli H-Beam')) rowWeightText = '480 kg / 480 kg';
+      else if (p.userData.name.includes('Çift RRU Kompleksi')) rowWeightText = '860 kg / 860 kg';
+      else if (p.userData.name.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U')) rowWeightText = '385 kg / 385 kg';
+      else if (p.userData.name.includes('Kedi Yolu Tabla + 42U')) rowWeightText = '295 kg / 295 kg';
+      else if (p.userData.name.includes('Kedi Yolu İçi Korkuluksuz Tabla') || p.userData.name.includes('Kedi Yolu Korkuluksuz Tabla')) rowWeightText = '145 kg / 145 kg';
 
       tbody.innerHTML += `
         <tr>
@@ -5095,28 +5198,256 @@ if (settingToggleAxes) {
   });
 }
 
+// ==========================================
+// 3D View Modes & Fullscreen Presentation Mode
+// ==========================================
+const mainViewport = document.getElementById('main-viewport-container') || document.querySelector('.viewport-container');
+const presentationHud = document.getElementById('presentation-hud');
+const btnFullscreenHeader = document.getElementById('btn-fullscreen-header');
+const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
+const presSelectArea = document.getElementById('pres-select-area');
+const presBtn2d = document.getElementById('pres-btn-2d');
+const presBtn3d = document.getElementById('pres-btn-3d');
+const presBtnAutoRotate = document.getElementById('pres-btn-autorotate');
+const presBtnResetCam = document.getElementById('pres-btn-reset-cam');
+const presBtnExit = document.getElementById('pres-btn-exit');
+
+const btnViewOrtho = document.getElementById('btn-view-ortho');
+const btnViewPersp = document.getElementById('btn-view-persp');
+
+function updateRendererDimensions() {
+  if (!container || !camera || !renderer) return;
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (w > 0 && h > 0) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+}
+
+// Window Resize handler
+window.addEventListener('resize', updateRendererDimensions);
+
 // View Modes Toggle
-document.getElementById('btn-view-ortho').addEventListener('click', (e) => {
-  document.getElementById('btn-view-persp').classList.remove('active');
-  e.target.classList.add('active');
-  camera.position.set(0, 15, 0);
-  controls.target.set(0, 0, 0);
-  controls.update();
+if (btnViewOrtho) {
+  btnViewOrtho.addEventListener('click', () => {
+    if (btnViewPersp) btnViewPersp.classList.remove('active');
+    btnViewOrtho.classList.add('active');
+    if (presBtn2d) presBtn2d.classList.add('active');
+    if (presBtn3d) presBtn3d.classList.remove('active');
+    camera.position.set(0, 15, 0);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  });
+}
+
+if (btnViewPersp) {
+  btnViewPersp.addEventListener('click', () => {
+    if (btnViewOrtho) btnViewOrtho.classList.remove('active');
+    btnViewPersp.classList.add('active');
+    if (presBtn3d) presBtn3d.classList.add('active');
+    if (presBtn2d) presBtn2d.classList.remove('active');
+    camera.position.set(5, 5, 8);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  });
+}
+
+function isPresentationActive() {
+  return document.fullscreenElement === mainViewport || 
+         document.webkitFullscreenElement === mainViewport || 
+         (mainViewport && mainViewport.classList.contains('fullscreen-mode'));
+}
+
+function enterPresentationMode() {
+  if (!mainViewport) return;
+  mainViewport.classList.add('fullscreen-mode');
+
+  if (presentationHud) {
+    presentationHud.style.display = 'flex';
+  }
+
+  // Synchronize area selector with main header
+  const selectArea = document.getElementById('select-area');
+  if (selectArea && presSelectArea) {
+    presSelectArea.value = selectArea.value;
+  }
+
+  // Update button texts & active styling
+  if (btnFullscreenHeader) {
+    btnFullscreenHeader.classList.add('active');
+    btnFullscreenHeader.innerHTML = '<span>🗗</span> <span>Tam Ekrandan Çık</span>';
+  }
+  if (btnToggleFullscreen) {
+    btnToggleFullscreen.classList.add('active');
+    btnToggleFullscreen.textContent = '🗗 Küçült';
+  }
+
+  // Trigger HTML5 Fullscreen API on main viewport
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (mainViewport.requestFullscreen) {
+      mainViewport.requestFullscreen().catch(() => {});
+    } else if (mainViewport.webkitRequestFullscreen) {
+      mainViewport.webkitRequestFullscreen();
+    }
+  }
+
+  setTimeout(updateRendererDimensions, 50);
+  setTimeout(updateRendererDimensions, 200);
+}
+
+function exitPresentationMode() {
+  if (!mainViewport) return;
+  mainViewport.classList.remove('fullscreen-mode');
+
+  if (presentationHud) {
+    presentationHud.style.display = 'none';
+  }
+
+  // Stop 360 tour if running
+  controls.autoRotate = false;
+  if (presBtnAutoRotate) {
+    presBtnAutoRotate.classList.remove('active');
+  }
+
+  if (btnFullscreenHeader) {
+    btnFullscreenHeader.classList.remove('active');
+    btnFullscreenHeader.innerHTML = '<span>⛶</span> <span>Tam Ekran Sunum</span>';
+  }
+  if (btnToggleFullscreen) {
+    btnToggleFullscreen.classList.remove('active');
+    btnToggleFullscreen.textContent = '⛶ Tam Ekran';
+  }
+
+  // Exit native fullscreen if browser is in fullscreen
+  if (document.fullscreenElement || document.webkitFullscreenElement) {
+    if (document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+
+  updateRendererDimensions();
+  setTimeout(updateRendererDimensions, 30);
+  setTimeout(updateRendererDimensions, 100);
+  setTimeout(updateRendererDimensions, 300);
+  window.dispatchEvent(new Event('resize'));
+}
+
+function togglePresentationMode() {
+  if (isPresentationActive()) {
+    exitPresentationMode();
+  } else {
+    enterPresentationMode();
+  }
+}
+
+// Wire Presentation UI Handlers
+if (btnFullscreenHeader) {
+  btnFullscreenHeader.addEventListener('click', (e) => {
+    e.preventDefault();
+    togglePresentationMode();
+  });
+}
+
+if (btnToggleFullscreen) {
+  btnToggleFullscreen.addEventListener('click', (e) => {
+    e.preventDefault();
+    togglePresentationMode();
+  });
+}
+
+if (presBtnExit) {
+  presBtnExit.addEventListener('click', (e) => {
+    e.preventDefault();
+    exitPresentationMode();
+  });
+}
+
+if (presSelectArea) {
+  presSelectArea.addEventListener('change', (e) => {
+    const val = e.target.value;
+    const selectArea = document.getElementById('select-area');
+    if (selectArea && selectArea.value !== val) {
+      selectArea.value = val;
+      selectArea.dispatchEvent(new Event('change'));
+    }
+  });
+}
+
+// Sync presSelectArea whenever selectArea changes
+const areaDropdown = document.getElementById('select-area');
+if (areaDropdown && presSelectArea) {
+  areaDropdown.addEventListener('change', (e) => {
+    presSelectArea.value = e.target.value;
+  });
+}
+
+if (presBtn2d) {
+  presBtn2d.addEventListener('click', () => {
+    if (btnViewOrtho) btnViewOrtho.click();
+  });
+}
+
+if (presBtn3d) {
+  presBtn3d.addEventListener('click', () => {
+    if (btnViewPersp) btnViewPersp.click();
+  });
+}
+
+// 360° Auto-Rotate Tur Kontrolü
+if (presBtnAutoRotate) {
+  presBtnAutoRotate.addEventListener('click', () => {
+    controls.autoRotate = !controls.autoRotate;
+    controls.autoRotateSpeed = 1.3;
+    presBtnAutoRotate.classList.toggle('active', controls.autoRotate);
+  });
+}
+
+// Kamera Odak / Reset
+if (presBtnResetCam) {
+  presBtnResetCam.addEventListener('click', () => {
+    const currentArea = state.currentArea || 'alan4';
+    if (currentArea === 'alan4') {
+      camera.position.set(16, 7, 16);
+      controls.target.set(0, 2.5, -0.7);
+    } else {
+      camera.position.set(5, 5, 8);
+      controls.target.set(0, 0, 0);
+    }
+    controls.update();
+  });
+}
+
+// Browser native fullscreen event listener (sync state if user presses browser Esc)
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement) {
+    exitPresentationMode();
+  }
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  if (!document.webkitFullscreenElement) {
+    exitPresentationMode();
+  }
 });
 
-document.getElementById('btn-view-persp').addEventListener('click', (e) => {
-  document.getElementById('btn-view-ortho').classList.remove('active');
-  e.target.classList.add('active');
-  camera.position.set(5, 5, 8);
-  controls.target.set(0, 0, 0);
-  controls.update();
-});
+// Keyboard shortcuts for presentation mode (F / F11 / Esc)
+window.addEventListener('keydown', (e) => {
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+    return;
+  }
 
-// Resize handler
-window.addEventListener('resize', () => {
-  camera.aspect = container.clientWidth / container.clientHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  if (e.key === 'Escape') {
+    if (isPresentationActive()) {
+      e.preventDefault();
+      exitPresentationMode();
+    }
+  } else if ((e.key === 'f' || e.key === 'F' || e.key === 'F11') && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    e.preventDefault();
+    togglePresentationMode();
+  }
 });
 
 function serializePlatform(p) {
@@ -5207,6 +5538,14 @@ function deserializeItemToArea(item, targetArea) {
     group = buildAlan1OzelKarmaBlok(targetArea);
   } else if (blockType === 'alan4-cember-platform-blok' || itemName.includes('Çemberli H-Beam')) {
     group = buildAlan4CemberPlatformBlok();
+  } else if (blockType === 'alan4-ozel-karma-blok' || itemName.includes('Özel Alan 4 Kompleksi')) {
+    group = buildAlan4OzelKarmaBlok(targetArea);
+  } else if (blockType === 'alan4-cift-rru-kompleks' || itemName.includes('Çift RRU Kompleksi')) {
+    group = buildAlan4CiftRRUKompleksBlok(targetArea);
+  } else if (blockType === 'alan4-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U') || itemName.includes('Kedi Yolu Tabla + 42U')) {
+    group = buildAlan4Kediyolu42UKompleksBlok(targetArea);
+  } else if (blockType === 'alan4-kediyolu-tabla-blok' || itemName.includes('Kedi Yolu İçi Korkuluksuz Tabla') || itemName.includes('Kedi Yolu Korkuluksuz Tabla')) {
+    group = buildAlan4KediyoluTablaBlok();
   } else if (blockType === 'rru-saha-blok-120' || itemName.includes('120cm')) {
     group = buildRRUSahaBlok120Model(targetArea);
   } else if (blockType === 'rru-saha-blok' || itemName.includes('RRU Saha Blok')) {
@@ -5293,10 +5632,8 @@ function deserializeItemToArea(item, targetArea) {
     group.visible = (targetArea === state.currentArea);
     scene.add(group);
 
-    if (targetArea === 'alan1') state.alan1Platforms.push(group);
-    else if (targetArea === 'alan2') state.alan2Platforms.push(group);
-    else if (targetArea === 'alan3') state.alan3Platforms.push(group);
-    else if (targetArea === 'alan4') state.alan4Platforms.push(group);
+    if (targetArea === 'alan4') state.alan4Platforms.push(group);
+    else state.alan1Platforms.push(group);
   }
 }
 
@@ -5308,8 +5645,6 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
     currentArea: state.currentArea,
     areas: {
       alan1: state.alan1Platforms.map(serializePlatform),
-      alan2: state.alan2Platforms.map(serializePlatform),
-      alan3: state.alan3Platforms.map(serializePlatform),
       alan4: state.alan4Platforms.map(serializePlatform)
     }
   };
@@ -5325,15 +5660,15 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
 
 // Preset Draft Templates Registry
 const PRESET_DRAFTS = {
-  'taslak-v2': {
+  'taslak-v3': {
     "version": "2.0",
-    "savedAt": "2026-09-10T20:57:53.080Z",
-    "currentArea": "alan1",
+    "savedAt": "2026-09-11T10:29:55.105Z",
+    "currentArea": "alan4",
     "areas": {
       "alan1": [
         {
-          "name": "Alan 2 Karma RRU Blok (4 Borulu - 7 RRU) (Alan 1)",
-          "blockType": "alan2-karma-rru-blok",
+          "name": "Alan 1 Özel Karma Blok (4 Bileşenli)",
+          "blockType": "alan1-ozel-karma-blok",
           "catalogId": null,
           "type": "rru",
           "category": "Karma",
@@ -5341,59 +5676,222 @@ const PRESET_DRAFTS = {
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
-          "position": { "x": 0.16582881193335844, "y": 0, "z": -1.1855 },
-          "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 },
-          "locked": false, "lockedX": false, "lockedY": false, "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "20U POI Rack Blok (3x POI Dolu)",
-          "blockType": "20u-poi-rack-blok",
-          "catalogId": null,
-          "type": "rru",
-          "category": "Canovate",
-          "isFreestanding": true,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": { "x": -1.562669426291808, "y": 0, "z": -0.9798741001872632 },
-          "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 },
-          "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "20U POI Rack Blok (3x POI Dolu)",
-          "blockType": "20u-poi-rack-blok",
-          "catalogId": null,
-          "type": "rru",
-          "category": "Canovate",
-          "isFreestanding": true,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": { "x": -1.5672568213661364, "y": 0, "z": -1.4605603122918533 },
-          "rotation": { "x": 0, "y": 7.853981633974483, "z": 0 },
-          "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "RRU Saha Blok 120cm (Alan 1)",
-          "blockType": "rru-saha-blok-120",
-          "catalogId": null,
-          "type": "platform",
-          "category": null,
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": { "x": 0.5874848490612461, "y": 0, "z": -1.1855 },
-          "rotation": { "x": 0, "y": 0, "z": 0 },
-          "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": -1.1855
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
           "allowPassThrough": true
         }
       ],
       "alan2": [],
-      "alan3": []
+      "alan3": [],
+      "alan4": [
+        {
+          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)",
+          "blockType": "alan4-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 6.87137451195054,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)",
+          "blockType": "alan4-cift-rru-kompleks",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -8.4671429562844,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)",
+          "blockType": "alan4-cift-rru-kompleks",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 8.3919,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)",
+          "blockType": "alan4-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -6.895658789047658,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        }
+      ]
+    }
+  },
+  'taslak-v2': {
+    "version": "2.0",
+    "savedAt": "2026-09-11T07:38:27.144Z",
+    "currentArea": "alan1",
+    "areas": {
+      "alan1": [
+        {
+          "name": "Alan 1 Özel Karma Blok (4 Bileşenli)",
+          "blockType": "alan1-ozel-karma-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": -1.1855
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ],
+      "alan2": [],
+      "alan3": [],
+      "alan4": [
+        {
+          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+          "blockType": "alan4-ozel-karma-blok",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -8.242980212994473,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+          "blockType": "alan4-ozel-karma-blok",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 8.307771779124387,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        }
+      ]
     }
   },
   'taslak-v1': {
@@ -5433,7 +5931,34 @@ const PRESET_DRAFTS = {
         { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.2429354550466356, "y": 0, "z": -1.188157875725572 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
         { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.22012813026807526, "y": 0, "z": -1.9309626762980763 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
       ],
-      "alan4": []
+      "alan4": [
+        {
+          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+          "blockType": "alan4-ozel-karma-blok",
+          "catalogId": null,
+          "type": "platform",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 8.391915754334763,
+            "y": 0,
+            "z": 0
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        }
+      ]
     }
   }
 };
@@ -5442,7 +5967,7 @@ function loadProjectFromData(importData) {
   selectObject(null);
 
   // 1. Clear scene and internal arrays for all areas
-  [...state.alan1Platforms, ...state.alan2Platforms, ...state.alan3Platforms, ...state.alan4Platforms].forEach(p => scene.remove(p));
+  [...state.alan1Platforms, ...state.alan4Platforms].forEach(p => scene.remove(p));
   state.alan1Platforms = [];
   state.alan2Platforms = [];
   state.alan3Platforms = [];
@@ -5450,12 +5975,12 @@ function loadProjectFromData(importData) {
 
   // 2. Check if new format containing all areas
   if (importData.areas) {
-    ['alan1', 'alan2', 'alan3', 'alan4'].forEach(areaKey => {
+    ['alan1', 'alan4'].forEach(areaKey => {
       const items = importData.areas[areaKey] || [];
       items.forEach(item => deserializeItemToArea(item, areaKey));
     });
 
-    const activeArea = importData.currentArea || 'alan1';
+    const activeArea = importData.currentArea === 'alan4' ? 'alan4' : 'alan1';
     const selectAreaElem = document.getElementById('select-area');
     if (selectAreaElem) {
       selectAreaElem.value = activeArea;
@@ -5467,7 +5992,7 @@ function loadProjectFromData(importData) {
     let itemsToImport = [];
 
     if (importData.area) {
-      targetArea = importData.area;
+      targetArea = importData.area === 'alan4' ? 'alan4' : 'alan1';
       itemsToImport = importData.items || [];
     } else if (Array.isArray(importData)) {
       itemsToImport = importData;
@@ -5495,7 +6020,6 @@ if (presetSelectElem) {
       loadProjectFromData(PRESET_DRAFTS[selectedPreset]);
       const draftName = e.target.options[e.target.selectedIndex].text;
       alert(`${draftName} hazır şablon tasarımı tüm alanlara başarıyla yüklendi!`);
-      e.target.value = ''; // Reset select placeholder to "📋 Hazır Taslaklar"
     }
   });
 }
@@ -5533,18 +6057,12 @@ if (importBtn && fileInput) {
 const resetBtn = document.getElementById('btn-reset-project');
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
-    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : (state.currentArea === 'alan3' ? 'ALAN 3' : (state.currentArea === 'alan2' ? 'ALAN 2' : 'ALAN 1'));
+    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : 'ALAN 1';
     const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?\n\nBu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
     if (confirmed) {
       if (state.currentArea === 'alan4') {
         state.alan4Platforms.forEach(p => scene.remove(p));
         state.alan4Platforms = [];
-      } else if (state.currentArea === 'alan3') {
-        state.alan3Platforms.forEach(p => scene.remove(p));
-        state.alan3Platforms = [];
-      } else if (state.currentArea === 'alan2') {
-        state.alan2Platforms.forEach(p => scene.remove(p));
-        state.alan2Platforms = [];
       } else {
         state.alan1Platforms.forEach(p => scene.remove(p));
         state.alan1Platforms = [];
@@ -5556,20 +6074,27 @@ if (resetBtn) {
 }
 
 function addInitialPlatforms() {
-  state.alan1Platforms = [];
-  state.alan2Platforms = [];
-  state.alan3Platforms = [];
-  state.alan4Platforms = [];
+  // Site ilk açılışında varsayılan olarak Taslak Versiyon 2'yi yükle
+  if (typeof PRESET_DRAFTS !== 'undefined' && PRESET_DRAFTS['taslak-v2']) {
+    loadProjectFromData(PRESET_DRAFTS['taslak-v2']);
+    const presetSelect = document.getElementById('select-preset-draft');
+    if (presetSelect) {
+      presetSelect.value = 'taslak-v2';
+    }
+  } else {
+    state.alan1Platforms = [];
+    state.alan4Platforms = [];
 
-  const alan4Block = buildAlan4CemberPlatformBlok();
-  alan4Block.userData.id = state.nextId++;
-  alan4Block.position.set(8.50, 0, 0);
-  alan4Block.visible = (state.currentArea === 'alan4');
-  scene.add(alan4Block);
-  state.alan4Platforms.push(alan4Block);
+    const alan4Block = buildAlan4OzelKarmaBlok('alan4');
+    alan4Block.userData.id = state.nextId++;
+    alan4Block.position.set(8.3919, 0, 0);
+    alan4Block.visible = (state.currentArea === 'alan4');
+    scene.add(alan4Block);
+    state.alan4Platforms.push(alan4Block);
 
-  selectObject(null);
-  updateBOM();
+    selectObject(null);
+    updateBOM();
+  }
 }
 
 addInitialPlatforms();
@@ -5582,6 +6107,14 @@ if (state.currentArea === 'alan4') {
   if (alan4Group) alan4Group.visible = true;
   camera.position.set(16, 7, 16);
   controls.target.set(0, 2.5, -0.7);
+  controls.update();
+} else {
+  const catwalkGroup = scene.getObjectByName('catwalk');
+  const alan4Group = scene.getObjectByName('alan4Structure');
+  if (catwalkGroup) catwalkGroup.visible = true;
+  if (alan4Group) alan4Group.visible = false;
+  camera.position.set(5, 5, 8);
+  controls.target.set(0, 0, 0);
   controls.update();
 }
 

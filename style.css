@@ -143,6 +143,10 @@ body {
 /* Sidebars */
 .sidebar-left, .sidebar-right {
   width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  max-width: var(--sidebar-width);
+  flex-shrink: 0;
+  flex-grow: 0;
   background: var(--bg-secondary);
   backdrop-filter: blur(16px);
   border-right: 1px solid var(--border-color);
@@ -276,14 +280,25 @@ textarea#notes {
 
 /* Viewport Area */
 .viewport-container {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   position: relative;
   height: 100%;
+  overflow: hidden;
 }
 
 #canvas-container {
   width: 100%;
   height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+#canvas-container canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .viewport-overlay {
@@ -595,4 +610,149 @@ input:checked + .slider {
 input:checked + .slider:before {
   transform: translateX(20px);
   background-color: #000;
+}
+
+/* ========================================================================= */
+/* FULLSCREEN PRESENTATION MODE STYLES                                      */
+/* ========================================================================= */
+.viewport-container.fullscreen-mode,
+.viewport-container:fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  background: #020617 !important;
+}
+
+.viewport-container.fullscreen-mode #canvas-container,
+.viewport-container:fullscreen #canvas-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.viewport-container.fullscreen-mode .viewport-overlay {
+  bottom: 25px;
+  left: 25px;
+  right: 25px;
+}
+
+/* Floating Presentation HUD Toolbar */
+.presentation-hud {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 18px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(253, 185, 19, 0.45);
+  border-radius: 50px;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 24px rgba(253, 185, 19, 0.2);
+  z-index: 100000;
+  pointer-events: auto;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  user-select: none;
+}
+
+.presentation-hud-brand {
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  white-space: nowrap;
+}
+
+.presentation-hud-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-select {
+  background: rgba(30, 41, 59, 0.95);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+.hud-select:focus, .hud-select:hover {
+  border-color: var(--gs-yellow);
+}
+
+.hud-btn {
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hud-btn:hover {
+  background: rgba(51, 65, 85, 0.95);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.hud-btn.active {
+  background: var(--gs-yellow);
+  color: #000000;
+  border-color: var(--gs-yellow);
+  box-shadow: 0 0 14px rgba(253, 185, 19, 0.5);
+}
+
+.hud-btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.hud-btn-danger:hover {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+/* Modal Maximize Styles */
+.modal-content.maximized {
+  max-width: 96vw !important;
+  width: 96vw !important;
+  height: 94vh !important;
+  max-height: 94vh !important;
+  display: flex;
+  flex-direction: column;
+}
+.modal-content.maximized > div:nth-child(2) {
+  flex: 1;
+  grid-template-columns: 1fr 380px !important;
+  height: calc(100% - 110px) !important;
+}
+.modal-content.maximized #dim-3d-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.modal-content.maximized > div:nth-child(2) > div:first-child {
+  width: 100% !important;
+  height: 100% !important;
 }

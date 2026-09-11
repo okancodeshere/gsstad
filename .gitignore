@@ -27,3 +27,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.swp
+
+# Archive backups
+*.zip
