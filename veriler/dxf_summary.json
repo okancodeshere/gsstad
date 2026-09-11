@@ -1,0 +1,16 @@
+{
+  "totalEntities": 360109,
+  "byType": {
+    "LINE": 335884,
+    "CIRCLE": 24196,
+    "SOLID": 17,
+    "LWPOLYLINE": 12
+  },
+  "byColor": {
+    "ByLayer": 360109
+  },
+  "byLayer": {
+    "0": 360109
+  },
+  "blocksCount": 3
+}

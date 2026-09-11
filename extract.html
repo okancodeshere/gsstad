@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DXF Yükle ve Sarı Çizgileri Çıkar</title>
+    <script src="https://cdn.jsdelivr.net/npm/dxf-parser/dist/dxf-parser.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .box { border: 2px dashed #ccc; padding: 20px; text-align: center; margin-bottom: 20px; }
+        #log { white-space: pre-wrap; background: #f4f4f4; padding: 10px; max-height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h2>DXF'ten Kedi Yolu Çıkarma Aracı</h2>
+    <p>Lütfen "SEYRANTEPE_KEDI_YOLU_PLANI.dxf" dosyasını seçin. Script, rengi <strong>Yeşil (Color 3)</strong> olan çizgileri bulup çıkaracaktır.</p>
+    
+    <div class="box">
+        <input type="file" id="dxf-file" accept=".dxf" />
+    </div>
+    
+    <div id="log">Bekleniyor...</div>
+
+    <script>
+        document.getElementById('dxf-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                document.getElementById('log').innerText = "DXF Okunuyor (bu işlem birkaç saniye sürebilir)...\n";
+                
+                try {
+                    const parser = new window.DxfParser();
+                    const dxf = parser.parseSync(text);
+                    document.getElementById('log').innerText += "DXF başarıyla ayrıştırıldı. Yeşil (Green) renkli çizgiler aranıyor...\n";
+                    
+                    const catwalkLines = [];
+                    for (const entity of dxf.entities) {
+                        // DXF özetine göre tüm objeler Layer 0'da ve ByLayer renginde.
+                        // Ancak sadece 12 adet LWPOLYLINE (birleşik çizgi) var.
+                        // Kedi yolu büyük ihtimalle bu LWPOLYLINE'lardan oluşuyor.
+                        if (entity.type === 'LWPOLYLINE') {
+                            catwalkLines.push(entity);
+                        }
+                    }
+
+                    document.getElementById('log').innerText += `Toplam ${catwalkLines.length} adet LWPOLYLINE (kedi yolu adayı) bulundu.\n`;
+                    
+                    if (catwalkLines.length > 0) {
+                        const json = JSON.stringify(catwalkLines, null, 2);
+                        const blob = new Blob([json], {type: "application/json"});
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'catwalk_data.json';
+                        a.innerText = "Buraya tıklayarak 'catwalk_data.json' dosyasını indirebilirsiniz.";
+                        a.style.display = 'block';
+                        a.style.fontSize = '18px';
+                        a.style.fontWeight = 'bold';
+                        a.style.marginTop = '20px';
+                        a.style.color = 'blue';
+                        
+                        document.body.appendChild(a);
+                    } else {
+                        document.getElementById('log').innerText += "Uyarı: Hiç LWPOLYLINE bulunamadı.\n";
+                    }
+                    
+                } catch(err) {
+                    document.getElementById('log').innerText += "Hata oluştu:\n" + err.message;
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        });
+    </script>
+</body>
+</html>
