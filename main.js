@@ -399,9 +399,9 @@ function createAlan4Structure() {
   }
 
   // =========================================================================
-  // 2. KEDİ YOLU (TEK KATLI, GENİŞLİK 2.6M, UZUNLUK 15.4M)
+  // 2. KEDİ YOLU (TEK KATLI, GENİŞLİK 2.6M, KÖŞELERDEN 4M İÇERİ ÇEKİLMİŞ: UZUNLUK 7.4M)
   // =========================================================================
-  const catwalkLength = 15.4; // 13m + 1.2m + 1.2m
+  const catwalkLength = 7.4; // 15.4m'den köşelerden ~4m içeri çekilmiş (X: -3.7m ile +3.7m arası)
   const catwalkWidth = 2.6;
   const floorGeo = new THREE.BoxGeometry(catwalkLength, 0.05, catwalkWidth);
   const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -426,7 +426,7 @@ function createAlan4Structure() {
   const transBeamGeo = new THREE.BoxGeometry(0.20, 0.18, 4.0);
   const saddleShoeGeo = new THREE.BoxGeometry(0.24, 0.12, 0.60);
 
-  for (let x = -6.6; x <= 6.6; x += 2.2) {
+  for (let x = -3.6; x <= 3.61; x += 1.8) {
     const transBeam = new THREE.Mesh(transBeamGeo, darkSteelMat);
     transBeam.position.set(x, -0.115, -0.65);
     alan4Group.add(transBeam);
@@ -449,7 +449,7 @@ function createAlan4Structure() {
   const topRailRearGeo = new THREE.CylinderGeometry(0.025, 0.025, catwalkLength);
   const midRailRearGeo = new THREE.CylinderGeometry(0.018, 0.018, catwalkLength);
 
-  // 3.1. Arka Kenar Korkuluğu (Z = +1.30m, 15.4m boydan boya)
+  // 3.1. Arka Kenar Korkuluğu (Z = +1.30m, 7.4m boydan boya)
   const topRailRear = new THREE.Mesh(topRailRearGeo, railMat);
   topRailRear.rotation.z = Math.PI / 2;
   topRailRear.position.set(0, 1.10, 1.30);
@@ -464,97 +464,135 @@ function createAlan4Structure() {
   kickPlateRear.position.set(0, 0.06, 1.29);
   alan4Group.add(kickPlateRear);
 
-  for (let x = -7.2; x <= 7.2; x += 1.6) {
+  for (let x = -3.6; x <= 3.61; x += 1.2) {
     const post = new THREE.Mesh(postGeo, railMat);
     post.position.set(x, 0.55, 1.30);
     alan4Group.add(post);
   }
 
-  // 3.2. Yan Kenar Korkulukları (Sol uç X = -7.7m kapalı, Sağ uç X = +7.7m yan platforma geçişli)
+  // 3.2. Yan Kenar Korkulukları (Sol uç X = -3.7m kapalı, Sağ uç X = +3.7m kapalı)
   const sideRailTopGeo = new THREE.CylinderGeometry(0.025, 0.025, catwalkWidth);
   const sideRailMidGeo = new THREE.CylinderGeometry(0.018, 0.018, catwalkWidth);
+  const sideKickGeo = new THREE.BoxGeometry(0.02, 0.12, catwalkWidth);
 
-  // Sol Uç (X = -7.7m): Tam boy korkuluk
+  // Sol Uç (X = -3.7m): Tam boy korkuluk
   const sTopLeft = new THREE.Mesh(sideRailTopGeo, railMat);
   sTopLeft.rotation.x = Math.PI / 2;
-  sTopLeft.position.set(-7.7, 1.10, 0);
+  sTopLeft.position.set(-3.7, 1.10, 0);
   alan4Group.add(sTopLeft);
 
   const sMidLeft = new THREE.Mesh(sideRailMidGeo, railMat);
   sMidLeft.rotation.x = Math.PI / 2;
-  sMidLeft.position.set(-7.7, 0.55, 0);
+  sMidLeft.position.set(-3.7, 0.55, 0);
   alan4Group.add(sMidLeft);
 
-  const sKickLeft = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, catwalkWidth), beamMat);
-  sKickLeft.position.set(-7.7, 0.06, 0);
+  const sKickLeft = new THREE.Mesh(sideKickGeo, beamMat);
+  sKickLeft.position.set(-3.7, 0.06, 0);
   alan4Group.add(sKickLeft);
 
-  [-0.9, 0, 0.9].forEach(zPos => {
+  [-1.1, 0, 1.1].forEach(zPos => {
     const p = new THREE.Mesh(postGeo, railMat);
-    p.position.set(-7.7, 0.55, zPos);
+    p.position.set(-3.7, 0.55, zPos);
     alan4Group.add(p);
   });
 
-  // Sağ Uç (X = +7.7m): Yan ek platforma geçiş için ortada 80cm geçiş boşluğu
-  const passWingGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.90);
-  const passMidGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.90);
-  [-0.85, 0.85].forEach(zWing => {
-    const wTop = new THREE.Mesh(passWingGeo, railMat);
-    wTop.rotation.x = Math.PI / 2;
-    wTop.position.set(7.7, 1.10, zWing);
-    alan4Group.add(wTop);
+  // Sağ Uç (X = +3.7m): Tam boy korkuluk
+  const sTopRight = new THREE.Mesh(sideRailTopGeo, railMat);
+  sTopRight.rotation.x = Math.PI / 2;
+  sTopRight.position.set(3.7, 1.10, 0);
+  alan4Group.add(sTopRight);
 
-    const wMid = new THREE.Mesh(passMidGeo, railMat);
-    wMid.rotation.x = Math.PI / 2;
-    wMid.position.set(7.7, 0.55, zWing);
-    alan4Group.add(wMid);
+  const sMidRight = new THREE.Mesh(sideRailMidGeo, railMat);
+  sMidRight.rotation.x = Math.PI / 2;
+  sMidRight.position.set(3.7, 0.55, 0);
+  alan4Group.add(sMidRight);
 
-    const wKick = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.90), beamMat);
-    wKick.position.set(7.7, 0.06, zWing);
-    alan4Group.add(wKick);
-  });
-  [-1.25, -0.40, 0.40, 1.25].forEach(zPos => {
+  const sKickRight = new THREE.Mesh(sideKickGeo, beamMat);
+  sKickRight.position.set(3.7, 0.06, 0);
+  alan4Group.add(sKickRight);
+
+  [-1.1, 0, 1.1].forEach(zPos => {
     const p = new THREE.Mesh(postGeo, railMat);
-    p.position.set(7.7, 0.55, zPos);
+    p.position.set(3.7, 0.55, zPos);
     alan4Group.add(p);
   });
 
-  // 3.3. Ön Kenar Korkulukları (Z = -1.30m)
-  // Skorbordun 1.2m taşan yan kısımlarında tam boy korkuluk
-  const wingLen = 1.2;
-  const wingTopGeo = new THREE.CylinderGeometry(0.025, 0.025, wingLen);
-  const wingMidGeo = new THREE.CylinderGeometry(0.018, 0.018, wingLen);
-
-  [-7.1, 7.1].forEach(xMid => {
-    const wTop = new THREE.Mesh(wingTopGeo, railMat);
-    wTop.rotation.z = Math.PI / 2;
-    wTop.position.set(xMid, 1.10, -1.30);
-    alan4Group.add(wTop);
-
-    const wMid = new THREE.Mesh(wingMidGeo, railMat);
-    wMid.rotation.z = Math.PI / 2;
-    wMid.position.set(xMid, 0.55, -1.30);
-    alan4Group.add(wMid);
-
-    const wKick = new THREE.Mesh(new THREE.BoxGeometry(wingLen, 0.12, 0.02), beamMat);
-    wKick.position.set(xMid, 0.06, -1.29);
-    alan4Group.add(wKick);
-  });
-
-  // Skorbord önü tekme levhası ve güvenlik bariyeri (X: -6.5m ile +6.5m)
-  const sbFrontKick = new THREE.Mesh(new THREE.BoxGeometry(13.0, 0.15, 0.02), beamMat);
+  // 3.3. Ön Kenar Korkuluğu ve Güvenlik Bariyeri (Z = -1.30m, X: -3.7m ile +3.7m)
+  const sbFrontKick = new THREE.Mesh(new THREE.BoxGeometry(catwalkLength, 0.15, 0.02), beamMat);
   sbFrontKick.position.set(0, 0.075, -1.29);
   alan4Group.add(sbFrontKick);
 
-  for (let x = -6.0; x <= 6.0; x += 2.0) {
+  for (let x = -3.6; x <= 3.61; x += 1.2) {
     const p = new THREE.Mesh(postGeo, railMat);
     p.position.set(x, 0.55, -1.30);
     alan4Group.add(p);
   }
-  const sbFrontMidRail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 13.0), railMat);
+  const sbFrontMidRail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, catwalkLength), railMat);
   sbFrontMidRail.rotation.z = Math.PI / 2;
   sbFrontMidRail.position.set(0, 1.10, -1.30);
   alan4Group.add(sbFrontMidRail);
+
+  // 3.4. Arkadan Bakıldığında Görünen Güvenlik Çemberli Gemici Merdiveni (Caged Safety Ladder)
+  // Fotoğrafta görülen çemberli düşey servis merdiveni (X = 1.8m, Z = 1.30m arka korkuluk üzerinde)
+  const ladderX = 1.8;
+  const ladderZ = 1.30;
+  const ladderStringerGeo = new THREE.CylinderGeometry(0.018, 0.018, 3.4);
+  const ladderRungGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.50);
+  ladderRungGeo.rotateZ(Math.PI / 2);
+
+  // İki Düşey Taşıyıcı Dikme (Stringers: Y = +1.20m'den Y = -2.20m'ye)
+  const stringerLeft = new THREE.Mesh(ladderStringerGeo, darkSteelMat);
+  stringerLeft.position.set(ladderX - 0.25, -0.50, ladderZ + 0.06);
+  alan4Group.add(stringerLeft);
+
+  const stringerRight = new THREE.Mesh(ladderStringerGeo, darkSteelMat);
+  stringerRight.position.set(ladderX + 0.25, -0.50, ladderZ + 0.06);
+  alan4Group.add(stringerRight);
+
+  // Yatay Basamaklar (Her 30cm'de bir)
+  for (let y = -2.0; y <= 1.0; y += 0.30) {
+    const rung = new THREE.Mesh(ladderRungGeo, darkSteelMat);
+    rung.position.set(ladderX, y, ladderZ + 0.06);
+    alan4Group.add(rung);
+  }
+
+  // Güvenlik Kafesi / Sırt Çemberleri (Safety Hoops)
+  const hoopMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+  for (let y = -1.2; y <= 1.2; y += 0.50) {
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.012, 8, 24, Math.PI), hoopMat);
+    hoop.rotation.x = Math.PI / 2;
+    hoop.position.set(ladderX, y, ladderZ + 0.15);
+    alan4Group.add(hoop);
+  }
+  // Güvenlik Kafesi Düşey Emniyet Lamaları (3 adet düşey çubuk)
+  [-0.30, 0, 0.30].forEach(dx => {
+    const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 2.5), hoopMat);
+    strap.position.set(ladderX + dx, 0.0, ladderZ + 0.48);
+    alan4Group.add(strap);
+  });
+
+  // 3.5. Fotoğraftaki Alt Saha Aydınlatma Projektörleri (Floodlight Brackets on Lower Front)
+  const lightHousingMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+  const lightGlassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, emissive: 0xffffee, emissiveIntensity: 0.3 });
+  const bracketMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
+
+  for (let lx = -5.5; lx <= 5.51; lx += 1.1) {
+    // Konsol braketi
+    const brk = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.10, 0.40), bracketMat);
+    brk.position.set(lx, -0.65, -2.10);
+    alan4Group.add(brk);
+
+    // Projektör gövdesi (açılı, sahaya bakan)
+    const housing = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 0.20), lightHousingMat);
+    housing.rotation.x = -Math.PI / 6; // Sahaya doğru eğik
+    housing.position.set(lx, -0.75, -2.35);
+    alan4Group.add(housing);
+
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.22), lightGlassMat);
+    glass.rotation.x = -Math.PI / 6 + Math.PI;
+    glass.position.set(lx, -0.75, -2.46);
+    alan4Group.add(glass);
+  }
 
   // =========================================================================
   // 4. DEV SCOREBOARD (GENİŞLİK: 13 METRE, YÜKSEKLİK: 8 METRE, DERİNLİK: 12.5 CM)
