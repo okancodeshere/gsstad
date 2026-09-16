@@ -2139,8 +2139,8 @@ function buildRRUSahaBlok120Model(targetArea = state.currentArea) {
 
     addRailingsToSahaBlock(blockGroup, true, true);
   } else {
-    const k2_1 = buildKiris2(true); k2_1.userData.interactive = false; k2_1.position.set(-0.10, 0.2465, 0); blockGroup.add(k2_1);
-    const k1_2 = buildKiris1(true); k1_2.userData.interactive = false; k1_2.position.set(-0.90, 0.2465, 0); blockGroup.add(k1_2);
+    const k1_1 = buildKiris1(true); k1_1.userData.interactive = false; k1_1.position.set(-0.10, 0.2465, 0); blockGroup.add(k1_1);
+    const k2_2 = buildKiris2(true); k2_2.userData.interactive = false; k2_2.position.set(-0.90, 0.2465, 0); blockGroup.add(k2_2);
     const k1_3 = buildKiris1(true); k1_3.userData.interactive = false; k1_3.position.set(-1.70, 0.2465, 0); blockGroup.add(k1_3);
     const k1_4 = buildKiris1(true); k1_4.userData.interactive = false; k1_4.position.set(-2.50, 0.2465, 0); blockGroup.add(k1_4);
 
@@ -2297,27 +2297,41 @@ function spawnRackBlokKorkuluklu() {
 }
 
 // 42U İkili Çerçeve Açık Sistem Kabin Model Builder (Canovate CSL-X-42YYA2 - Double Frame Open Rack)
-function build42UIkiliCerceveKabin(colorHex = 0xd4d8dd, is20U = false) {
+function build42UIkiliCerceveKabin(colorHex = 0xd4d8dd, is20U = false, customConfig = null) {
   const group = new THREE.Group();
   
-  const uCount = is20U ? 20 : 42;
+  let uCount = is20U ? 20 : 42;
+  let H = is20U ? 1.05 : 2.0933;
+  let blockType = is20U ? '20u-canovate-kabin' : '42u-canovate-kabin';
+  let name = is20U ? '20U İkili Çerçeve Açık Sistem Kabin' : '42U İkili Çerçeve Açık Sistem Kabin';
+  let modelNo = is20U ? 'CSL-X-20YYA2' : 'CSL-X-42YYA2';
+  let weight = is20U ? 42 : 58;
+
+  if (customConfig) {
+    if (customConfig.uCount) uCount = customConfig.uCount;
+    if (customConfig.height) H = customConfig.height;
+    if (customConfig.blockType) blockType = customConfig.blockType;
+    if (customConfig.name) name = customConfig.name;
+    if (customConfig.modelNo) modelNo = customConfig.modelNo;
+    if (customConfig.weight) weight = customConfig.weight;
+  }
+  
   const baseH = 0.1125;
   const W = 0.60;
   const D = 0.70;
-  const H = is20U ? 1.05 : 2.0933;
   
   group.userData = {
     type: 'rru',
-    blockType: is20U ? '20u-canovate-kabin' : '42u-canovate-kabin',
+    blockType: blockType,
     category: 'Canovate',
-    name: is20U ? '20U İkili Çerçeve Açık Sistem Kabin' : '42U İkili Çerçeve Açık Sistem Kabin',
-    modelNo: is20U ? 'CSL-X-20YYA2' : 'CSL-X-42YYA2',
+    name: name,
+    modelNo: modelNo,
     uHeight: uCount,
     width: W,
     height: H,
     depth: D,
     innerMountWidth: 0.4826,
-    weight: 58,
+    weight: weight,
     maxStaticLoad: 600,
     interactive: true,
     locked: false,
@@ -2558,12 +2572,25 @@ function spawn42UPoiRackBlok() {
   addPlatformToActiveArea(rackGroup);
 }
 
-function build20UPoiRackBlok(targetArea = state.currentArea) {
+function build20UPoiRackBlok(targetArea = state.currentArea, poiCountOverride = null) {
   const areaSuffix = targetArea === 'alan3' ? ' (Alan 3)' : (targetArea === 'alan2' ? ' (Alan 2)' : '');
-  
-  const rackGroup = build42UIkiliCerceveKabin(0xd4d8dd, true); // true for is20U
-  rackGroup.userData.blockType = '20u-poi-rack-blok';
-  rackGroup.userData.name = `20U POI Rack Blok (3x POI Dolu)${areaSuffix}`;
+  const isAlan1 = (targetArea === 'alan1');
+  const poiCount = poiCountOverride !== null ? poiCountOverride : (isAlan1 ? 5 : 3);
+  const is5POI = (poiCount === 5);
+
+  const customConfig = is5POI ? {
+    uCount: 36,
+    height: 1.78,
+    blockType: '5poi-rack-blok',
+    name: '36U İkili Çerçeve Açık Sistem Kabin (5 POI)',
+    modelNo: 'CSL-X-36YYA2',
+    weight: 52
+  } : null;
+
+  const rackGroup = build42UIkiliCerceveKabin(0xd4d8dd, !is5POI, customConfig);
+  rackGroup.userData.blockType = is5POI ? '5poi-rack-blok' : '20u-poi-rack-blok';
+  rackGroup.userData.name = is5POI ? `POI Rack Blok (5x POI Dolu)${areaSuffix}` : `20U POI Rack Blok (3x POI Dolu)${areaSuffix}`;
+  rackGroup.userData.height = is5POI ? 1.78 : 1.05;
   rackGroup.userData.lockedX = false;
   rackGroup.userData.lockedY = false;
   rackGroup.userData.lockedZ = false;
@@ -2578,7 +2605,7 @@ function build20UPoiRackBlok(targetArea = state.currentArea) {
   const startY = baseH + poiHeight / 2 + 0.005;
   const stepY = 0.315;
 
-  for (let i = 0; i < 3; i++) { // Only 3 POIs
+  for (let i = 0; i < poiCount; i++) {
     const poiModel = buildProsePoiModel(poiCatalogItem);
     poiModel.userData.name = `POI Modül ${i + 1} (CB-12-POI-64F-A12)`;
     poiModel.userData.interactive = true;
@@ -3081,16 +3108,16 @@ function buildAlan1OzelKarmaBlok(targetArea = state.currentArea) {
   };
 
   const sub1 = buildAlan2KarmaRRUBlok(targetArea);
-  sub1.position.set(0.16582881193335844, 0, 0);
+  sub1.position.set(-0.6341711880666415, 0, 0);
   sub1.rotation.set(0, 4.71238898038469, 0);
   blockGroup.add(sub1);
 
-  const sub2 = build20UPoiRackBlok(targetArea);
+  const sub2 = build20UPoiRackBlok('alan1', 5);
   sub2.position.set(-1.562669426291808, 0, 0.2056258998127368);
   sub2.rotation.set(0, 1.5707963267948966, 0);
   blockGroup.add(sub2);
 
-  const sub3 = build20UPoiRackBlok(targetArea);
+  const sub3 = build20UPoiRackBlok('alan1', 5);
   sub3.position.set(-1.5672568213661364, 0, -0.2750603122918533);
   sub3.rotation.set(0, 7.853981633974483, 0);
   blockGroup.add(sub3);
@@ -3105,6 +3132,564 @@ function buildAlan1OzelKarmaBlok(targetArea = state.currentArea) {
 
 function spawnAlan1OzelKarmaBlok() {
   const blockGroup = buildAlan1OzelKarmaBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -2.0, false);
+  blockGroup.position.y = 0.0;
+  addPlatformToActiveArea(blockGroup);
+}
+
+function buildAlan1Karma13RRUBlok(targetArea = state.currentArea) {
+  let areaSuffix = ' (Alan 1)';
+  const isRotatedArea = (targetArea === 'alan2' || targetArea === 'alan3');
+  
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan1-13rru-karma-blok',
+    category: 'Karma',
+    name: `Alan 1 Sırt Sırta Karma RRU Blok (13 RRU: 4 TCell + 4 TT + 5 Voda)${areaSuffix}`,
+    width: 0.80,
+    height: 2.40,
+    depth: 0.70,
+    weight: 380,
+    interactive: true,
+    locked: false,
+    lockedX: isRotatedArea ? true : false,
+    lockedY: false,
+    lockedZ: isRotatedArea ? false : true,
+    allowPassThrough: true
+  };
+
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.2 });
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.1 });
+
+  const pipePositionsX = [-0.24, -0.08, 0.08, 0.24];
+  const pipeHeight = 1.50;
+
+  pipePositionsX.forEach((posX) => {
+    const vPipeGeo = new THREE.CylinderGeometry(0.025, 0.025, pipeHeight, 16);
+    const vPipe = new THREE.Mesh(vPipeGeo, pipeMat);
+    vPipe.position.set(posX, 0.75, -0.26);
+    blockGroup.add(vPipe);
+
+    const flangeGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16);
+    const botFlange = new THREE.Mesh(flangeGeo, clampMat);
+    botFlange.position.set(posX, 0.01, -0.26);
+    blockGroup.add(botFlange);
+
+    const topFlange = new THREE.Mesh(flangeGeo, clampMat);
+    topFlange.position.set(posX, 1.49, -0.26);
+    blockGroup.add(topFlange);
+  });
+
+  const levelsY = [1.50, 0.75];
+  levelsY.forEach((levelY) => {
+    const hPipeGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.65, 16);
+    hPipeGeo.rotateZ(Math.PI / 2);
+    const hPipe = new THREE.Mesh(hPipeGeo, pipeMat);
+    hPipe.position.set(0, levelY, -0.26);
+    blockGroup.add(hPipe);
+  });
+
+  // --- ÖN YÜZ (FRONT FACE): 7 RRU (4 Alt Kot + 3 Üst Kot) ---
+  // Operatör Dağılımı: 2 Turkcell + 2 Türk Telekom (Alt Kot), 3 Vodafone (Üst Kot)
+  const tcell1 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5301') || { id: 'tcell-5301', category: 'Turkcell', name: 'RRU 5301', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tcell2 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5502') || { id: 'tcell-5502', category: 'Turkcell', name: 'RRU 5502', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tt1 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5527') || { id: 'tt-5527', category: 'Türk Telekom', name: '2G-3G-4G RRU5527', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
+
+  const frontLowerEquipments = [
+    { item: tcell1, label: 'Turkcell RRU 5301', posX: pipePositionsX[0] },
+    { item: tcell2, label: 'Turkcell RRU 5502', posX: pipePositionsX[1] },
+    { item: tt1, label: 'Türk Telekom RRU5527 (#1)', posX: pipePositionsX[2] },
+    { item: tt2, label: 'Türk Telekom NR RRU5818W (#1)', posX: pipePositionsX[3] }
+  ];
+
+  frontLowerEquipments.forEach(eq => {
+    const rruModel = buildCustomEquipmentModel(eq.item);
+    rruModel.userData.name = `${eq.label} (Ön Alt Kot)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, Math.PI / 2, Math.PI);
+    rruModel.position.set(eq.posX, 0.75, 0);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(eq.posX, 0.75, -0.22);
+    blockGroup.add(bracketMesh);
+    blockGroup.add(rruModel);
+  });
+
+  const frontUpperPipePositionsX = [pipePositionsX[0], pipePositionsX[1], pipePositionsX[2]];
+  frontUpperPipePositionsX.forEach((posX, idx) => {
+    const rruModel = buildCustomEquipmentModel(vodaItem);
+    rruModel.userData.name = `Vodafone RRU5526t (#${idx + 1}) (Ön Üst Kot)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, Math.PI / 2, Math.PI);
+    rruModel.position.set(posX, 1.50, 0);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(posX, 1.50, -0.22);
+    blockGroup.add(bracketMesh);
+    blockGroup.add(rruModel);
+  });
+
+  // --- ARKA YÜZ (REAR FACE - SIRT SIRTA): 6 RRU (3 Alt Kot + 3 Üst Kot) ---
+  // Operatör Dağılımı: 2 Turkcell + 1 Türk Telekom (Alt Kot), 1 Türk Telekom + 2 Vodafone (Üst Kot)
+  // GENEL TOPLAM: 4 Turkcell + 4 Türk Telekom + 5 Vodafone = 13 RRU!
+  const tcell4485 = EQUIPMENT_CATALOG.find(item => item.id === 'turkcell-4485') || { id: 'turkcell-4485', category: 'Turkcell', name: 'LTE RRU4485 - 4G', width: 0.398, height: 0.533, depth: 0.145, weight: 25, color: '#1d4ed8' };
+  const tcell2219 = EQUIPMENT_CATALOG.find(item => item.id === 'turkcell-2219') || { id: 'turkcell-2219', category: 'Turkcell', name: 'GSM 2219 B8', width: 0.343, height: 0.466, depth: 0.154, weight: 20, color: '#1d4ed8' };
+  const tt1_rear = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5527') || { id: 'tt-5527', category: 'Türk Telekom', name: '2G-3G-4G RRU5527', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const tt2_rear = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const voda5818w = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5818w') || { id: 'vodafone-5818w', category: 'Vodafone', name: 'RRU5818w', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#dc2626' };
+  const voda5526et = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526et') || { id: 'vodafone-5526et', category: 'Vodafone', name: 'RRU5526et', width: 0.356, height: 0.480, depth: 0.125, weight: 22, color: '#dc2626' };
+
+  // Arka Alt Kot: 2 Turkcell (Mavi) + 2 Türk Telekom (Camgöbeği) - Ön Alt Kot ile tam simetrik
+  const rearLowerEquipments = [
+    { item: { ...tcell4485, color: '#1d4ed8' }, label: 'Turkcell LTE RRU4485', posX: pipePositionsX[0] },
+    { item: { ...tcell2219, color: '#1d4ed8' }, label: 'Turkcell GSM 2219 B8', posX: pipePositionsX[1] },
+    { item: tt1_rear, label: 'Türk Telekom RRU5527 (#2)', posX: pipePositionsX[2] },
+    { item: tt2_rear, label: 'Türk Telekom NR RRU5818W (#2)', posX: pipePositionsX[3] }
+  ];
+
+  rearLowerEquipments.forEach(eq => {
+    const rruModel = buildCustomEquipmentModel(eq.item);
+    rruModel.userData.name = `${eq.label} (Arka Alt Kot - Sırt Sırta)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, -Math.PI / 2, Math.PI);
+    rruModel.position.set(eq.posX, 0.75, -0.52);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(eq.posX, 0.75, -0.30);
+    blockGroup.add(bracketMesh);
+    blockGroup.add(rruModel);
+  });
+
+  // Arka Üst Kot: 2 Vodafone (Kırmızı) - Ön Üst Kot ile aynı operatör ve renk
+  const rearUpperEquipments = [
+    { item: voda5818w, label: 'Vodafone NR RRU5818w (#4)', posX: pipePositionsX[0] },
+    { item: voda5526et, label: 'Vodafone RRU5526et (#5)', posX: pipePositionsX[1] }
+  ];
+
+  rearUpperEquipments.forEach(eq => {
+    const rruModel = buildCustomEquipmentModel(eq.item);
+    rruModel.userData.name = `${eq.label} (Arka Üst Kot - Sırt Sırta)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, -Math.PI / 2, Math.PI);
+    rruModel.position.set(eq.posX, 1.50, -0.52);
+
+    const bracketGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const bracketMesh = new THREE.Mesh(bracketGeo, clampMat);
+    bracketMesh.position.set(eq.posX, 1.50, -0.30);
+    blockGroup.add(bracketMesh);
+    blockGroup.add(rruModel);
+  });
+
+  return blockGroup;
+}
+
+function buildAlan1OzelKarma13RRUBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan1-13rru-ozel-karma-blok',
+    category: 'Karma',
+    name: `Alan 1 Özel Karma Blok (13 RRU Sırt Sırta + 10 POI)`,
+    width: 3.5,
+    height: 2.40,
+    depth: 1.50,
+    weight: 690,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  const sub1 = buildAlan1Karma13RRUBlok(targetArea);
+  sub1.position.set(-0.6341711880666415, 0, 0);
+  sub1.rotation.set(0, 4.71238898038469, 0);
+  blockGroup.add(sub1);
+
+  const sub2 = build20UPoiRackBlok('alan1', 5);
+  sub2.position.set(-1.562669426291808, 0, 0.2056258998127368);
+  sub2.rotation.set(0, 1.5707963267948966, 0);
+  blockGroup.add(sub2);
+
+  const sub3 = build20UPoiRackBlok('alan1', 5);
+  sub3.position.set(-1.5672568213661364, 0, -0.2750603122918533);
+  sub3.rotation.set(0, 7.853981633974483, 0);
+  blockGroup.add(sub3);
+
+  const sub4 = buildRRUSahaBlok120Model(targetArea);
+  sub4.position.set(0.5874848490612461, 0, 0);
+  sub4.rotation.set(0, 0, 0);
+  blockGroup.add(sub4);
+
+  return blockGroup;
+}
+
+function spawnAlan1OzelKarma13RRUBlok() {
+  const blockGroup = buildAlan1OzelKarma13RRUBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -2.0, false);
+  blockGroup.position.y = 0.0;
+  addPlatformToActiveArea(blockGroup);
+}
+
+// 140cm Genişletilmiş Platform (Kedi yolundan uzak olan tarafa doğru 20cm büyütülmüş)
+// 140cm Genişletilmiş Platform (Kedi yolundan uzak olan tarafa (-Z) doğru büyütülmüş, ön kenar kedi yoluyla sabit)
+function buildRRUSahaBlok140Model(targetArea = state.currentArea) {
+  const isAlan1 = targetArea === 'alan1';
+  let areaTitle = 'RRU Saha Blok 140cm (Alan 1)';
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'rru-saha-blok-140',
+    name: areaTitle,
+    width: 3.4,
+    depth: 1.46,
+    height: 2.2,
+    interactive: true
+  };
+
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.4 });
+  const tableMat = new THREE.MeshStandardMaterial({ 
+    color: 0xffffff, 
+    roughness: 0.4, 
+    metalness: 0.3, 
+    transparent: true, 
+    opacity: 0.95 
+  });
+  const borderMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.5, roughness: 0.3 });
+
+  // 4 I-Kiriş profili (Z ekseninde 1.50m boyunda, ön kenar kedi yolunda sabit +0.5855m, genişleme tamamen kedi yolunun aksine (-Z) -0.9145m kotuna)
+  const beamPositionsX = [-0.10, -0.90, -1.70, -2.50];
+  const beamLength = 1.50;
+  const beamZ = -0.1645;
+
+  beamPositionsX.forEach((posX) => {
+    const kGroup = new THREE.Group();
+    // Ana silindiri saran semer çemberi
+    const ringGeo = new THREE.CylinderGeometry(0.2345, 0.2345, 0.12, 32, 1, false);
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.z = Math.PI / 2;
+    ring.position.set(0, -0.7, 0);
+    kGroup.add(ring);
+
+    // Semer bacakları ve flanşları
+    const legGeo = new THREE.BoxGeometry(0.08, 0.45, 0.08);
+    const plateMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
+    const legLeft = new THREE.Mesh(legGeo, plateMat);
+    legLeft.position.set(0, -0.45, 0.18);
+    kGroup.add(legLeft);
+    const legRight = new THREE.Mesh(legGeo, plateMat);
+    legRight.position.set(0, -0.45, -0.18);
+    kGroup.add(legRight);
+
+    // I-Kiriş profil gövdesi
+    const ibeam = createIBeam(beamLength, 0.20, 0.20, 0.01, ringMat);
+    ibeam.position.set(0, -0.3655, beamZ);
+    kGroup.add(ibeam);
+
+    kGroup.position.set(posX, 0.2465, 0);
+    kGroup.userData.interactive = false;
+    blockGroup.add(kGroup);
+  });
+
+  // Platform Izgara Tablaları (Net derinlik: 1.46m, kedi yolunun aksine genişletilmiş)
+  const tableCentersX = [-0.50, -1.30, -2.10];
+  tableCentersX.forEach(tx => {
+    const tGroup = new THREE.Group();
+    const plateGeo = new THREE.BoxGeometry(0.80, 0.02, 1.46);
+    const plate = new THREE.Mesh(plateGeo, tableMat);
+    plate.position.set(0, 0, beamZ);
+    tGroup.add(plate);
+
+    const bLeftGeo = new THREE.BoxGeometry(0.02, 0.04, 1.46);
+    const bLeft = new THREE.Mesh(bLeftGeo, borderMat);
+    bLeft.position.set(-0.40, 0, beamZ);
+    tGroup.add(bLeft);
+
+    const bRight = bLeft.clone();
+    bRight.position.set(0.40, 0, beamZ);
+    tGroup.add(bRight);
+
+    tGroup.position.set(tx, -0.0090, 0);
+    tGroup.userData.interactive = false;
+    blockGroup.add(tGroup);
+  });
+
+  // Korkuluklar: Ön kenar (kedi yolu tarafı) sabit frontZ = +0.5655m, arka kenar (kedi yolunun aksi) backZ = -0.8945m
+  const railingGroup = new THREE.Group();
+  railingGroup.name = "railing";
+  const railColor = 0xfdb913;
+  const railMat = new THREE.MeshStandardMaterial({ color: railColor, metalness: 0.5, roughness: 0.3 });
+  const postHeight = 1.2;
+  const postRadius = 0.02;
+  const postGeo = new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16);
+  const tableSurfaceY = 0.0010;
+
+  const backZ = -0.8945;
+  const frontZ = 0.5655;
+  const sideLength = 1.46;
+  const sideZCenter = -0.1645;
+
+  const postPositions = [
+    // Arka uzun kenar (kedi yolunun aksi, z = -0.8945)
+    { x: -0.02, z: backZ },
+    { x: -0.67, z: backZ },
+    { x: -1.30, z: backZ },
+    { x: -1.93, z: backZ },
+    { x: -2.58, z: backZ },
+    // Ön uzun kenar (kedi yolu tarafı, z = 0.5655)
+    { x: -0.02, z: frontZ },
+    { x: -0.67, z: frontZ },
+    { x: -1.30, z: frontZ },
+    { x: -1.93, z: frontZ },
+    { x: -2.58, z: frontZ },
+    // Yan kısa kenarlar
+    { x: -0.02, z: sideZCenter },
+    { x: -2.58, z: sideZCenter }
+  ];
+
+  const railsConfig = [
+    { type: 'alongX', z: backZ, xCenter: -1.30, length: 2.56 },
+    { type: 'alongX', z: frontZ, xCenter: -1.30, length: 2.56 },
+    { type: 'alongZ', x: -0.02, zCenter: sideZCenter, length: sideLength },
+    { type: 'alongZ', x: -2.58, zCenter: sideZCenter, length: sideLength }
+  ];
+
+  postPositions.forEach(pos => {
+    const post = new THREE.Mesh(postGeo, railMat);
+    post.position.set(pos.x, tableSurfaceY + postHeight / 2, pos.z);
+    post.castShadow = true;
+    railingGroup.add(post);
+  });
+
+  const railRadius = 0.015;
+  const railHeights = [0.4, 0.8, 1.2];
+  railHeights.forEach(h => {
+    const yPos = tableSurfaceY + h;
+    railsConfig.forEach(rc => {
+      const railGeo = new THREE.CylinderGeometry(railRadius, railRadius, rc.length, 16);
+      const rail = new THREE.Mesh(railGeo, railMat);
+      if (rc.type === 'alongX') {
+        rail.rotation.z = Math.PI / 2;
+        rail.position.set(rc.xCenter, yPos, rc.z);
+      } else {
+        rail.rotation.x = Math.PI / 2;
+        rail.position.set(rc.x, yPos, rc.zCenter);
+      }
+      rail.castShadow = true;
+      railingGroup.add(rail);
+    });
+  });
+
+  blockGroup.add(railingGroup);
+  return blockGroup;
+}
+
+// Taşıyıcı Kiriş Üzerinde Yan Yana 7 Flanşlı Pol ve Tek Cephe 13 RRU Şasesi
+function buildAlan1Karma7Boru13RRUBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan1-7boru-13rru-blok',
+    category: 'Karma',
+    name: 'Alan 1 7 Borulu Tek Cephe Karma RRU Blok (13 RRU)',
+    width: 0.80,
+    height: 1.95,
+    depth: 1.46,
+    weight: 420,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  // Galvaniz platform grisi boru materyali
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.5, roughness: 0.35 });
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.1 });
+  const flangeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.4 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x718096, metalness: 0.9, roughness: 0.1 });
+
+  // Kedi yolunun aksine (-Z) kaydırılmış dikey pol pozisyonları (centerZ = -0.25m):
+  const centerZ = -0.25;
+  const pipePositionsZ = [];
+  for (let i = -3; i <= 3; i++) {
+    pipePositionsZ.push(centerZ + i * 0.18);
+  }
+  const pipeHeight = 1.85;
+
+  pipePositionsZ.forEach(posZ => {
+    // Yükseltme gövdesi ve flanş plakası
+    const postGeo = new THREE.BoxGeometry(0.08, 0.10, 0.08);
+    const post = new THREE.Mesh(postGeo, flangeMat);
+    post.position.set(0, -0.05, posZ);
+    blockGroup.add(post);
+
+    const flangePlateGeo = new THREE.BoxGeometry(0.16, 0.015, 0.16);
+    const flangePlate = new THREE.Mesh(flangePlateGeo, flangeMat);
+    flangePlate.position.set(0, 0.0075, posZ);
+    blockGroup.add(flangePlate);
+
+    // 4 adet montaj cıvatası
+    const boltHeadGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.015, 6);
+    [-0.06, 0.06].forEach(dx => {
+      [-0.06, 0.06].forEach(dz => {
+        const bolt = new THREE.Mesh(boltHeadGeo, boltHeadMat);
+        bolt.position.set(dx, 0.02, posZ + dz);
+        blockGroup.add(bolt);
+      });
+    });
+
+    // Dikey Taşıyıcı Boru (Ø 50mm, Kısaltılmış Boy: 1.85m, Galvaniz Gri)
+    const vPipeGeo = new THREE.CylinderGeometry(0.025, 0.025, pipeHeight, 16);
+    const vPipe = new THREE.Mesh(vPipeGeo, pipeMat);
+    vPipe.position.set(0, pipeHeight / 2, posZ);
+    blockGroup.add(vPipe);
+  });
+
+  // Yatay Bağlantı ve Rijitlik Boruları (Z ekseni boyunca tüm 7 polü bağlayan kuşaklar)
+  const tieLength = 1.08 + 0.10;
+  [0.75, 1.45].forEach(levelY => {
+    const hPipeGeo = new THREE.CylinderGeometry(0.02, 0.02, tieLength, 16);
+    hPipeGeo.rotateX(Math.PI / 2);
+    const hPipe = new THREE.Mesh(hPipeGeo, pipeMat);
+    hPipe.position.set(0, levelY, centerZ);
+    blockGroup.add(hPipe);
+  });
+
+  // Ekipman Katalog Tanımları
+  const tcell1 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5301') || { id: 'tcell-5301', category: 'Turkcell', name: 'RRU 5301', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tcell2 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5502') || { id: 'tcell-5502', category: 'Turkcell', name: 'RRU 5502', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tcell4485 = EQUIPMENT_CATALOG.find(item => item.id === 'turkcell-4485') || { id: 'turkcell-4485', category: 'Turkcell', name: 'LTE RRU4485 - 4G', width: 0.398, height: 0.533, depth: 0.145, weight: 25, color: '#1d4ed8' };
+  const tcell2219 = EQUIPMENT_CATALOG.find(item => item.id === 'turkcell-2219') || { id: 'turkcell-2219', category: 'Turkcell', name: 'GSM 2219 B8', width: 0.343, height: 0.466, depth: 0.154, weight: 20, color: '#1d4ed8' };
+
+  const tt1 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5527') || { id: 'tt-5527', category: 'Türk Telekom', name: '2G-3G-4G RRU5527', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+
+  const voda5526t = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
+  const voda5818w = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5818w') || { id: 'vodafone-5818w', category: 'Vodafone', name: 'RRU5818w', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#dc2626' };
+  const voda5526et = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526et') || { id: 'vodafone-5526et', category: 'Vodafone', name: 'RRU5526et', width: 0.356, height: 0.480, depth: 0.125, weight: 22, color: '#dc2626' };
+
+  // TEK CEPHE MONTAJ (Tüm RRU'lar platform içine / sağ tarafa (+X) doğru uzanır; Z ekseninde ince kenarlarıyla (14cm) çakışmasız monte edilir):
+  // 1. Alt Kot (+0.75m): 7 RRU (4 Turkcell Mavi + 3 Türk Telekom Camgöbeği)
+  const lowerConfigs = [
+    { item: { ...tcell1, color: '#1d4ed8' }, label: 'Turkcell RRU 5301', posZ: pipePositionsZ[0] },
+    { item: { ...tcell2, color: '#1d4ed8' }, label: 'Turkcell RRU 5502', posZ: pipePositionsZ[1] },
+    { item: { ...tcell4485, color: '#1d4ed8' }, label: 'Turkcell LTE RRU4485', posZ: pipePositionsZ[2] },
+    { item: { ...tcell2219, color: '#1d4ed8' }, label: 'Turkcell GSM 2219 B8', posZ: pipePositionsZ[3] },
+    { item: tt1, label: 'Türk Telekom RRU5527 (#1)', posZ: pipePositionsZ[4] },
+    { item: tt2, label: 'Türk Telekom NR RRU5818W (#1)', posZ: pipePositionsZ[5] },
+    { item: tt1, label: 'Türk Telekom RRU5527 (#2)', posZ: pipePositionsZ[6] }
+  ];
+
+  lowerConfigs.forEach(cfg => {
+    const rruModel = buildCustomEquipmentModel(cfg.item);
+    rruModel.userData.name = `${cfg.label} (Alt Kot)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, 0, 0);
+    const posX = (cfg.item.width || 0.40) / 2 + 0.08;
+    rruModel.position.set(posX, 0.75, cfg.posZ);
+    if (rruModel.children[3]) {
+      rruModel.children[3].rotation.z = 0;
+    }
+
+    const collarGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 16);
+    const collarMesh = new THREE.Mesh(collarGeo, clampMat);
+    collarMesh.position.set(0, 0.75, cfg.posZ);
+    blockGroup.add(collarMesh);
+    blockGroup.add(rruModel);
+  });
+
+  // 2. Üst Kot (+1.45m): 6 RRU (5 Vodafone Kırmızı + 1 Türk Telekom Camgöbeği)
+  const upperConfigs = [
+    { item: voda5526t, label: 'Vodafone RRU5526t (#1)', posZ: pipePositionsZ[0] },
+    { item: voda5526t, label: 'Vodafone RRU5526t (#2)', posZ: pipePositionsZ[1] },
+    { item: voda5526t, label: 'Vodafone RRU5526t (#3)', posZ: pipePositionsZ[2] },
+    { item: voda5818w, label: 'Vodafone NR RRU5818w (#4)', posZ: pipePositionsZ[3] },
+    { item: voda5526et, label: 'Vodafone RRU5526et (#5)', posZ: pipePositionsZ[4] },
+    { item: tt2, label: 'Türk Telekom NR RRU5818W (#2)', posZ: pipePositionsZ[5] }
+  ];
+
+  upperConfigs.forEach(cfg => {
+    const rruModel = buildCustomEquipmentModel(cfg.item);
+    rruModel.userData.name = `${cfg.label} (Üst Kot)`;
+    rruModel.userData.interactive = true;
+    rruModel.rotation.set(0, 0, 0);
+    const posX = (cfg.item.width || 0.40) / 2 + 0.08;
+    rruModel.position.set(posX, 1.45, cfg.posZ);
+    if (rruModel.children[3]) {
+      rruModel.children[3].rotation.z = 0;
+    }
+
+    const collarGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.08, 16);
+    const collarMesh = new THREE.Mesh(collarGeo, clampMat);
+    collarMesh.position.set(0, 1.45, cfg.posZ);
+    blockGroup.add(collarMesh);
+    blockGroup.add(rruModel);
+  });
+
+  return blockGroup;
+}
+
+// Kompleks Blok: 7 Borulu Tek Cephe 13 RRU + 10 POI + 140cm Platform (Alan 1)
+function buildAlan1OzelKarma7Boru13RRUBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan1-7boru-ozel-karma-blok',
+    category: 'Karma',
+    name: 'Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)',
+    width: 3.5,
+    height: 2.40,
+    depth: 1.46,
+    weight: 730,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  // 1. 7 Borulu Tek Cephe 13 RRU Şasesi - En soldaki taşıyıcı kiriş (Kiriş 4: x = -2.50) üzerine monte
+  // sub4 x = 0.5874848 olduğundan, world x = 0.5874848490612461 - 2.50 = -1.9125151509387539
+  const sub1 = buildAlan1Karma7Boru13RRUBlok(targetArea);
+  sub1.position.set(-1.9125151509387539, 0, 0);
+  sub1.rotation.set(0, 0, 0);
+  blockGroup.add(sub1);
+
+  // 2. 5-POI Rack 1 (36U) - RRU'lara en uzak 2 kirişe (Kiriş 2: x = -0.3125m ve Kiriş 1: x = +0.4875m) yük binecek şekilde, portları RRU'lara bakacak (-X) biçimde yerleşim:
+  const sub2 = build20UPoiRackBlok('alan1', 5);
+  sub2.position.set(0.0874848490612461, 0, -0.55);
+  sub2.rotation.set(0, -Math.PI / 2, 0);
+  blockGroup.add(sub2);
+
+  // 3. 5-POI Rack 2 (36U) - RRU'lara en uzak 2 kiriş üzerine, Rack 1 ile yan yana ve portları RRU'lara bakacak (-X) biçimde:
+  const sub3 = build20UPoiRackBlok('alan1', 5);
+  sub3.position.set(0.0874848490612461, 0, 0.05);
+  sub3.rotation.set(0, -Math.PI / 2, 0);
+  blockGroup.add(sub3);
+
+  // 4. Genişletilmiş Platform (Ön kenar kedi yoluyla sıfır, arka kenar -Z'ye genişletilmiş)
+  const sub4 = buildRRUSahaBlok140Model(targetArea);
+  sub4.position.set(0.5874848490612461, 0, 0);
+  sub4.rotation.set(0, 0, 0);
+  blockGroup.add(sub4);
+
+  return blockGroup;
+}
+
+function spawnAlan1OzelKarma7Boru13RRUBlok() {
+  const blockGroup = buildAlan1OzelKarma7Boru13RRUBlok(state.currentArea);
   blockGroup.userData.id = state.nextId++;
   setupPlatformTransform(blockGroup, 0, -2.0, false);
   blockGroup.position.y = 0.0;
@@ -3642,6 +4227,12 @@ if (btnAlan2Karma) btnAlan2Karma.addEventListener('click', spawnAlan2KarmaRRUBlo
 const btnAlan1OzelKarma = document.getElementById('btn-add-alan1-ozel-karma-blok');
 if (btnAlan1OzelKarma) btnAlan1OzelKarma.addEventListener('click', spawnAlan1OzelKarmaBlok);
 
+const btnAlan1OzelKarma13 = document.getElementById('btn-add-alan1-13rru-ozel-karma-blok');
+if (btnAlan1OzelKarma13) btnAlan1OzelKarma13.addEventListener('click', spawnAlan1OzelKarma13RRUBlok);
+
+const btnAlan1OzelKarma7Boru = document.getElementById('btn-add-alan1-7boru-ozel-karma-blok');
+if (btnAlan1OzelKarma7Boru) btnAlan1OzelKarma7Boru.addEventListener('click', spawnAlan1OzelKarma7Boru13RRUBlok);
+
 const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
 if (btnAlan4Plat) btnAlan4Plat.addEventListener('click', spawnAlan4CemberPlatformBlok);
 
@@ -3693,6 +4284,14 @@ function updateAreaButtonVisibility() {
     btnSaha120.style.display = isAlan4 ? 'none' : 'flex';
   }
 
+  const btn20UPoi = document.getElementById('btn-add-20u-poi-blok');
+  if (btn20UPoi) {
+    const nameSpan = btn20UPoi.querySelector('.name');
+    if (nameSpan) {
+      nameSpan.textContent = isAlan4 ? '20U Rack + 3 POI Blok' : 'POI Rack + 5 POI Blok (Alan 1)';
+    }
+  }
+
   if (btnRru) btnRru.style.display = 'flex';
   if (btnRack) btnRack.style.display = 'flex';
   if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
@@ -3704,6 +4303,10 @@ function updateAreaButtonVisibility() {
   if (btnRruK) btnRruK.style.display = 'flex';
   if (btnRackK) btnRackK.style.display = 'flex';
   if (btnAlan1OzelKarma) btnAlan1OzelKarma.style.display = isAlan4 ? 'none' : 'flex';
+  const btnAlan1OzelKarma13 = document.getElementById('btn-add-alan1-13rru-ozel-karma-blok');
+  if (btnAlan1OzelKarma13) btnAlan1OzelKarma13.style.display = isAlan4 ? 'none' : 'flex';
+  const btnAlan1OzelKarma7Boru = document.getElementById('btn-add-alan1-7boru-ozel-karma-blok');
+  if (btnAlan1OzelKarma7Boru) btnAlan1OzelKarma7Boru.style.display = isAlan4 ? 'none' : 'flex';
 
   const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
   if (btnAlan4Plat) btnAlan4Plat.style.display = 'none';
@@ -3995,9 +4598,9 @@ if (selectAreaElem) {
 // Excel Equipment Catalog Data
 const EQUIPMENT_CATALOG = [
   // Turkcell
-  { id: 'turkcell-4485', category: 'Turkcell', name: 'LTE RRU4485 - 4G', width: 0.398, height: 0.533, depth: 0.145, weight: 25, color: '#0284c7' },
-  { id: 'turkcell-8863', category: 'Turkcell', name: 'NR RR8863 – 5G', width: 0.375, height: 0.478, depth: 0.155, weight: 25, color: '#0284c7' },
-  { id: 'turkcell-2219', category: 'Turkcell', name: 'GSM 2219 B8', width: 0.343, height: 0.466, depth: 0.154, weight: 20, color: '#0284c7' },
+  { id: 'turkcell-4485', category: 'Turkcell', name: 'LTE RRU4485 - 4G', width: 0.398, height: 0.533, depth: 0.145, weight: 25, color: '#1d4ed8' },
+  { id: 'turkcell-8863', category: 'Turkcell', name: 'NR RR8863 – 5G', width: 0.375, height: 0.478, depth: 0.155, weight: 25, color: '#1d4ed8' },
+  { id: 'turkcell-2219', category: 'Turkcell', name: 'GSM 2219 B8', width: 0.343, height: 0.466, depth: 0.154, weight: 20, color: '#1d4ed8' },
 
   // Vodafone
   { id: 'vodafone-5526et', category: 'Vodafone', name: 'RRU5526et', width: 0.356, height: 0.480, depth: 0.125, weight: 22, color: '#dc2626' },
@@ -5493,7 +6096,7 @@ function deserializeItemToArea(item, targetArea) {
   // Matching itemName.includes('42U POI Rack') FIRST ensures POI Racks are built with all 6 POI modules inside!
   if (itemName.includes('42U POI Rack') || blockType === '42u-poi-rack-blok') {
     group = build42UPoiRackBlok(targetArea);
-  } else if (itemName.includes('20U POI Rack') || blockType === '20u-poi-rack-blok') {
+  } else if (itemName.includes('20U POI Rack') || blockType === '20u-poi-rack-blok' || blockType === '5poi-rack-blok' || itemName.includes('5x POI') || itemName.includes('5 POI') || itemName.includes('POI Rack Blok')) {
     group = build20UPoiRackBlok(targetArea);
   } else if (
     blockType === 'rectifier-20u-eltek' || 
@@ -5533,8 +6136,14 @@ function deserializeItemToArea(item, targetArea) {
     group = buildAlan2KarmaRRUBlok(targetArea);
   } else if (blockType === '42u-canovate-kabin' || itemName.includes('42U İkili Çerçeve') || itemName.includes('Canovate')) {
     group = build42UIkiliCerceveKabin();
+  } else if (blockType === 'alan1-7boru-ozel-karma-blok' || itemName.includes('7 Borulu')) {
+    group = buildAlan1OzelKarma7Boru13RRUBlok(targetArea);
+  } else if (blockType === 'alan1-13rru-ozel-karma-blok' || itemName.includes('13 RRU')) {
+    group = buildAlan1OzelKarma13RRUBlok(targetArea);
   } else if (blockType === 'alan1-ozel-karma-blok' || itemName.includes('Özel Karma Blok')) {
     group = buildAlan1OzelKarmaBlok(targetArea);
+  } else if (blockType === 'rru-saha-blok-140' || itemName.includes('140cm')) {
+    group = buildRRUSahaBlok140Model(targetArea);
   } else if (blockType === 'alan4-cember-platform-blok' || itemName.includes('Çemberli H-Beam')) {
     group = buildAlan4CemberPlatformBlok();
   } else if (blockType === 'alan4-ozel-karma-blok' || itemName.includes('Özel Alan 4 Kompleksi')) {
@@ -5804,13 +6413,13 @@ const PRESET_DRAFTS = {
   },
   'taslak-v2': {
     "version": "2.0",
-    "savedAt": "2026-09-11T07:38:27.144Z",
+    "savedAt": "2026-09-16T21:17:19.155Z",
     "currentArea": "alan1",
     "areas": {
       "alan1": [
         {
-          "name": "Alan 1 Özel Karma Blok (4 Bileşenli)",
-          "blockType": "alan1-ozel-karma-blok",
+          "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
+          "blockType": "alan1-7boru-ozel-karma-blok",
           "catalogId": null,
           "type": "rru",
           "category": "Karma",
@@ -5849,7 +6458,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -8.242980212994473,
+            "x": -4.802038673384319,
             "y": 0,
             "z": 0
           },
@@ -5875,7 +6484,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 8.307771779124387,
+            "x": 4.664673878978663,
             "y": 0,
             "z": 0
           },
