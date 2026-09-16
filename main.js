@@ -532,46 +532,7 @@ function createAlan4Structure() {
   sbFrontMidRail.position.set(0, 1.10, -1.30);
   alan4Group.add(sbFrontMidRail);
 
-  // 3.4. Arkadan Bakıldığında Görünen Güvenlik Çemberli Gemici Merdiveni (Caged Safety Ladder)
-  // Fotoğrafta görülen çemberli düşey servis merdiveni (X = 1.8m, Z = 1.30m arka korkuluk üzerinde)
-  const ladderX = 1.8;
-  const ladderZ = 1.30;
-  const ladderStringerGeo = new THREE.CylinderGeometry(0.018, 0.018, 3.4);
-  const ladderRungGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.50);
-  ladderRungGeo.rotateZ(Math.PI / 2);
-
-  // İki Düşey Taşıyıcı Dikme (Stringers: Y = +1.20m'den Y = -2.20m'ye)
-  const stringerLeft = new THREE.Mesh(ladderStringerGeo, darkSteelMat);
-  stringerLeft.position.set(ladderX - 0.25, -0.50, ladderZ + 0.06);
-  alan4Group.add(stringerLeft);
-
-  const stringerRight = new THREE.Mesh(ladderStringerGeo, darkSteelMat);
-  stringerRight.position.set(ladderX + 0.25, -0.50, ladderZ + 0.06);
-  alan4Group.add(stringerRight);
-
-  // Yatay Basamaklar (Her 30cm'de bir)
-  for (let y = -2.0; y <= 1.0; y += 0.30) {
-    const rung = new THREE.Mesh(ladderRungGeo, darkSteelMat);
-    rung.position.set(ladderX, y, ladderZ + 0.06);
-    alan4Group.add(rung);
-  }
-
-  // Güvenlik Kafesi / Sırt Çemberleri (Safety Hoops)
-  const hoopMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
-  for (let y = -1.2; y <= 1.2; y += 0.50) {
-    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.012, 8, 24, Math.PI), hoopMat);
-    hoop.rotation.x = Math.PI / 2;
-    hoop.position.set(ladderX, y, ladderZ + 0.15);
-    alan4Group.add(hoop);
-  }
-  // Güvenlik Kafesi Düşey Emniyet Lamaları (3 adet düşey çubuk)
-  [-0.30, 0, 0.30].forEach(dx => {
-    const strap = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 2.5), hoopMat);
-    strap.position.set(ladderX + dx, 0.0, ladderZ + 0.48);
-    alan4Group.add(strap);
-  });
-
-  // 3.5. Fotoğraftaki Alt Saha Aydınlatma Projektörleri (Floodlight Brackets on Lower Front)
+  // 3.4. Fotoğraftaki Alt Saha Aydınlatma Projektörleri (Floodlight Brackets on Lower Front)
   const lightHousingMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
   const lightGlassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, emissive: 0xffffee, emissiveIntensity: 0.3 });
   const bracketMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 });
