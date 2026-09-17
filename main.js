@@ -323,6 +323,76 @@ function createScoreboardTexture() {
 }
 
 // Generate Alan 4 Representation (Scoreboard: 13m x 8m, 1.5m Çaplı Çift Boru + 72cm Boşluk + 2.6m Genişliğinde Tek Kat Kedi Yolu)
+
+// Generate Alan 2 Representation (Tribün Üstü Taşıyıcı Beton Alan)
+function createAlan2Structure() {
+  const alan2Group = new THREE.Group();
+  alan2Group.name = 'alan2Structure';
+  alan2Group.visible = false; // Hidden by default
+
+  // Concrete floor
+  const floorWidth = 2.0; 
+  const floorLength = 30.0; 
+  const floorThickness = 0.4; 
+
+  const concreteMat = new THREE.MeshStandardMaterial({ 
+    color: 0x6e7072, 
+    roughness: 0.9,
+    metalness: 0.1
+  });
+
+  const floorGeo = new THREE.BoxGeometry(floorLength, floorThickness, floorWidth);
+  const floor = new THREE.Mesh(floorGeo, concreteMat);
+  floor.position.set(0, -floorThickness / 2, -floorWidth / 2);
+  floor.receiveShadow = true;
+  alan2Group.add(floor);
+
+  // Glass railing along Z = 0 edge (facing the tribune)
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x99ccff,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.1,
+    metalness: 0.6,
+    side: THREE.DoubleSide
+  });
+
+  const postMat = new THREE.MeshStandardMaterial({
+    color: 0x444444,
+    roughness: 0.6,
+    metalness: 0.8
+  });
+
+  const postWidth = 0.05;
+  const postDepth = 0.1;
+  const postHeight = 1.2;
+  const postGeo = new THREE.BoxGeometry(postWidth, postHeight, postDepth);
+  const glassThickness = 0.02;
+  const glassHeight = 1.1;
+
+  const postSpacing = 1.5;
+  const numPosts = Math.floor(floorLength / postSpacing) + 1;
+  const startX = -(numPosts - 1) * postSpacing / 2;
+
+  for (let i = 0; i < numPosts; i++) {
+    const xPos = startX + i * postSpacing;
+    const post = new THREE.Mesh(postGeo, postMat);
+    post.position.set(xPos, postHeight / 2, -0.05); 
+    post.castShadow = true;
+    alan2Group.add(post);
+
+    if (i < numPosts - 1) {
+      const panelWidth = postSpacing - postWidth;
+      const glassGeo = new THREE.BoxGeometry(panelWidth, glassHeight, glassThickness);
+      const glass = new THREE.Mesh(glassGeo, glassMat);
+      glass.position.set(xPos + postSpacing / 2, glassHeight / 2 + 0.05, -0.05);
+      alan2Group.add(glass);
+    }
+  }
+
+  scene.add(alan2Group);
+}
+
 function createAlan4Structure() {
   const alan4Group = new THREE.Group();
   alan4Group.name = 'alan4Structure';
@@ -1031,6 +1101,7 @@ function spawnOffsetArmPipeLeft() {
 
 createCatwalk();
 createAlan4Structure();
+  createAlan2Structure();
 
 createGroundCoordinateGuide();
 
@@ -1803,6 +1874,8 @@ function spawnRRU(rruType) {
 // Helper to return platforms list for the active area
 function getActivePlatforms() {
   if (state.currentArea === 'alan4') return state.alan4Platforms;
+  if (state.currentArea === 'alan2') return state.alan2Platforms;
+  if (state.currentArea === 'alan3') return state.alan3Platforms;
   return state.alan1Platforms;
 }
 
@@ -1849,22 +1922,29 @@ function hasCollision(obj, newX, newY, newZ) {
 }
 
 function setupPlatformTransform(group, defaultX = 0, defaultZ = -2.0, isStandaloneKiris = false) {
-  const yPos = isStandaloneKiris ? 0.2465 : 0;
-  if (state.currentArea === 'alan4') {
-    group.rotation.y = 0;
-    const isKarmaBlok = (group.userData && group.userData.blockType === 'alan2-karma-rru-blok');
-    const posX = isKarmaBlok ? 8.50 : defaultX;
-    group.position.set(posX, yPos, 0);
-  } else {
-    group.rotation.y = 0;
-    group.position.set(defaultX, yPos, -1.1855);
+    const yPos = isStandaloneKiris ? 0.2465 : 0;
+    if (state.currentArea === 'alan4') {
+      group.rotation.y = 0;
+      const isKarmaBlok = (group.userData && group.userData.blockType === 'alan4-ozel-karma-blok');
+      const posX = isKarmaBlok ? 8.50 : defaultX;
+      group.position.set(posX, yPos, 0);
+    } else if (state.currentArea === 'alan2') {
+      group.rotation.y = 0;
+      group.position.set(defaultX, yPos, -1.0);
+    } else {
+      group.rotation.y = 0;
+      group.position.set(defaultX, yPos, -1.1855);
+    }
   }
-}
 
 function addPlatformToActiveArea(group) {
   scene.add(group);
   if (state.currentArea === 'alan4') {
     state.alan4Platforms.push(group);
+  } else if (state.currentArea === 'alan2') {
+    state.alan2Platforms.push(group);
+  } else if (state.currentArea === 'alan3') {
+    state.alan3Platforms.push(group);
   } else {
     state.alan1Platforms.push(group);
   }
@@ -2008,6 +2088,98 @@ function addRailingsToBlock(blockGroup, isAlan2 = (state.currentArea === 'alan2'
   });
 
   blockGroup.add(railingGroup);
+}
+
+
+function buildAlan2RRUBlokModel() {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'alan2-rru-blok',
+    name: 'RRU Blok',
+    width: 2.0,
+    depth: 1.5,
+    height: 2.2,
+    interactive: true
+  };
+
+  const t1 = buildTabla1(); t1.userData.interactive = false; t1.position.set(-0.5, -0.0090, -0.1645); blockGroup.add(t1);
+  const t3 = buildTabla3(); t3.userData.interactive = false; t3.position.set(0.5, -0.0090, -0.1645); blockGroup.add(t3);
+
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const flangeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.2, roughness: 0.4 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x718096, metalness: 0.9, roughness: 0.1 });
+
+  const pipeGeo = new THREE.CylinderGeometry(0.03175, 0.03175, 2.0, 32);
+  const flangePlateGeo = new THREE.BoxGeometry(0.20, 0.012, 0.20);
+  const boltGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.02, 6);
+  
+  const tableSurfaceY = 0.0010;
+
+  [-0.9, 0.9].forEach(posX => {
+    const verticalPipe = new THREE.Mesh(pipeGeo, pipeMat);
+    verticalPipe.position.set(posX, tableSurfaceY + 1.0, 0); 
+    verticalPipe.castShadow = true;
+    blockGroup.add(verticalPipe);
+
+    const pipeFlange = new THREE.Mesh(flangePlateGeo, flangeMat);
+    pipeFlange.position.set(posX, tableSurfaceY + 0.006, 0); 
+    pipeFlange.castShadow = true;
+    blockGroup.add(pipeFlange);
+
+    [-0.075, 0.075].forEach(dx => {
+      [-0.075, 0.075].forEach(dz => {
+        const hexBolt = new THREE.Mesh(boltGeo, boltHeadMat);
+        hexBolt.position.set(posX + dx, tableSurfaceY + 0.016, dz);
+        blockGroup.add(hexBolt);
+      });
+    });
+  });
+
+  return blockGroup;
+}
+
+function buildAlan2RRUBlokKorkulukluModel() {
+  const blockGroup = buildAlan2RRUBlokModel();
+  blockGroup.userData.blockType = 'alan2-rru-blok-korkuluklu';
+  blockGroup.userData.name = 'RRU Blok (Korkuluklu)';
+  
+  const railingGroup = new THREE.Group();
+  railingGroup.name = "railing";
+
+  const railColor = 0xfdb913; 
+  const railMat = new THREE.MeshStandardMaterial({ color: railColor, metalness: 0.5, roughness: 0.3 });
+  
+  const postHeight = 1.2;
+  const postRadius = 0.02;
+  const postGeo = new THREE.CylinderGeometry(postRadius, postRadius, postHeight, 16);
+  const tableSurfaceY = 0.0010;
+
+  const zRail = 0.5655; 
+  const postPositionsX = [-0.98, -0.33, 0.33, 0.98];
+  
+  postPositionsX.forEach(x => {
+    const post = new THREE.Mesh(postGeo, railMat);
+    post.position.set(x, tableSurfaceY + postHeight / 2, zRail);
+    post.castShadow = true;
+    railingGroup.add(post);
+  });
+
+  const railRadius = 0.015;
+  const railLength = 1.96;
+  const railGeo = new THREE.CylinderGeometry(railRadius, railRadius, railLength, 16);
+  railGeo.rotateZ(Math.PI / 2);
+  
+  [tableSurfaceY + 0.6, tableSurfaceY + 1.15].forEach(yPos => {
+    const hRail = new THREE.Mesh(railGeo, railMat);
+    hRail.position.set(0, yPos, zRail);
+    hRail.castShadow = true;
+    railingGroup.add(hRail);
+  });
+
+  blockGroup.add(railingGroup);
+
+  return blockGroup;
 }
 
 function buildRRUBlokModel() {
@@ -2279,7 +2451,14 @@ function spawnRackBlok() {
 function spawnRRUBlokKorkuluklu() {
   const isRotatedArea = (state.currentArea === 'alan2' || state.currentArea === 'alan3');
   const nameLabel = state.currentArea === 'alan3' ? 'RRU Blok (Alan 3 - Korkuluklu)' : (state.currentArea === 'alan2' ? 'RRU Blok (Alan 2 - Korkuluklu)' : 'RRU Blok (Korkuluklu)');
-  const blockGroup = buildRRUBlokKorkulukluModel(isRotatedArea);
+  
+  let blockGroup;
+  if (state.currentArea === 'alan2') {
+    blockGroup = buildAlan2RRUBlokKorkulukluModel();
+  } else {
+    blockGroup = buildRRUBlokKorkulukluModel(isRotatedArea);
+  }
+  
   blockGroup.userData.id = state.nextId++;
   blockGroup.userData.name = nameLabel;
   setupPlatformTransform(blockGroup, 0, -2.0);
@@ -3739,6 +3918,121 @@ function buildAlan4OzelKarmaBlok(targetArea = state.currentArea) {
   return blockGroup;
 }
 
+
+function buildAlan2OzelKarmaPlatformBlok() {
+  const group = new THREE.Group();
+  group.userData = {
+    type: 'platform',
+    blockType: 'alan2-ozel-karma-platform-blok',
+    category: 'Platform',
+    name: 'Korkuluksuz Tabla Bloğu (Alan 2)',
+    width: 1.20,
+    depth: 2.00,
+    height: 0.05,
+    weight: 200,
+    interactive: true,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  const tableMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.3, transparent: true, opacity: 0.95 });
+  const borderMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.5, roughness: 0.3 });
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x718096, metalness: 0.9, roughness: 0.1 });
+  
+  const frontZ = -1.0;
+  const rearZ   =  1.0;
+  const leftX   = -0.60;
+  const rightX  =  0.60;
+  const platWidth  = 1.20;   
+  const platLength = 2.00;   
+  const tableY = 0.02;       
+
+  // Sadece 2 tabla (1m x 1.2m)
+  const t1Length = 1.0; const t1CenterZ = -0.50;
+  const t1Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.02, t1Length), tableMat);
+  t1Mesh.position.set(0, tableY, t1CenterZ);
+  group.add(t1Mesh);
+
+  const t2Length = 1.0; const t2CenterZ = 0.50;
+  const t2Mesh = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.02, t2Length), tableMat);
+  t2Mesh.position.set(0, tableY, t2CenterZ);
+  group.add(t2Mesh);
+
+  // Yan bordürler
+  [-0.59, 0.59].forEach(xBorder => {
+    const bSide1 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, t1Length), borderMat); bSide1.position.set(xBorder, tableY + 0.015, t1CenterZ); group.add(bSide1);
+    const bSide2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.03, t2Length), borderMat); bSide2.position.set(xBorder, tableY + 0.015, t2CenterZ); group.add(bSide2);
+  });
+
+  // Orta birleşim bordürü
+  const seamBorder = new THREE.Mesh(new THREE.BoxGeometry(platWidth, 0.03, 0.02), borderMat);
+  seamBorder.position.set(0, tableY + 0.015, 0.0);
+  group.add(seamBorder);
+
+  // Dış tekme levhaları (kickplates) - Opsiyonel olarak bırakılabilir zemin estetiği için ama korkuluksuz.
+  const kpX = new THREE.BoxGeometry(platWidth, 0.10, 0.02);
+  const kpZ = new THREE.BoxGeometry(0.02, 0.10, platLength);
+  const kpFront = new THREE.Mesh(kpX, borderMat); kpFront.position.set(0, tableY + 0.04, frontZ); group.add(kpFront);
+  const kpRear  = new THREE.Mesh(kpX, borderMat); kpRear.position.set(0, tableY + 0.04, rearZ); group.add(kpRear);
+  const kpLeft  = new THREE.Mesh(kpZ, borderMat); kpLeft.position.set(leftX, tableY + 0.04, 0); group.add(kpLeft);
+  const kpRight = new THREE.Mesh(kpZ, borderMat); kpRight.position.set(rightX, tableY + 0.04, 0); group.add(kpRight);
+
+  // Korkuluk sistemi (postlar ve yatay borular) tamamen kaldırıldı.
+
+  return group;
+}
+
+function buildAlan2OzelKarmaBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'platform',
+    blockType: 'alan2-ozel-karma-blok',
+    category: 'Karma',
+    name: 'Özel Alan 2 Kompleksi (Platform + POI + RRU)',
+    width: 1.20,
+    depth: 2.00,
+    height: 2.40,
+    weight: 550,
+    interactive: true,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  // 1. Zemin platformu
+  const subPlatform = buildAlan2OzelKarmaPlatformBlok();
+  subPlatform.userData.interactive = false;
+  subPlatform.position.set(0, 0, 0);
+  blockGroup.add(subPlatform);
+
+  // 2. Alan 2 Karma RRU Blok (4 Borulu - 7 RRU) - Ön tarafta (Z = -0.6)
+  const subKarma = buildAlan2KarmaRRUBlok(targetArea);
+  subKarma.userData.interactive = false;
+  subKarma.position.set(0, 0, -0.60);
+  blockGroup.add(subKarma);
+
+  // 3. 42U POI Rack Blok - Arka tarafta (Z = 0.60), içe dönük
+  const subPoi = build42UPoiRackBlok(targetArea);
+  subPoi.userData.interactive = false;
+  subPoi.position.set(0, 0, 0.60);
+  // RRU'lara (Yani Z=-0.60 yönüne) bakması için Math.PI döndürüyoruz.
+  subPoi.rotation.set(0, Math.PI, 0);
+  blockGroup.add(subPoi);
+
+  return blockGroup;
+}
+
+function spawnAlan2OzelKarmaBlok() {
+  const blockGroup = buildAlan2OzelKarmaBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -1.0, false);
+  addPlatformToActiveArea(blockGroup);
+}
+
 function spawnAlan4OzelKarmaBlok() {
   const blockGroup = buildAlan4OzelKarmaBlok(state.currentArea);
   blockGroup.userData.id = state.nextId++;
@@ -3829,6 +4123,167 @@ function buildAlan4CiftRRUKompleksBlok(targetArea = state.currentArea) {
   blockGroup.add(subKarmaRear);
 
   return blockGroup;
+}
+
+
+
+
+
+
+
+
+
+
+
+function buildAlan2Karsilikli11BoruRRUBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan2-karsilikli-11boru-rru-blok',
+    category: 'Karma',
+    name: 'Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok',
+    width: 1.5,
+    height: 2.2,
+    depth: 1.2,
+    weight: 750,
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  // 1. Taban: İki adet çentiksiz Tabla-2(120cm). Genişlik 1.5m olacak şekilde.
+  const t2_1 = buildTabla2(true); t2_1.userData.interactive = false; t2_1.position.set(-0.25, -0.0090, -0.1645); blockGroup.add(t2_1);
+  const t2_2 = buildTabla2(true); t2_2.userData.interactive = false; t2_2.position.set(0.25, -0.0090, -0.1645); blockGroup.add(t2_2);
+
+  // 2. Korkuluk kaldırıldı.
+
+  // 3. Borular ve RRU'lar
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.1 });
+  const flangePlateGeo = new THREE.BoxGeometry(0.18, 0.012, 0.18);
+
+  const tcellItem = EQUIPMENT_CATALOG.find(item => item.id === 'turkcell-4485') || { id: 'turkcell-4485', category: 'Turkcell', name: 'LTE RRU4485 - 4G', width: 0.398, height: 0.533, depth: 0.145, weight: 25, color: '#1d4ed8' };
+  const ttItem = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
+
+  // Z ekseninde yanyana olanlar olabildiğince yakın (0.18m aralık).
+  const leftPosZ = [-0.45, -0.27, -0.09, 0.09, 0.27, 0.45];
+  const leftEquip = [
+    { bottom: vodaItem, top: vodaItem },
+    { bottom: vodaItem, top: vodaItem },
+    { bottom: vodaItem, top: vodaItem },
+    { bottom: vodaItem, top: vodaItem },
+    { bottom: vodaItem, top: tcellItem },
+    { bottom: tcellItem, top: tcellItem }
+  ]; 
+
+  const rightPosZ = [-0.36, -0.18, 0, 0.18, 0.36];
+  const rightEquip = [
+    { bottom: ttItem, top: ttItem },
+    { bottom: ttItem, top: ttItem },
+    { bottom: ttItem, top: ttItem },
+    { bottom: tcellItem, top: tcellItem },
+    { bottom: tcellItem, top: null }
+  ];
+
+  const createPipeAndRRU = (posX, posZ, config, pipeIndex, isLeft) => {
+    const verticalPipeGeo = new THREE.CylinderGeometry(0.03175, 0.03175, 2.0, 32);
+    const verticalPipe = new THREE.Mesh(verticalPipeGeo, pipeMat);
+    verticalPipe.position.set(posX, 1.0, posZ);
+    verticalPipe.castShadow = true;
+    blockGroup.add(verticalPipe);
+
+    const pipeFlange = new THREE.Mesh(flangePlateGeo, pipeMat);
+    pipeFlange.position.set(posX, 0.007, posZ);
+    pipeFlange.castShadow = true;
+    blockGroup.add(pipeFlange);
+
+    const levels = [
+      { y: 0.75, item: config.bottom },
+      { y: 1.50, item: config.top }
+    ];
+
+    levels.forEach((lvl, lvlIndex) => {
+      if (!lvl.item) return;
+
+      const rruModel = buildCustomEquipmentModel(lvl.item);
+      rruModel.userData.name = lvl.item.category + " RRU (" + (isLeft ? "Sol" : "Sağ") + " Boru " + pipeIndex + ", " + (lvlIndex === 0 ? "Alt" : "Üst") + ")";
+      rruModel.userData.interactive = true;
+      
+      const rruDirX = isLeft ? 1 : -1; 
+      
+      if (isLeft) {
+        rruModel.rotation.set(0, 0, 0); 
+      } else {
+        rruModel.rotation.set(0, Math.PI, 0); 
+      }
+      
+      const offset = (lvl.item.width / 2) + 0.08;
+      const rruPosX = posX + (rruDirX * offset);
+      
+      rruModel.position.set(rruPosX, lvl.y, posZ); 
+      blockGroup.add(rruModel);
+    });
+  };
+
+  // Karşılıklı borular arası mesafe: RRU'ların arasında net 80 cm çalışma alanı kalacak şekilde X ekseninde konumlandırılıyor.
+  // RRU offseti yaklaşık 0.28m. Ortada 0.80m boşluk için: 0.80 / 2 = 0.40m. 
+  // Pollerin konumu = 0.40m + 0.28m = 0.68m.
+  leftPosZ.forEach((z, i) => createPipeAndRRU(-0.68, z, leftEquip[i], i + 1, true));
+  rightPosZ.forEach((z, i) => createPipeAndRRU(0.68, z, rightEquip[i], i + 1, false));
+
+  return blockGroup;
+}
+
+function spawnAlan2Karsilikli11BoruRRUBlok() {
+  const blockGroup = buildAlan2Karsilikli11BoruRRUBlok();
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -1.0); 
+  addPlatformToActiveArea(blockGroup);
+}
+
+
+function buildAlan2Kediyolu42UKompleksBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru', 
+    blockType: 'alan2-kediyolu-42u-kompleks',
+    category: 'Canovate',
+    name: 'Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)',
+    width: 1.2,
+    depth: 1.2,
+    height: 2.15,
+    interactive: true,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true
+  };
+
+  // Taban: İki adet çentiksiz Tabla-2 (120cm)
+  const t2_1 = buildTabla2(true); t2_1.userData.interactive = false; t2_1.position.set(-0.1, -0.0090, -0.1645); blockGroup.add(t2_1);
+  const t2_2 = buildTabla2(true); t2_2.userData.interactive = false; t2_2.position.set(0.1, -0.0090, -0.1645); blockGroup.add(t2_2);
+
+  // 42U POI Rack
+  const subPoi = build42UPoiRackBlok('alan2');
+  subPoi.userData.interactive = false;
+  // Alan 2'de koridor Z ekseninde. Rack'i Z ekseninde konumlandırıyoruz.
+  // Ön yüzü Z'ye (-Z veya +Z) bakacak şekilde.
+  subPoi.position.set(0, 0, -0.1645); 
+  subPoi.rotation.set(0, 0, 0); 
+  blockGroup.add(subPoi);
+
+  return blockGroup;
+}
+
+function spawnAlan2Kediyolu42UKompleksBlok() {
+  const blockGroup = buildAlan2Kediyolu42UKompleksBlok();
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -1.0); 
+  addPlatformToActiveArea(blockGroup);
 }
 
 function spawnAlan4CiftRRUKompleksBlok() {
@@ -4154,16 +4609,22 @@ renderer.domElement.addEventListener('pointermove', (event) => {
       let targetZ = dragObject.userData.lockedZ ? dragObject.position.z : (dragIntersection.z + dragOffset.z);
       let targetY = dragObject.position.y;
       if ((dragObject.userData.type === 'platform' || dragObject.userData.type === 'rru') && !dragObject.userData.isOffsetArmModule && !dragObject.userData.isInclinedPipe && !dragObject.userData.isOffsetCarrier && !dragObject.userData.isFreestanding) {
-        if (state.currentArea === 'alan4') {
-          // Locked to X-axis dual carrier cylinders at Z = 0
-          if (dragObject.userData.lockedZ) targetZ = 0;
-          if (!dragObject.userData.lockedX) targetX = Math.max(-12.0, Math.min(12.0, dragIntersection.x + dragOffset.x));
-        } else {
-          // Alan 1: Locked to X-axis carrier pipe at Z = -1.1855
-          if (!dragObject.userData.lockedZ) targetZ = -1.1855;
-          if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, dragIntersection.x + dragOffset.x));
+          if (state.currentArea === 'alan4') {
+            // Locked to X-axis dual carrier cylinders at Z = 0
+            if (dragObject.userData.lockedZ) targetZ = 0;
+            if (!dragObject.userData.lockedX) targetX = Math.max(-12.0, Math.min(12.0, dragIntersection.x + dragOffset.x));
+          } else if (state.currentArea === 'alan1') {
+            // Alan 1: Locked to X-axis carrier pipe at Z = -1.1855
+            if (dragObject.userData.lockedZ) targetZ = -1.1855;
+            if (!dragObject.userData.lockedX) targetX = Math.max(-9.0, Math.min(9.0, dragIntersection.x + dragOffset.x));
+          } else if (state.currentArea === 'alan2' || state.currentArea === 'alan3') {
+            // Alan 2 & 3: Carrier pipe is along Z-axis. X is locked, Z is free to slide.
+            // lockedZ is false, lockedX is true. 
+            // So targetZ should NOT be hardcoded, targetX is already locked by dragObject.position.x
+            if (!dragObject.userData.lockedZ) targetZ = Math.max(-9.0, Math.min(9.0, dragIntersection.z + dragOffset.z));
+            // targetX is already dragObject.position.x if lockedX is true
+          }
         }
-      }
 
       // Restrict movement if it causes collision with other equipment bodies
       if (!hasCollision(dragObject, targetX, targetY, targetZ)) {
@@ -4237,10 +4698,20 @@ const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok
 if (btnAlan4Plat) btnAlan4Plat.addEventListener('click', spawnAlan4CemberPlatformBlok);
 
 const btnAlan4OzelKarma = document.getElementById('btn-add-alan4-ozel-karma-blok');
+    const btnAlan2OzelKarma = document.getElementById('btn-add-alan2-ozel-karma-blok');
 if (btnAlan4OzelKarma) btnAlan4OzelKarma.addEventListener('click', spawnAlan4OzelKarmaBlok);
+const globalBtnAlan2OzelKarma = document.getElementById('btn-add-alan2-ozel-karma-blok');
+if (globalBtnAlan2OzelKarma) globalBtnAlan2OzelKarma.addEventListener('click', spawnAlan2OzelKarmaBlok);
 
 const btnAlan4CiftRRU = document.getElementById('btn-add-alan4-cift-rru-kompleks');
-if (btnAlan4CiftRRU) btnAlan4CiftRRU.addEventListener('click', spawnAlan4CiftRRUKompleksBlok);
+  if (btnAlan4CiftRRU) btnAlan4CiftRRU.addEventListener('click', spawnAlan4CiftRRUKompleksBlok);
+  const btnAlan2Kediyolu42U = document.getElementById('btn-add-alan2-kediyolu-42u-kompleks');
+  if (btnAlan2Kediyolu42U) btnAlan2Kediyolu42U.addEventListener('click', spawnAlan2Kediyolu42UKompleksBlok);
+  const btnAlan2Karsilikli = document.getElementById('btn-add-alan2-karsilikli-rru');
+  if (btnAlan2Karsilikli) btnAlan2Karsilikli.addEventListener('click', spawnAlan2Karsilikli11BoruRRUBlok);
+  
+  
+  
 
 const btnAlan4KediyoluTabla = document.getElementById('btn-add-alan4-kediyolu-tabla-blok');
 if (btnAlan4KediyoluTabla) btnAlan4KediyoluTabla.addEventListener('click', spawnAlan4KediyoluTablaBlok);
@@ -4264,7 +4735,10 @@ const btnOffsetLeft = document.getElementById('btn-add-offset-arm-left');
 if (btnOffsetLeft) btnOffsetLeft.addEventListener('click', spawnOffsetArmPipeLeft);
 
 function updateAreaButtonVisibility() {
+  const isAlan1 = (state.currentArea === 'alan1');
   const isAlan4 = (state.currentArea === 'alan4');
+  const isAlan2 = (state.currentArea === 'alan2');
+  
   const btnRru = document.getElementById('btn-add-rru-blok');
   const btnRack = document.getElementById('btn-add-rack-blok');
   const btnPoiBlok = document.getElementById('btn-add-42u-poi-blok');
@@ -4275,13 +4749,22 @@ function updateAreaButtonVisibility() {
   const btnTCellOffset = document.getElementById('btn-add-tcell-offset-blok');
   const btnRruK = document.getElementById('btn-add-rru-blok-korkuluklu');
   const btnRackK = document.getElementById('btn-add-rack-blok-korkuluklu');
+  
   const btnSaha120 = document.getElementById('btn-add-rru-saha-blok-120');
   const btnAlan1OzelKarma = document.getElementById('btn-add-alan1-ozel-karma-blok');
+  const btnAlan1OzelKarma13 = document.getElementById('btn-add-alan1-13rru-ozel-karma-blok');
+  const btnAlan1OzelKarma7Boru = document.getElementById('btn-add-alan1-7boru-ozel-karma-blok');
+  
+  const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
+  const btnAlan4OzelKarma = document.getElementById('btn-add-alan4-ozel-karma-blok');
+  const btnAlan4CiftRRU = document.getElementById('btn-add-alan4-cift-rru-kompleks');
+  const btnAlan4KediyoluTabla = document.getElementById('btn-add-alan4-kediyolu-tabla-blok');
+  const btnAlan4Kediyolu42U = document.getElementById('btn-add-alan4-kediyolu-42u-kompleks');
 
   if (btnSaha120) {
     const nameSpan = btnSaha120.querySelector('.name');
     if (nameSpan) nameSpan.textContent = 'RRU Saha Blok 120cm (Alan 1)';
-    btnSaha120.style.display = isAlan4 ? 'none' : 'flex';
+    btnSaha120.style.display = isAlan1 ? 'flex' : 'none';
   }
 
   const btn20UPoi = document.getElementById('btn-add-20u-poi-blok');
@@ -4302,21 +4785,23 @@ function updateAreaButtonVisibility() {
   if (btnTCellOffset) btnTCellOffset.style.display = 'flex';
   if (btnRruK) btnRruK.style.display = 'flex';
   if (btnRackK) btnRackK.style.display = 'flex';
-  if (btnAlan1OzelKarma) btnAlan1OzelKarma.style.display = isAlan4 ? 'none' : 'flex';
-  const btnAlan1OzelKarma13 = document.getElementById('btn-add-alan1-13rru-ozel-karma-blok');
-  if (btnAlan1OzelKarma13) btnAlan1OzelKarma13.style.display = isAlan4 ? 'none' : 'flex';
-  const btnAlan1OzelKarma7Boru = document.getElementById('btn-add-alan1-7boru-ozel-karma-blok');
-  if (btnAlan1OzelKarma7Boru) btnAlan1OzelKarma7Boru.style.display = isAlan4 ? 'none' : 'flex';
+  
+  if (btnAlan1OzelKarma) btnAlan1OzelKarma.style.display = isAlan1 ? 'flex' : 'none';
+  if (btnAlan1OzelKarma13) btnAlan1OzelKarma13.style.display = isAlan1 ? 'flex' : 'none';
+  if (btnAlan1OzelKarma7Boru) btnAlan1OzelKarma7Boru.style.display = isAlan1 ? 'flex' : 'none';
 
-  const btnAlan4Plat = document.getElementById('btn-add-alan4-cember-platform-blok');
   if (btnAlan4Plat) btnAlan4Plat.style.display = 'none';
-  const btnAlan4OzelKarma = document.getElementById('btn-add-alan4-ozel-karma-blok');
   if (btnAlan4OzelKarma) btnAlan4OzelKarma.style.display = isAlan4 ? 'flex' : 'none';
-  const btnAlan4CiftRRU = document.getElementById('btn-add-alan4-cift-rru-kompleks');
+    if (btnAlan2OzelKarma) btnAlan2OzelKarma.style.display = isAlan2 ? 'flex' : 'none';
   if (btnAlan4CiftRRU) btnAlan4CiftRRU.style.display = isAlan4 ? 'flex' : 'none';
-  const btnAlan4KediyoluTabla = document.getElementById('btn-add-alan4-kediyolu-tabla-blok');
+  const btnAlan2Kediyolu42U = document.getElementById('btn-add-alan2-kediyolu-42u-kompleks');
+  if (btnAlan2Kediyolu42U) btnAlan2Kediyolu42U.style.display = isAlan2 ? 'flex' : 'none';
+  const btnAlan2Karsilikli = document.getElementById('btn-add-alan2-karsilikli-rru');
+  if (btnAlan2Karsilikli) btnAlan2Karsilikli.style.display = isAlan2 ? 'flex' : 'none';
+  
+  
+  
   if (btnAlan4KediyoluTabla) btnAlan4KediyoluTabla.style.display = 'none';
-  const btnAlan4Kediyolu42U = document.getElementById('btn-add-alan4-kediyolu-42u-kompleks');
   if (btnAlan4Kediyolu42U) btnAlan4Kediyolu42U.style.display = isAlan4 ? 'flex' : 'none';
 }
 
@@ -4571,16 +5056,26 @@ if (selectAreaElem) {
     updateAreaButtonVisibility();
 
     const catwalkGroup = scene.getObjectByName('catwalk');
+    const alan2Group = scene.getObjectByName('alan2Structure');
     const alan4Group = scene.getObjectByName('alan4Structure');
 
     if (selectedArea === 'alan4') {
       if (catwalkGroup) catwalkGroup.visible = false;
+      if (alan2Group) alan2Group.visible = false;
       if (alan4Group) alan4Group.visible = true;
       camera.position.set(16, 7, 16);
       controls.target.set(0, 2.5, -0.7);
       controls.update();
+    } else if (selectedArea === 'alan2') {
+      if (catwalkGroup) catwalkGroup.visible = false;
+      if (alan2Group) alan2Group.visible = true;
+      if (alan4Group) alan4Group.visible = false;
+      camera.position.set(8, 6, 8);
+      controls.target.set(0, 0, -1);
+      controls.update();
     } else {
       if (catwalkGroup) catwalkGroup.visible = true;
+      if (alan2Group) alan2Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
       camera.position.set(5, 5, 8);
       controls.target.set(0, 0, 0);
@@ -4588,6 +5083,7 @@ if (selectAreaElem) {
     }
 
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
+    setPlatformGroupVisibility(state.alan2Platforms, selectedArea === 'alan2');
     setPlatformGroupVisibility(state.alan4Platforms, selectedArea === 'alan4');
 
     selectObject(null);
@@ -6150,7 +6646,11 @@ function deserializeItemToArea(item, targetArea) {
     group = buildAlan4OzelKarmaBlok(targetArea);
   } else if (blockType === 'alan4-cift-rru-kompleks' || itemName.includes('Çift RRU Kompleksi')) {
     group = buildAlan4CiftRRUKompleksBlok(targetArea);
-  } else if (blockType === 'alan4-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U') || itemName.includes('Kedi Yolu Tabla + 42U')) {
+    } else if (blockType === 'alan2-kediyolu-42u-kompleks') {
+      group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
+    } else if (blockType === 'alan2-karsilikli-11boru-rru-blok') {
+      group = buildAlan2Karsilikli11BoruRRUBlok(targetArea);
+    } else if (blockType === 'alan4-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U') || itemName.includes('Kedi Yolu Tabla + 42U')) {
     group = buildAlan4Kediyolu42UKompleksBlok(targetArea);
   } else if (blockType === 'alan4-kediyolu-tabla-blok' || itemName.includes('Kedi Yolu İçi Korkuluksuz Tabla') || itemName.includes('Kedi Yolu Korkuluksuz Tabla')) {
     group = buildAlan4KediyoluTablaBlok();
@@ -6241,6 +6741,8 @@ function deserializeItemToArea(item, targetArea) {
     scene.add(group);
 
     if (targetArea === 'alan4') state.alan4Platforms.push(group);
+    else if (targetArea === 'alan2') state.alan2Platforms.push(group);
+    else if (targetArea === 'alan3') state.alan3Platforms.push(group);
     else state.alan1Platforms.push(group);
   }
 }
@@ -6252,9 +6754,11 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
     savedAt: new Date().toISOString(),
     currentArea: state.currentArea,
     areas: {
-      alan1: state.alan1Platforms.map(serializePlatform),
-      alan4: state.alan4Platforms.map(serializePlatform)
-    }
+        alan1: state.alan1Platforms.map(serializePlatform),
+        alan2: state.alan2Platforms.map(serializePlatform),
+        alan3: state.alan3Platforms.map(serializePlatform),
+        alan4: state.alan4Platforms.map(serializePlatform)
+      }
   };
 
   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
@@ -6575,7 +7079,7 @@ function loadProjectFromData(importData) {
   selectObject(null);
 
   // 1. Clear scene and internal arrays for all areas
-  [...state.alan1Platforms, ...state.alan4Platforms].forEach(p => scene.remove(p));
+  [...state.alan1Platforms, ...state.alan2Platforms, ...state.alan3Platforms, ...state.alan4Platforms].forEach(p => scene.remove(p));
   state.alan1Platforms = [];
   state.alan2Platforms = [];
   state.alan3Platforms = [];
@@ -6583,12 +7087,12 @@ function loadProjectFromData(importData) {
 
   // 2. Check if new format containing all areas
   if (importData.areas) {
-    ['alan1', 'alan4'].forEach(areaKey => {
+    ['alan1', 'alan2', 'alan3', 'alan4'].forEach(areaKey => {
       const items = importData.areas[areaKey] || [];
       items.forEach(item => deserializeItemToArea(item, areaKey));
     });
 
-    const activeArea = importData.currentArea === 'alan4' ? 'alan4' : 'alan1';
+    const activeArea = importData.currentArea === 'alan4' ? 'alan4' : (importData.currentArea === 'alan2' ? 'alan2' : 'alan1');
     const selectAreaElem = document.getElementById('select-area');
     if (selectAreaElem) {
       selectAreaElem.value = activeArea;
@@ -6600,7 +7104,7 @@ function loadProjectFromData(importData) {
     let itemsToImport = [];
 
     if (importData.area) {
-      targetArea = importData.area === 'alan4' ? 'alan4' : 'alan1';
+      targetArea = importData.area === 'alan4' ? 'alan4' : (importData.area === 'alan2' ? 'alan2' : 'alan1');
       itemsToImport = importData.items || [];
     } else if (Array.isArray(importData)) {
       itemsToImport = importData;
@@ -6665,19 +7169,25 @@ if (importBtn && fileInput) {
 const resetBtn = document.getElementById('btn-reset-project');
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
-    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : 'ALAN 1';
-    const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?\n\nBu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
-    if (confirmed) {
-      if (state.currentArea === 'alan4') {
-        state.alan4Platforms.forEach(p => scene.remove(p));
-        state.alan4Platforms = [];
-      } else {
-        state.alan1Platforms.forEach(p => scene.remove(p));
-        state.alan1Platforms = [];
+    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : (state.currentArea === 'alan2' ? 'ALAN 2' : 'ALAN 1');
+      const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?\n\nBu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
+      if (confirmed) {
+        if (state.currentArea === 'alan4') {
+          state.alan4Platforms.forEach(p => scene.remove(p));
+          state.alan4Platforms = [];
+        } else if (state.currentArea === 'alan2') {
+            state.alan2Platforms.forEach(p => scene.remove(p));
+            state.alan2Platforms = [];
+          } else if (state.currentArea === 'alan3') {
+            state.alan3Platforms.forEach(p => scene.remove(p));
+            state.alan3Platforms = [];
+          } else {
+          state.alan1Platforms.forEach(p => scene.remove(p));
+          state.alan1Platforms = [];
+        }
+        selectObject(null);
+        updateBOM();
       }
-      selectObject(null);
-      updateBOM();
-    }
   });
 }
 
@@ -6691,7 +7201,9 @@ function addInitialPlatforms() {
     }
   } else {
     state.alan1Platforms = [];
-    state.alan4Platforms = [];
+      state.alan2Platforms = [];
+      state.alan3Platforms = [];
+      state.alan4Platforms = [];
 
     const alan4Block = buildAlan4OzelKarmaBlok('alan4');
     alan4Block.userData.id = state.nextId++;
@@ -6710,16 +7222,30 @@ updateAreaButtonVisibility();
 
 if (state.currentArea === 'alan4') {
   const catwalkGroup = scene.getObjectByName('catwalk');
+  const alan2Group = scene.getObjectByName('alan2Structure');
   const alan4Group = scene.getObjectByName('alan4Structure');
   if (catwalkGroup) catwalkGroup.visible = false;
+  if (alan2Group) alan2Group.visible = false;
   if (alan4Group) alan4Group.visible = true;
   camera.position.set(16, 7, 16);
   controls.target.set(0, 2.5, -0.7);
   controls.update();
+} else if (state.currentArea === 'alan2') {
+  const catwalkGroup = scene.getObjectByName('catwalk');
+  const alan2Group = scene.getObjectByName('alan2Structure');
+  const alan4Group = scene.getObjectByName('alan4Structure');
+  if (catwalkGroup) catwalkGroup.visible = false;
+  if (alan2Group) alan2Group.visible = true;
+  if (alan4Group) alan4Group.visible = false;
+  camera.position.set(8, 6, 8);
+  controls.target.set(0, 0, -1);
+  controls.update();
 } else {
   const catwalkGroup = scene.getObjectByName('catwalk');
+  const alan2Group = scene.getObjectByName('alan2Structure');
   const alan4Group = scene.getObjectByName('alan4Structure');
   if (catwalkGroup) catwalkGroup.visible = true;
+  if (alan2Group) alan2Group.visible = false;
   if (alan4Group) alan4Group.visible = false;
   camera.position.set(5, 5, 8);
   controls.target.set(0, 0, 0);

@@ -20,10 +20,11 @@
         </div>
         <div class="area-selector" style="margin-left: 20px;">
           <label for="select-area" style="color: #475569; font-weight: 600; font-size: 13px; margin-right: 6px;">Çalışma Alanı:</label>
-          <select id="select-area" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-            <option value="alan1" selected>📍 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
-            <option value="alan4">📍 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
-          </select>
+            <select id="select-area" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+              <option value="alan1" selected>🏢 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
+              <option value="alan2">🏢 ALAN 2 (Tribün Üstü Beton Alan)</option>
+              <option value="alan4">🏢 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
+            </select>
         </div>
       </div>
       <div class="controls-top" style="display: flex; gap: 8px; align-items: center;">
@@ -83,6 +84,7 @@
             <!-- Alan Seçimi -->
             <select id="pres-select-area" class="hud-select" title="Çalışma Alanı Değiştir">
               <option value="alan1" selected>📍 Alan 1</option>
+              <option value="alan2">📍 Alan 2</option>
               <option value="alan4">📍 Alan 4</option>
             </select>
             <!-- 2D / 3D Görünüm -->
@@ -132,14 +134,39 @@
                 <span class="icon">📦📏</span>
                 <span class="name" style="color: white; font-weight: bold;">RRU Saha Blok 120cm (Alan 1)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan4-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
+              
+                <button class="btn-eq" id="btn-add-alan2-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
+                  <span class="icon">🚀</span>
+                  <span class="name" style="color: white; font-weight: bold;">Özel Alan 2 Kompleksi (Platform + POI + RRU)</span>
+                </button>
+
+                <button class="btn-eq" id="btn-add-alan4-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
                 <span class="icon">🚀🏗️</span>
                 <span class="name" style="color: white; font-weight: bold;">Özel Alan 4 Kompleksi (Platform + POI + RRU)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan4-cift-rru-kompleks" style="background: linear-gradient(135deg, #059669, #0d9488); color: white; border: none; grid-column: span 2; display: none;">
-                <span class="icon">🚀📡</span>
-                <span class="name" style="color: white; font-weight: bold;">Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)</span>
-              </button>
+              
+                
+                
+                <button class="btn-eq" id="btn-add-alan4-cift-rru-kompleks" style="background: linear-gradient(135deg, #059669, #0d9488); color: white; border: none; grid-column: span 2; display: none;">
+                  <span class="icon">🏢📡</span>
+                  <span class="name" style="color: white; font-weight: bold;">Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)</span>
+                </button>
+                
+                <button class="btn-eq" id="btn-add-alan2-karsilikli-rru" style="background: linear-gradient(135deg, #4338ca, #3730a3); color: white; border: none; grid-column: span 2; display: none;">
+                  <span class="icon">📡</span>
+                  <span class="name" style="color: white; font-weight: bold;">Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok</span>
+                </button>
+                <button class="btn-eq" id="btn-add-alan2-kediyolu-42u-kompleks" style="background: linear-gradient(135deg, #ea580c, #c2410c); color: white; border: none; grid-column: span 2; display: none;">
+                  <span class="icon">🏢</span>
+                  <span class="name" style="color: white; font-weight: bold;">Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)</span>
+                </button>
+
+
+                
+
+                
+
+                
               <button class="btn-eq" id="btn-add-alan4-kediyolu-42u-kompleks" style="background: linear-gradient(135deg, #0369a1, #1e40af); color: white; border: none; grid-column: span 2; display: none;">
                 <span class="icon">🚀🗄️</span>
                 <span class="name" style="color: white; font-weight: bold;">Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)</span>
