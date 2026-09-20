@@ -393,6 +393,66 @@ function createAlan2Structure() {
   scene.add(alan2Group);
 }
 
+// Generate Alan 3 Representation (Tribün Üstü Taşıyıcı Beton Alan - Alan 3)
+function createAlan3Structure() {
+  const alan3Group = new THREE.Group();
+  alan3Group.name = 'alan3Structure';
+  alan3Group.visible = false; 
+
+  const floorWidth = 2.0; 
+  const floorLength = 30.0; 
+  const floorThickness = 0.4; 
+
+  const floorGeo = new THREE.BoxGeometry(floorLength, floorThickness, floorWidth);
+  const concreteMat = new THREE.MeshStandardMaterial({ 
+    color: 0x6e7072, 
+    roughness: 0.9,
+    metalness: 0.1
+  });
+  const floor = new THREE.Mesh(floorGeo, concreteMat);
+  floor.position.set(0, -floorThickness / 2, -floorWidth / 2);
+  floor.receiveShadow = true;
+  alan3Group.add(floor);
+
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x99ccff,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.1,
+    metalness: 0.6,
+    side: THREE.DoubleSide
+  });
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7, roughness: 0.3 });
+
+  const railingLength = 30.0;
+  const numPosts = 16;
+  const postSpacing = railingLength / (numPosts - 1);
+  const postHeight = 1.1;
+  const postWidth = 0.05;
+  const glassHeight = 1.0;
+  const glassThickness = 0.02;
+
+  const postGeo = new THREE.BoxGeometry(postWidth, postHeight, postWidth);
+
+  for (let i = 0; i < numPosts; i++) {
+    const xPos = -railingLength / 2 + i * postSpacing;
+    const post = new THREE.Mesh(postGeo, postMat);
+    post.position.set(xPos, postHeight / 2, -0.05); 
+    post.castShadow = true;
+    alan3Group.add(post);
+
+    if (i < numPosts - 1) {
+      const panelWidth = postSpacing - postWidth;
+      const glassGeo = new THREE.BoxGeometry(panelWidth, glassHeight, glassThickness);
+      const glass = new THREE.Mesh(glassGeo, glassMat);
+      glass.position.set(xPos + postSpacing / 2, glassHeight / 2 + 0.05, -0.05);
+      alan3Group.add(glass);
+    }
+  }
+
+  scene.add(alan3Group);
+}
+
 function createAlan4Structure() {
   const alan4Group = new THREE.Group();
   alan4Group.name = 'alan4Structure';
@@ -1102,6 +1162,7 @@ function spawnOffsetArmPipeLeft() {
 createCatwalk();
 createAlan4Structure();
   createAlan2Structure();
+  createAlan3Structure();
 
 createGroundCoordinateGuide();
 
@@ -1954,6 +2015,7 @@ function addPlatformToActiveArea(group) {
 
 function spawnKiris1() {
   const isAlan2 = (state.currentArea === 'alan2');
+    const isAlan3 = (state.currentArea === 'alan3');
   const group = buildKiris1();
   group.userData.id = state.nextId++;
   group.userData.name = isAlan2 ? 'Kiriş-1 (Alan 2)' : 'Kiriş-1';
@@ -1963,6 +2025,7 @@ function spawnKiris1() {
 
 function spawnKiris2() {
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   const group = buildKiris2();
   group.userData.id = state.nextId++;
   group.userData.name = isAlan2 ? 'Kiriş-2 (Alan 2)' : 'Kiriş-2';
@@ -1972,6 +2035,7 @@ function spawnKiris2() {
 
 function spawnTabla1() {
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   const group = buildTabla1();
   group.userData.id = state.nextId++;
   group.userData.name = isAlan2 ? 'Tabla-1 (Alan 2)' : 'Tabla-1';
@@ -1982,6 +2046,7 @@ function spawnTabla1() {
 
 function spawnTabla2() {
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   const group = buildTabla2();
   group.userData.id = state.nextId++;
   group.userData.name = isAlan2 ? 'Tabla-2 (Alan 2)' : 'Tabla-2';
@@ -1992,6 +2057,7 @@ function spawnTabla2() {
 
 function spawnTabla3() {
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   const group = buildTabla3();
   group.userData.id = state.nextId++;
   group.userData.name = isAlan2 ? 'Tabla-3 (Alan 2)' : 'Tabla-3';
@@ -2328,6 +2394,7 @@ function buildRRUSahaBlok120Model(targetArea = state.currentArea) {
 
 function spawnRRUBlok() {
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   const blockGroup = buildRRUBlokModel();
   blockGroup.userData.id = state.nextId++;
   if (isAlan2) blockGroup.userData.name = 'RRU Blok (Alan 2)';
@@ -4738,6 +4805,7 @@ function updateAreaButtonVisibility() {
   const isAlan1 = (state.currentArea === 'alan1');
   const isAlan4 = (state.currentArea === 'alan4');
   const isAlan2 = (state.currentArea === 'alan2');
+  const isAlan3 = (state.currentArea === 'alan3');
   
   const btnRru = document.getElementById('btn-add-rru-blok');
   const btnRack = document.getElementById('btn-add-rack-blok');
@@ -4792,12 +4860,12 @@ function updateAreaButtonVisibility() {
 
   if (btnAlan4Plat) btnAlan4Plat.style.display = 'none';
   if (btnAlan4OzelKarma) btnAlan4OzelKarma.style.display = isAlan4 ? 'flex' : 'none';
-    if (btnAlan2OzelKarma) btnAlan2OzelKarma.style.display = isAlan2 ? 'flex' : 'none';
+    if (btnAlan2OzelKarma) btnAlan2OzelKarma.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
   if (btnAlan4CiftRRU) btnAlan4CiftRRU.style.display = isAlan4 ? 'flex' : 'none';
   const btnAlan2Kediyolu42U = document.getElementById('btn-add-alan2-kediyolu-42u-kompleks');
-  if (btnAlan2Kediyolu42U) btnAlan2Kediyolu42U.style.display = isAlan2 ? 'flex' : 'none';
+  if (btnAlan2Kediyolu42U) btnAlan2Kediyolu42U.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
   const btnAlan2Karsilikli = document.getElementById('btn-add-alan2-karsilikli-rru');
-  if (btnAlan2Karsilikli) btnAlan2Karsilikli.style.display = isAlan2 ? 'flex' : 'none';
+  if (btnAlan2Karsilikli) btnAlan2Karsilikli.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
   
   
   
@@ -5059,9 +5127,11 @@ if (selectAreaElem) {
     const alan2Group = scene.getObjectByName('alan2Structure');
     const alan4Group = scene.getObjectByName('alan4Structure');
 
+const alan3Group = scene.getObjectByName('alan3Structure');
     if (selectedArea === 'alan4') {
       if (catwalkGroup) catwalkGroup.visible = false;
       if (alan2Group) alan2Group.visible = false;
+      if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = true;
       camera.position.set(16, 7, 16);
       controls.target.set(0, 2.5, -0.7);
@@ -5069,6 +5139,15 @@ if (selectAreaElem) {
     } else if (selectedArea === 'alan2') {
       if (catwalkGroup) catwalkGroup.visible = false;
       if (alan2Group) alan2Group.visible = true;
+      if (alan3Group) alan3Group.visible = false;
+      if (alan4Group) alan4Group.visible = false;
+      camera.position.set(8, 6, 8);
+      controls.target.set(0, 0, -1);
+      controls.update();
+    } else if (selectedArea === 'alan3') {
+      if (catwalkGroup) catwalkGroup.visible = false;
+      if (alan2Group) alan2Group.visible = false;
+      if (alan3Group) alan3Group.visible = true;
       if (alan4Group) alan4Group.visible = false;
       camera.position.set(8, 6, 8);
       controls.target.set(0, 0, -1);
@@ -5076,6 +5155,7 @@ if (selectAreaElem) {
     } else {
       if (catwalkGroup) catwalkGroup.visible = true;
       if (alan2Group) alan2Group.visible = false;
+      if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
       camera.position.set(5, 5, 8);
       controls.target.set(0, 0, 0);
@@ -5085,6 +5165,7 @@ if (selectAreaElem) {
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
     setPlatformGroupVisibility(state.alan2Platforms, selectedArea === 'alan2');
     setPlatformGroupVisibility(state.alan4Platforms, selectedArea === 'alan4');
+      setPlatformGroupVisibility(state.alan3Platforms, selectedArea === 'alan3');
 
     selectObject(null);
     updateBOM();
@@ -6743,6 +6824,8 @@ function deserializeItemToArea(item, targetArea) {
     if (targetArea === 'alan4') state.alan4Platforms.push(group);
     else if (targetArea === 'alan2') state.alan2Platforms.push(group);
     else if (targetArea === 'alan3') state.alan3Platforms.push(group);
+    else if (targetArea === 'alan3') state.alan3Platforms.push(group);
+    else if (targetArea === 'alan3') state.alan3Platforms.push(group);
     else state.alan1Platforms.push(group);
   }
 }
@@ -6916,162 +6999,305 @@ const PRESET_DRAFTS = {
     }
   },
   'taslak-v2': {
-    "version": "2.0",
-    "savedAt": "2026-09-16T21:17:19.155Z",
-    "currentArea": "alan1",
-    "areas": {
-      "alan1": [
-        {
-          "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
-          "blockType": "alan1-7boru-ozel-karma-blok",
-          "catalogId": null,
-          "type": "rru",
-          "category": "Karma",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 0,
-            "y": 0,
-            "z": -1.1855
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": false,
-          "lockedZ": false,
-          "allowPassThrough": true
+        "version": "2.0",
+        "savedAt": "2026-09-20T20:49:07.094Z",
+        "currentArea": "alan3",
+        "areas": {
+              "alan1": [
+                    {
+                          "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
+                          "blockType": "alan1-7boru-ozel-karma-blok",
+                          "catalogId": null,
+                          "type": "rru",
+                          "category": "Karma",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 0,
+                                "y": 0,
+                                "z": -1.1855
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    }
+              ],
+              "alan2": [
+                    {
+                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "blockType": "alan2-kediyolu-42u-kompleks",
+                          "catalogId": null,
+                          "type": "rru",
+                          "category": "Canovate",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 1.0767213144577608,
+                                "y": 0,
+                                "z": -0.7101746540679279
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 3.141592653589793,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "blockType": "alan2-kediyolu-42u-kompleks",
+                          "catalogId": null,
+                          "type": "rru",
+                          "category": "Canovate",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 0.08005000593878442,
+                                "y": 0,
+                                "z": -0.7085345822064888
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 3.141592653589793,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "blockType": "alan2-kediyolu-42u-kompleks",
+                          "catalogId": null,
+                          "type": "rru",
+                          "category": "Canovate",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": -0.891626949721315,
+                                "y": 0,
+                                "z": -0.7250625354388356
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 3.141592653589793,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+                          "blockType": "alan2-karsilikli-11boru-rru-blok",
+                          "catalogId": null,
+                          "type": "rru",
+                          "category": "Karma",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 2.4658990336217204,
+                                "y": 0,
+                                "z": -0.6946839913760219
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+                          "blockType": "rectifier-20u-eltek",
+                          "catalogId": "rectifier-20u-eltek",
+                          "type": "rru",
+                          "category": "Rectifier",
+                          "isFreestanding": true,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": -2.0864791941400758,
+                                "y": 0,
+                                "z": -0.6332376280672216
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 4.71238898038469,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+                          "blockType": "rectifier-20u-eltek",
+                          "catalogId": "rectifier-20u-eltek",
+                          "type": "rru",
+                          "category": "Rectifier",
+                          "isFreestanding": true,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 3.851952261417253,
+                                "y": 0,
+                                "z": -0.7692552154740175
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 1.5707963267948966,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+                          "blockType": "rectifier-20u-eltek",
+                          "catalogId": "rectifier-20u-eltek",
+                          "type": "rru",
+                          "category": "Rectifier",
+                          "isFreestanding": true,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": -3.9324336243309648,
+                                "y": 0,
+                                "z": -0.591984448925329
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 1.5707963267948966,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    }
+              ],
+              "alan3": [
+                    {
+                          "name": "Özel Alan 2 Kompleksi (Platform + POI + RRU)",
+                          "blockType": "alan2-ozel-karma-blok",
+                          "catalogId": null,
+                          "type": "platform",
+                          "category": "Karma",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": -0.7245500429693337,
+                                "y": 0,
+                                "z": -0.8266094762855631
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 4.71238898038469,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": false,
+                          "lockedZ": false,
+                          "allowPassThrough": true
+                    }
+              ],
+              "alan4": [
+                    {
+                          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+                          "blockType": "alan4-ozel-karma-blok",
+                          "catalogId": null,
+                          "type": "platform",
+                          "category": "Karma",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": -4.802038673384319,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": true,
+                          "lockedZ": true,
+                          "allowPassThrough": true
+                    },
+                    {
+                          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+                          "blockType": "alan4-ozel-karma-blok",
+                          "catalogId": null,
+                          "type": "platform",
+                          "category": "Karma",
+                          "isFreestanding": false,
+                          "isOffsetArmModule": false,
+                          "isOffsetCarrier": false,
+                          "isInclinedPipe": false,
+                          "position": {
+                                "x": 4.664673878978663,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "rotation": {
+                                "x": 0,
+                                "y": 0,
+                                "z": 0
+                          },
+                          "locked": false,
+                          "lockedX": false,
+                          "lockedY": true,
+                          "lockedZ": true,
+                          "allowPassThrough": true
+                    }
+              ]
         }
-      ],
-      "alan2": [],
-      "alan3": [],
-      "alan4": [
-        {
-          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
-          "blockType": "alan4-ozel-karma-blok",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -4.802038673384319,
-            "y": 0,
-            "z": 0
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
-          "blockType": "alan4-ozel-karma-blok",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 4.664673878978663,
-            "y": 0,
-            "z": 0
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        }
-      ]
-    }
-  },
-  'taslak-v1': {
-    "version": "2.0",
-    "savedAt": "2026-08-14T12:27:41.644Z",
-    "currentArea": "alan1",
-    "areas": {
-      "alan1": [
-        { "name": "RRU Blok (Korkuluklu)", "blockType": "rru-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -2.295145407456438, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "RRU Blok (Korkuluklu)", "blockType": "rru-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 2.670922501399333, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -4.900061062901976, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "Turkcell 10'lu (5 Dikey Boru 2 Kat) Blok", "blockType": "tcell-offset-blok", "catalogId": null, "type": "rru", "category": "Turkcell", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 2.046088244628467, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Türk Telekom 5'li RRU5527 Blok", "blockType": "tt-5li-5527-blok", "catalogId": null, "type": "rru", "category": "Türk Telekom", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 3.2869700859554434, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Türk Telekom 5'li RRU5818W Blok", "blockType": "tt-5li-5818w-blok", "catalogId": null, "type": "rru", "category": "Türk Telekom", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 3.2944827039688143, "y": 1.5, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Vodafone 3'lü RRU5526t Blok", "blockType": "voda-3li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -2.890639995254168, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Vodafone 5'li RRU5526t Blok", "blockType": "voda-5li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -1.6952168892768145, "y": 0.75, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Vodafone 5'li RRU5526t Blok", "blockType": "voda-5li-rru-blok", "catalogId": null, "type": "rru", "category": "Vodafone", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -1.7102878002086999, "y": 1.5, "z": -1.1855 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": true, "lockedX": true, "lockedY": true, "lockedZ": true, "allowPassThrough": true },
-        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 5.119058564096933, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.023352096690417296, "y": 0, "z": -1.688624436780009 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -0.6561372739989106, "y": 0, "z": -0.9737981000025636 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu)", "blockType": "42u-canovate-kabin", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.5642749069576185, "y": 0, "z": -0.9711852491449924 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "Rack Blok (Korkuluklu)", "blockType": "rack-blok-korkuluklu", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -1.1855 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "Turkcell Çift Bölmeli Outdoor Güç Kabini (1500x1070x750)", "blockType": "rectifier-turkcell-double", "catalogId": "rectifier-turkcell-double", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 5.17012080690793, "y": 0, "z": -1.4040498760089049 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW)", "blockType": "rectifier-20u-eltek", "catalogId": "rectifier-20u-eltek", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -5.426622921854924, "y": 0, "z": -1.5176537070995237 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini", "blockType": "rectifier-mts9304a", "catalogId": "rectifier-mts9304a", "type": "rru", "category": "Rectifier", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": -4.452552658789933, "y": 0, "z": -1.5652529226819627 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
-      ],
-      "alan2": [
-        { "name": "Alan 2 Karma RRU Blok (4 Borulu - 7 RRU) (Alan 2)", "blockType": "alan2-karma-rru-blok", "catalogId": null, "type": "rru", "category": "Karma", "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -2.9988460001254937 }, "rotation": { "x": 0, "y": 6.283185307179586, "z": 0 }, "locked": false, "lockedX": true, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "RRU Saha Blok (Alan 2)", "blockType": "rru-saha-blok", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -3.3915045073350853 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 2)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.12635916826471072, "y": 0, "z": -1.1939725002212356 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
-      ],
-      "alan3": [
-        { "name": "30cm Ofset & 2.5\" Boru (Sağ - Çift Kol) (Alan 3)", "blockType": null, "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": true, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": -0.4535, "z": -4.5 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": true, "lockedZ": false, "allowPassThrough": true },
-        { "name": "30cm Ofset & 2.5\" Boru (Sol - Çift Kol) (Alan 3)", "blockType": null, "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": true, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": -0.4535, "z": -4.5 }, "rotation": { "x": 0, "y": 0, "z": 0 }, "locked": false, "lockedX": false, "lockedY": true, "lockedZ": false, "allowPassThrough": true },
-        { "name": "RRU Saha Blok (Alan 3)", "blockType": "rru-saha-blok", "catalogId": null, "type": "platform", "category": null, "isFreestanding": false, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0, "y": 0, "z": -3.2512388136492154 }, "rotation": { "x": 0, "y": 1.5707963267948966, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.1963078487261432, "y": 0, "z": -2.608624899453891 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.2429354550466356, "y": 0, "z": -1.188157875725572 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true },
-        { "name": "42U POI Rack Blok (6x POI Dolu) (Alan 3)", "blockType": "42u-poi-rack-blok", "catalogId": null, "type": "rru", "category": "Canovate", "isFreestanding": true, "isOffsetArmModule": false, "isOffsetCarrier": false, "isInclinedPipe": false, "position": { "x": 0.22012813026807526, "y": 0, "z": -1.9309626762980763 }, "rotation": { "x": 0, "y": 4.71238898038469, "z": 0 }, "locked": false, "lockedX": false, "lockedY": false, "lockedZ": false, "allowPassThrough": true }
-      ],
-      "alan4": [
-        {
-          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
-          "blockType": "alan4-ozel-karma-blok",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 8.391915754334763,
-            "y": 0,
-            "z": 0
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        }
-      ]
-    }
   }
 };
 
@@ -7092,7 +7318,7 @@ function loadProjectFromData(importData) {
       items.forEach(item => deserializeItemToArea(item, areaKey));
     });
 
-    const activeArea = importData.currentArea === 'alan4' ? 'alan4' : (importData.currentArea === 'alan2' ? 'alan2' : 'alan1');
+    const activeArea = importData.currentArea === 'alan4' ? 'alan4' : (importData.currentArea === 'alan3' ? 'alan3' : (importData.currentArea === 'alan2' ? 'alan2' : 'alan1'));
     const selectAreaElem = document.getElementById('select-area');
     if (selectAreaElem) {
       selectAreaElem.value = activeArea;
@@ -7104,7 +7330,7 @@ function loadProjectFromData(importData) {
     let itemsToImport = [];
 
     if (importData.area) {
-      targetArea = importData.area === 'alan4' ? 'alan4' : (importData.area === 'alan2' ? 'alan2' : 'alan1');
+      targetArea = importData.area === 'alan4' ? 'alan4' : (importData.area === 'alan3' ? 'alan3' : (importData.area === 'alan2' ? 'alan2' : 'alan1'));
       itemsToImport = importData.items || [];
     } else if (Array.isArray(importData)) {
       itemsToImport = importData;
@@ -7169,7 +7395,7 @@ if (importBtn && fileInput) {
 const resetBtn = document.getElementById('btn-reset-project');
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
-    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : (state.currentArea === 'alan2' ? 'ALAN 2' : 'ALAN 1');
+    const areaLabel = state.currentArea === 'alan4' ? 'ALAN 4' : (state.currentArea === 'alan3' ? 'ALAN 3' : (state.currentArea === 'alan2' ? 'ALAN 2' : 'ALAN 1'));
       const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?\n\nBu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
       if (confirmed) {
         if (state.currentArea === 'alan4') {
@@ -7220,32 +7446,38 @@ function addInitialPlatforms() {
 addInitialPlatforms();
 updateAreaButtonVisibility();
 
+const catwalkGroup = scene.getObjectByName('catwalk');
+const alan2Group = scene.getObjectByName('alan2Structure');
+const alan4Group = scene.getObjectByName('alan4Structure');
+const alan3Group = scene.getObjectByName('alan3Structure');
 if (state.currentArea === 'alan4') {
-  const catwalkGroup = scene.getObjectByName('catwalk');
-  const alan2Group = scene.getObjectByName('alan2Structure');
-  const alan4Group = scene.getObjectByName('alan4Structure');
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = false;
+  if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = true;
   camera.position.set(16, 7, 16);
   controls.target.set(0, 2.5, -0.7);
   controls.update();
 } else if (state.currentArea === 'alan2') {
-  const catwalkGroup = scene.getObjectByName('catwalk');
-  const alan2Group = scene.getObjectByName('alan2Structure');
-  const alan4Group = scene.getObjectByName('alan4Structure');
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = true;
+  if (alan3Group) alan3Group.visible = false;
+  if (alan4Group) alan4Group.visible = false;
+  camera.position.set(8, 6, 8);
+  controls.target.set(0, 0, -1);
+  controls.update();
+} else if (state.currentArea === 'alan3') {
+  if (catwalkGroup) catwalkGroup.visible = false;
+  if (alan2Group) alan2Group.visible = false;
+  if (alan3Group) alan3Group.visible = true;
   if (alan4Group) alan4Group.visible = false;
   camera.position.set(8, 6, 8);
   controls.target.set(0, 0, -1);
   controls.update();
 } else {
-  const catwalkGroup = scene.getObjectByName('catwalk');
-  const alan2Group = scene.getObjectByName('alan2Structure');
-  const alan4Group = scene.getObjectByName('alan4Structure');
   if (catwalkGroup) catwalkGroup.visible = true;
   if (alan2Group) alan2Group.visible = false;
+  if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = false;
   camera.position.set(5, 5, 8);
   controls.target.set(0, 0, 0);

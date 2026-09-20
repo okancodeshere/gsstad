@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
+
+  <script>
+    window.addEventListener('error', (e) => {
+      const errDiv = document.createElement('div');
+      errDiv.style.cssText = 'position:fixed; z-index:999999; background:red; color:white; top:0; left:0; padding:20px; font-size:16px; width: 100%; white-space: pre-wrap; font-family: monospace;';
+      errDiv.innerHTML = '<b>JS ERROR:</b> ' + e.message + '<br><b>File:</b> ' + e.filename + ':' + e.lineno;
+      document.body.appendChild(errDiv);
+    });
+  </script>
+
 </head>
 <body>
   <div id="app">
@@ -23,6 +33,7 @@
             <select id="select-area" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
               <option value="alan1" selected>🏢 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
               <option value="alan2">🏢 ALAN 2 (Tribün Üstü Beton Alan)</option>
+                <option value="alan3">🏢 ALAN 3 (Tribün Üstü Beton Alan)</option>
               <option value="alan4">🏢 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
             </select>
         </div>
