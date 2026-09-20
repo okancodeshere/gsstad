@@ -7007,7 +7007,7 @@ const PRESET_DRAFTS = {
   'taslak-v2': {
         "version": "2.0",
         "savedAt": "2026-09-20T20:49:07.094Z",
-        "currentArea": "alan3",
+        "currentArea": "alan1",
         "areas": {
               "alan1": [
                     {
