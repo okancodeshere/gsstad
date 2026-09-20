@@ -6717,7 +6717,13 @@ function deserializeItemToArea(item, targetArea) {
     group = buildAlan1OzelKarma7Boru13RRUBlok(targetArea);
   } else if (blockType === 'alan1-13rru-ozel-karma-blok' || itemName.includes('13 RRU')) {
     group = buildAlan1OzelKarma13RRUBlok(targetArea);
-  } else if (blockType === 'alan1-ozel-karma-blok' || itemName.includes('Özel Karma Blok')) {
+  } else if (blockType === 'alan2-ozel-karma-blok' || itemName.includes('Özel Alan 2 Kompleksi')) {
+      group = buildAlan2OzelKarmaBlok(targetArea);
+    } else if (blockType === 'alan2-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + 42U')) {
+      group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
+    } else if (blockType === 'alan2-karsilikli-11boru-rru-blok' || itemName.includes('Karşılıklı 11 Boru')) {
+      group = buildAlan2Karsilikli11BoruRRUBlok(targetArea);
+    } else if (blockType === 'alan1-ozel-karma-blok' || itemName.includes('Özel Karma Blok')) {
     group = buildAlan1OzelKarmaBlok(targetArea);
   } else if (blockType === 'rru-saha-blok-140' || itemName.includes('140cm')) {
     group = buildRRUSahaBlok140Model(targetArea);
