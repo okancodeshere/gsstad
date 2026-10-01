@@ -8241,306 +8241,384 @@ const PRESET_DRAFTS = {
     }
   },
   'taslak-v2': {
-        "version": "2.0",
-        "savedAt": "2026-09-20T20:49:07.094Z",
-        "currentArea": "alan2",
-        "areas": {
-              "alan1": [
-                    {
-                          "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
-                          "blockType": "alan1-7boru-ozel-karma-blok",
-                          "catalogId": null,
-                          "type": "rru",
-                          "category": "Karma",
-                          "isFreestanding": false,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 0,
-                                "y": 0,
-                                "z": -1.1855
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    }
-              ],
-              "alan2": [
-                    {
-                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-                          "blockType": "alan2-kediyolu-42u-kompleks",
-                          "catalogId": null,
-                          "type": "rru",
-                          "category": "Canovate",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 1.0767213144577608,
-                                "y": 0,
-                                "z": -0.7101746540679279
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 3.141592653589793,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-                          "blockType": "alan2-kediyolu-42u-kompleks",
-                          "catalogId": null,
-                          "type": "rru",
-                          "category": "Canovate",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 0.08005000593878442,
-                                "y": 0,
-                                "z": -0.7085345822064888
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 3.141592653589793,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-                          "blockType": "alan2-kediyolu-42u-kompleks",
-                          "catalogId": null,
-                          "type": "rru",
-                          "category": "Canovate",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": -0.891626949721315,
-                                "y": 0,
-                                "z": -0.7250625354388356
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 3.141592653589793,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
-                          "blockType": "alan2-karsilikli-11boru-rru-blok",
-                          "catalogId": null,
-                          "type": "rru",
-                          "category": "Karma",
-                          "isFreestanding": false,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 2.4658990336217204,
-                                "y": 0,
-                                "z": -0.6946839913760219
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-                          "blockType": "rectifier-20u-eltek",
-                          "catalogId": "rectifier-20u-eltek",
-                          "type": "rru",
-                          "category": "Rectifier",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": -2.0864791941400758,
-                                "y": 0,
-                                "z": -0.6332376280672216
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 4.71238898038469,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-                          "blockType": "rectifier-20u-eltek",
-                          "catalogId": "rectifier-20u-eltek",
-                          "type": "rru",
-                          "category": "Rectifier",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 3.851952261417253,
-                                "y": 0,
-                                "z": -0.7692552154740175
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 1.5707963267948966,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-                          "blockType": "rectifier-20u-eltek",
-                          "catalogId": "rectifier-20u-eltek",
-                          "type": "rru",
-                          "category": "Rectifier",
-                          "isFreestanding": true,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": -3.9324336243309648,
-                                "y": 0,
-                                "z": -0.591984448925329
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 1.5707963267948966,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    }
-              ],
-              "alan3": [
-                    {
-                          "name": "Özel Alan 2 Kompleksi (Platform + POI + RRU)",
-                          "blockType": "alan2-ozel-karma-blok",
-                          "catalogId": null,
-                          "type": "platform",
-                          "category": "Karma",
-                          "isFreestanding": false,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": -0.7245500429693337,
-                                "y": 0,
-                                "z": -0.8266094762855631
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 4.71238898038469,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": false,
-                          "lockedZ": false,
-                          "allowPassThrough": true
-                    }
-              ],
-              "alan4": [
-                    {
-                          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
-                          "blockType": "alan4-ozel-karma-blok",
-                          "catalogId": null,
-                          "type": "platform",
-                          "category": "Karma",
-                          "isFreestanding": false,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": -4.802038673384319,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": true,
-                          "lockedZ": true,
-                          "allowPassThrough": true
-                    },
-                    {
-                          "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
-                          "blockType": "alan4-ozel-karma-blok",
-                          "catalogId": null,
-                          "type": "platform",
-                          "category": "Karma",
-                          "isFreestanding": false,
-                          "isOffsetArmModule": false,
-                          "isOffsetCarrier": false,
-                          "isInclinedPipe": false,
-                          "position": {
-                                "x": 4.664673878978663,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "rotation": {
-                                "x": 0,
-                                "y": 0,
-                                "z": 0
-                          },
-                          "locked": false,
-                          "lockedX": false,
-                          "lockedY": true,
-                          "lockedZ": true,
-                          "allowPassThrough": true
-                    }
-              ]
-        }
+  "version": "2.0",
+  "savedAt": "2026-10-01T13:07:40.578Z",
+  "currentArea": "alan2",
+  "areas": {
+    "alan1": [
+      {
+        "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
+        "blockType": "alan1-7boru-ozel-karma-blok",
+        "catalogId": null,
+        "type": "rru",
+        "category": "Karma",
+        "isFreestanding": false,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": -1.1855
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      }
+    ],
+    "alan2": [
+      {
+        "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+        "blockType": "alan2-kediyolu-42u-kompleks",
+        "catalogId": null,
+        "type": "rru",
+        "category": "Canovate",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -4.361001259960455,
+          "y": 0,
+          "z": -1.1805947860171155
+        },
+        "rotation": {
+          "x": 0,
+          "y": 18.84955592153876,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+        "blockType": "alan2-kediyolu-42u-kompleks",
+        "catalogId": null,
+        "type": "rru",
+        "category": "Canovate",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -3.615809390325525,
+          "y": 0,
+          "z": -1.1914694272152344
+        },
+        "rotation": {
+          "x": 0,
+          "y": 18.84955592153876,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+        "blockType": "alan2-kediyolu-42u-kompleks",
+        "catalogId": null,
+        "type": "rru",
+        "category": "Canovate",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -5.103055270452055,
+          "y": 0,
+          "z": -1.216680015245864
+        },
+        "rotation": {
+          "x": 0,
+          "y": 18.84955592153876,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+        "blockType": "alan2-karsilikli-11boru-rru-blok",
+        "catalogId": null,
+        "type": "rru",
+        "category": "Karma",
+        "isFreestanding": false,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -1.520515241914614,
+          "y": 0,
+          "z": -1.164294472925311
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+        "blockType": "rectifier-20u-eltek",
+        "catalogId": "rectifier-20u-eltek",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 4.194284776610373,
+          "y": 0,
+          "z": -1.4117056039669595
+        },
+        "rotation": {
+          "x": 0,
+          "y": 6.283185307179586,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+        "blockType": "rectifier-20u-eltek",
+        "catalogId": "rectifier-20u-eltek",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 3.4028464432652448,
+          "y": 0,
+          "z": -1.4206267185693213
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+        "blockType": "rectifier-mts9304a",
+        "catalogId": "rectifier-mts9304a",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 2.605808707734417,
+          "y": 0,
+          "z": -1.4547246070415678
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+        "blockType": "rectifier-mts9304a",
+        "catalogId": "rectifier-mts9304a",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 1.7417955494464192,
+          "y": 0,
+          "z": -1.4595080285942583
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+        "blockType": "rectifier-20u-eltek",
+        "catalogId": "rectifier-20u-eltek",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 0.8394722597445441,
+          "y": 0,
+          "z": -1.4119842935578095
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      },
+      {
+        "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+        "blockType": "rectifier-mts9304a",
+        "catalogId": "rectifier-mts9304a",
+        "type": "rru",
+        "category": "Rectifier",
+        "isFreestanding": true,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 5.050704812315493,
+          "y": 0,
+          "z": -1.4139675859568794
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      }
+    ],
+    "alan3": [
+      {
+        "name": "Özel Alan 2 Kompleksi (Platform + POI + RRU)",
+        "blockType": "alan2-ozel-karma-blok",
+        "catalogId": null,
+        "type": "platform",
+        "category": "Karma",
+        "isFreestanding": false,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -0.7245500429693337,
+          "y": 0,
+          "z": -0.8266094762855631
+        },
+        "rotation": {
+          "x": 0,
+          "y": 4.71238898038469,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": false,
+        "lockedZ": false,
+        "allowPassThrough": true
+      }
+    ],
+    "alan4": [
+      {
+        "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+        "blockType": "alan4-ozel-karma-blok",
+        "catalogId": null,
+        "type": "platform",
+        "category": "Karma",
+        "isFreestanding": false,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": -4.802038673384319,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": true,
+        "lockedZ": true,
+        "allowPassThrough": true
+      },
+      {
+        "name": "Özel Alan 4 Kompleksi (Platform + POI + RRU)",
+        "blockType": "alan4-ozel-karma-blok",
+        "catalogId": null,
+        "type": "platform",
+        "category": "Karma",
+        "isFreestanding": false,
+        "isOffsetArmModule": false,
+        "isOffsetCarrier": false,
+        "isInclinedPipe": false,
+        "position": {
+          "x": 4.664673878978663,
+          "y": 0,
+          "z": 0
+        },
+        "rotation": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "locked": false,
+        "lockedX": false,
+        "lockedY": true,
+        "lockedZ": true,
+        "allowPassThrough": true
+      }
+    ]
   }
+}
 };
 
 function loadProjectFromData(importData) {
