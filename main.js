@@ -25,7 +25,7 @@ const state = {
   viewMode: 'persp', // 'persp' or 'ortho'
   nextId: 1,
   axisLockZ: true, // Lock Z position by default for sliding along X axis
-  currentArea: 'alan1'
+  currentArea: 'alan2'
 };
 
 // Dimensions conversion (1 unit in 3D = 1 meter)
@@ -324,11 +324,203 @@ function createScoreboardTexture() {
 
 // Generate Alan 4 Representation (Scoreboard: 13m x 8m, 1.5m Çaplı Çift Boru + 72cm Boşluk + 2.6m Genişliğinde Tek Kat Kedi Yolu)
 
+// Procedural Perforated Metal Texture Generator (Rüzgar Geçirgen Delikli Perfore Sac)
+function createPerforatedMetalTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // Base metallic surface: Anodized aluminum / galvanized steel color
+  ctx.fillStyle = '#788494';
+  ctx.fillRect(0, 0, 256, 256);
+
+  // Subtle metallic brushing noise
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  for (let i = 0; i < 400; i++) {
+    const rx = Math.random() * 256;
+    const ry = Math.random() * 256;
+    ctx.fillRect(rx, ry, 2, 2);
+  }
+
+  // Punched circular perforations in staggered 60° triangular pitch
+  // StepX = 32, StepY = 25.6 gives exact seamless tiling on 256x256 (8 cols, 10 rows)
+  const stepX = 32;
+  const stepY = 25.6;
+  const holeRadius = 10.0; // ~40% wind airflow permeability
+
+  // Cut out transparent holes
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = '#000000';
+  for (let y = -stepY; y <= 256 + stepY; y += stepY) {
+    const row = Math.round(y / stepY);
+    const offsetX = (row % 2 !== 0) ? stepX / 2 : 0;
+    for (let x = -stepX; x <= 256 + stepX; x += stepX) {
+      ctx.beginPath();
+      ctx.arc(x + offsetX, y, holeRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Draw punch-die edge bevels / darker rim for authentic 3D sheet metal depth
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(30, 41, 59, 0.7)';
+  ctx.lineWidth = 1.4;
+  for (let y = -stepY; y <= 256 + stepY; y += stepY) {
+    const row = Math.round(y / stepY);
+    const offsetX = (row % 2 !== 0) ? stepX / 2 : 0;
+    for (let x = -stepX; x <= 256 + stepX; x += stepX) {
+      ctx.beginPath();
+      ctx.arc(x + offsetX, y, holeRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+// Procedural Cable Tray Perforated Bottom Texture Generator (Yağmur Suyu Drenaj Delikli Galvaniz Sac)
+function createCableTrayPerforatedTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Taban sıcak daldırma galvaniz çelik rengi
+  ctx.fillStyle = '#a4b0be';
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Galvaniz çinko pul / gren dokusu
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+  for (let i = 0; i < 600; i++) {
+    const rx = Math.random() * 512;
+    const ry = Math.random() * 512;
+    ctx.fillRect(rx, ry, Math.random() * 4 + 1, Math.random() * 4 + 1);
+  }
+
+  // Yağmur suyu drenaj delikleri (Oval uzun yarıklar - 16px genişlik, 46px uzunluk)
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.fillStyle = '#000000';
+
+  const slotW = 16;
+  const slotH = 46;
+  const rad = 8;
+  const cols = 8;
+  const rows = 8;
+  const colSpacing = 64;
+  const rowSpacing = 64;
+
+  for (let r = 0; r < rows; r++) {
+    const offsetX = (r % 2 === 1) ? colSpacing / 2 : 0;
+    for (let c = 0; c < cols; c++) {
+      const x = (c * colSpacing + offsetX + 16) % 512;
+      const y = r * rowSpacing + 9;
+      ctx.beginPath();
+      ctx.roundRect(x, y, slotW, slotH, rad);
+      ctx.fill();
+    }
+  }
+
+  // Pres baskı çapak/pah kenar derinliği
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(30, 41, 59, 0.75)';
+  ctx.lineWidth = 2.0;
+
+  for (let r = 0; r < rows; r++) {
+    const offsetX = (r % 2 === 1) ? colSpacing / 2 : 0;
+    for (let c = 0; c < cols; c++) {
+      const x = (c * colSpacing + offsetX + 16) % 512;
+      const y = r * rowSpacing + 9;
+      ctx.beginPath();
+      ctx.roundRect(x, y, slotW, slotH, rad);
+      ctx.stroke();
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+// 48 Adet 7/8" Feeder + 16 Adet 2x25 mm² Enerji Kablosu Demeti Üretici
+// Feeder: 48 adet, r = 13.5mm (OD ~27-28mm). 12 sütun x 4 katman (Tava/Merdiven Sol Bölümü)
+// Enerji: 16 adet, r = 10.5mm (OD ~21mm). 4 sütun x 4 katman (Tava/Merdiven Sağ Bölümü)
+function getTelecomCableBundleConfigs() {
+  const feederMat = new THREE.MeshStandardMaterial({
+    color: 0x181a1e, // 7/8" UV korumalı mat siyah dış kılıf
+    roughness: 0.65,
+    metalness: 0.15
+  });
+
+  const powerMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7, // 2x25 mm² DC güç mavi dış kılıf
+    roughness: 0.55,
+    metalness: 0.20
+  });
+
+  const configs = [];
+
+  // A) 48 Adet 7/8" Feeder Kablosu (12 sütun x 4 katman = 48 adet)
+  const feederRadius = 0.0135;
+  const feederStartX = -0.21;
+  const feederEndX = 0.04;
+  const feederCols = 12;
+  const feederTiers = 4;
+
+  for (let c = 0; c < feederCols; c++) {
+    const x = feederStartX + c * ((feederEndX - feederStartX) / (feederCols - 1));
+    for (let t = 1; t <= feederTiers; t++) {
+      const cableIndex = (t - 1) * feederCols + c + 1;
+      configs.push({
+        type: 'feeder',
+        name: `7/8" Feeder #${cableIndex} (Kat ${t})`,
+        x: x,
+        tier: t,
+        r: feederRadius,
+        mat: feederMat
+      });
+    }
+  }
+
+  // B) 16 Adet 2x25 mm² Enerji Kablosu (4 sütun x 4 katman = 16 adet)
+  const powerRadius = 0.0105;
+  const powerStartX = 0.10;
+  const powerEndX = 0.21;
+  const powerCols = 4;
+  const powerTiers = 4;
+
+  for (let c = 0; c < powerCols; c++) {
+    const x = powerStartX + c * ((powerEndX - powerStartX) / (powerCols - 1));
+    for (let t = 1; t <= powerTiers; t++) {
+      const cableIndex = (t - 1) * powerCols + c + 1;
+      configs.push({
+        type: 'power',
+        name: `2x25mm² Enerji #${cableIndex} (Kat ${t})`,
+        x: x,
+        tier: t,
+        r: powerRadius,
+        mat: powerMat
+      });
+    }
+  }
+
+  return configs;
+}
+
 // Generate Alan 2 Representation (Tribün Üstü Taşıyıcı Beton Alan)
+const alan2SlidingDoors = [];
+
 function createAlan2Structure() {
   const alan2Group = new THREE.Group();
   alan2Group.name = 'alan2Structure';
   alan2Group.visible = false; // Hidden by default
+  alan2SlidingDoors.length = 0;
 
   // Concrete floor
   const floorWidth = 2.0; 
@@ -364,33 +556,1000 @@ function createAlan2Structure() {
   });
 
   const postWidth = 0.05;
-  const postDepth = 0.1;
-  const postHeight = 1.2;
-  const postGeo = new THREE.BoxGeometry(postWidth, postHeight, postDepth);
+  const postDepth = 0.08;
   const glassThickness = 0.02;
-  const glassHeight = 1.1;
 
-  const postSpacing = 1.5;
-  const numPosts = Math.floor(floorLength / postSpacing) + 1;
-  const startX = -(numPosts - 1) * postSpacing / 2;
+  // -------------------------------------------------------------
+  // 11 Metrelik Özel Korumalı Alan (170 cm Yükseklik)
+  // X = -5.5 ile X = +5.5 arası (Toplam 11 metre)
+  // 0 referanslı direğin sağ ve sol direklerinin iç kesimlerini kapsar
+  // 3 cephesi (Sol, Sağ, Arka) 170cm Cam ile kapalı
+  // Z+ Ön Cephesi (tribüne bakan cephe) rüzgar geçirgenliği için Delikli Perfore Metal Sac (6 adet 150cm kademeli kayar kapı + 2 adet 1m sabit panel)
+  // -------------------------------------------------------------
+  const encMinX = -5.5;
+  const encMaxX = 5.5;
+  const encFrontZ = -0.05;
+  const encBackZ = -1.95;
+  const encGlassH = 1.70; // 170 cm panel yüksekliği
+  const encPostH = 1.75;
 
-  for (let i = 0; i < numPosts; i++) {
-    const xPos = startX + i * postSpacing;
+  // Delikli Perfore Metal Malzeme ve Doku Üreteci (Rüzgar Yükünü Düşüren ~%40 Geçirgenlik)
+  const perforatedTex = createPerforatedMetalTexture();
+  const createPerforatedMat = (wMeters, hMeters) => {
+    const tex = perforatedTex.clone();
+    tex.needsUpdate = true;
+    const repX = Math.max(1, Math.round(wMeters * 4));
+    const repY = Math.max(1, Math.round(hMeters * 4));
+    tex.repeat.set(repX, repY);
+    return new THREE.MeshStandardMaterial({
+      map: tex,
+      transparent: true,
+      alphaTest: 0.25,
+      metalness: 0.85,
+      roughness: 0.35,
+      color: 0x94a3b8, // Galvaniz perfore metal sac görünümü
+      side: THREE.DoubleSide
+    });
+  };
+
+  // Standart korkuluk (enclosure dışındaki alanlar: X < -5.5 ve X > +5.5)
+  const stdGlassH = 1.10;
+  const stdPostH = 1.20;
+
+  // 1. ÖN CEPHE (Tribüne bakan cephe, Z = -0.05)
+  // A) Sol Dış Bölüm: X = -15.0'den X = -5.5'e (1.1m standart cam)
+  const leftRailLen = Math.abs(encMinX - (-floorLength / 2)); // 9.5m
+  const leftNumPosts = Math.round(leftRailLen / 1.5) + 1;
+  const leftSpacing = leftRailLen / (leftNumPosts - 1);
+  for (let i = 0; i < leftNumPosts - 1; i++) {
+    const xPos = -floorLength / 2 + i * leftSpacing;
+    const postGeo = new THREE.BoxGeometry(postWidth, stdPostH, postDepth);
     const post = new THREE.Mesh(postGeo, postMat);
-    post.position.set(xPos, postHeight / 2, -0.05); 
+    post.position.set(xPos, stdPostH / 2, encFrontZ);
     post.castShadow = true;
     alan2Group.add(post);
 
-    if (i < numPosts - 1) {
-      const panelWidth = postSpacing - postWidth;
-      const glassGeo = new THREE.BoxGeometry(panelWidth, glassHeight, glassThickness);
+    const panelW = leftSpacing - postWidth;
+    const glassGeo = new THREE.BoxGeometry(panelW, stdGlassH, glassThickness);
+    const glass = new THREE.Mesh(glassGeo, glassMat);
+    glass.position.set(xPos + leftSpacing / 2, stdGlassH / 2 + 0.05, encFrontZ);
+    alan2Group.add(glass);
+  }
+
+  // B) Sağ Dış Bölüm: X = +5.5'ten X = +15.0'e (1.1m standart cam)
+  const rightRailLen = Math.abs(floorLength / 2 - encMaxX); // 9.5m
+  const rightNumPosts = Math.round(rightRailLen / 1.5) + 1;
+  const rightSpacing = rightRailLen / (rightNumPosts - 1);
+  for (let i = 0; i < rightNumPosts; i++) {
+    const xPos = encMaxX + i * rightSpacing;
+    if (i > 0) {
+      const postGeo = new THREE.BoxGeometry(postWidth, stdPostH, postDepth);
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.set(xPos, stdPostH / 2, encFrontZ);
+      post.castShadow = true;
+      alan2Group.add(post);
+    }
+    if (i < rightNumPosts - 1) {
+      const panelW = rightSpacing - postWidth;
+      const glassGeo = new THREE.BoxGeometry(panelW, stdGlassH, glassThickness);
       const glass = new THREE.Mesh(glassGeo, glassMat);
-      glass.position.set(xPos + postSpacing / 2, glassHeight / 2 + 0.05, -0.05);
+      glass.position.set(xPos + rightSpacing / 2, stdGlassH / 2 + 0.05, encFrontZ);
       alan2Group.add(glass);
     }
   }
 
+  // C) 11 Metrelik Bölümün Z+ Ön Cephesi: Kademeli Kayar Kapı Sistemi (6 Adet 150cm Kapı + Kenarlarda 1m Sabit Panel)
+  // Toplam açıklık: 11.0 metre (X = -5.5 ile X = +5.5 arası)
+  // Kenarlar: X = [-5.5, -4.5] (1.0m) ve X = [+4.5, +5.5] (1.0m) rüzgar geçirgen delikli perfore paneller
+  // Orta kayar alan: X = [-4.5, +4.5] (9.0m) -> 6 adet 1.50m genişliğinde kademeli kayar perfore kapı
+
+  const doorTrackMat = new THREE.MeshStandardMaterial({
+    color: 0x828b96,
+    metalness: 0.85,
+    roughness: 0.25
+  });
+
+  const doorFrameMat = new THREE.MeshStandardMaterial({
+    color: 0x64748b,
+    metalness: 0.8,
+    roughness: 0.3
+  });
+
+  const doorHandleMat = new THREE.MeshStandardMaterial({
+    color: 0xe2e8f0,
+    metalness: 0.9,
+    roughness: 0.15
+  });
+
+  // 1. Üst Taşıyıcı Çift Ray Profili (Header Track Profile)
+  const topTrackGeo = new THREE.BoxGeometry(encMaxX - encMinX, 0.06, 0.10);
+  const topTrack = new THREE.Mesh(topTrackGeo, doorTrackMat);
+  topTrack.position.set(0, encGlassH + 0.03, -0.05);
+  topTrack.castShadow = true;
+  alan2Group.add(topTrack);
+
+  // 2. Alt Zemin Kılavuz Rayı (Floor Guide Track)
+  const floorTrackGeo = new THREE.BoxGeometry(encMaxX - encMinX, 0.015, 0.08);
+  const floorTrack = new THREE.Mesh(floorTrackGeo, doorTrackMat);
+  floorTrack.position.set(0, 0.0075, -0.05);
+  floorTrack.receiveShadow = true;
+  alan2Group.add(floorTrack);
+
+  // 3. Kenar Sabit Paneller (1.0m genişliğinde rüzgar geçirgen delikli metal perfore paneller)
+  // A) Sol Sabit Panel: X = -5.5 ile X = -4.5 arası
+  const fixedPostGeo = new THREE.BoxGeometry(postWidth, encPostH, postDepth);
+  const fixedLeftPost1 = new THREE.Mesh(fixedPostGeo, postMat);
+  fixedLeftPost1.position.set(encMinX, encPostH / 2, encFrontZ);
+  alan2Group.add(fixedLeftPost1);
+
+  const fixedLeftPost2 = new THREE.Mesh(fixedPostGeo, postMat);
+  fixedLeftPost2.position.set(-4.5, encPostH / 2, encFrontZ);
+  alan2Group.add(fixedLeftPost2);
+
+  const fixedPanelW = 1.0 - postWidth;
+  const fixedPerforatedMat = createPerforatedMat(fixedPanelW, encGlassH);
+  const fixedPanelGeo = new THREE.PlaneGeometry(fixedPanelW, encGlassH);
+
+  const fixedLeftPanel = new THREE.Mesh(fixedPanelGeo, fixedPerforatedMat);
+  fixedLeftPanel.position.set(-5.0, encGlassH / 2 + 0.02, encFrontZ);
+  alan2Group.add(fixedLeftPanel);
+
+  const fixedRailGeo = new THREE.BoxGeometry(fixedPanelW, 0.04, 0.03);
+  const fixedLeftTopRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedLeftTopRail.position.set(-5.0, encGlassH + 0.02 - 0.02, encFrontZ);
+  alan2Group.add(fixedLeftTopRail);
+
+  const fixedLeftMidRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedLeftMidRail.position.set(-5.0, encGlassH / 2 + 0.02, encFrontZ);
+  alan2Group.add(fixedLeftMidRail);
+
+  const fixedLeftBotRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedLeftBotRail.position.set(-5.0, 0.02 + 0.02, encFrontZ);
+  alan2Group.add(fixedLeftBotRail);
+
+  // B) Sağ Sabit Panel: X = +4.5 ile X = +5.5 arası
+  const fixedRightPost1 = new THREE.Mesh(fixedPostGeo, postMat);
+  fixedRightPost1.position.set(4.5, encPostH / 2, encFrontZ);
+  alan2Group.add(fixedRightPost1);
+
+  const fixedRightPost2 = new THREE.Mesh(fixedPostGeo, postMat);
+  fixedRightPost2.position.set(encMaxX, encPostH / 2, encFrontZ);
+  alan2Group.add(fixedRightPost2);
+
+  const fixedRightPanel = new THREE.Mesh(fixedPanelGeo, fixedPerforatedMat);
+  fixedRightPanel.position.set(5.0, encGlassH / 2 + 0.02, encFrontZ);
+  alan2Group.add(fixedRightPanel);
+
+  const fixedRightTopRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedRightTopRail.position.set(5.0, encGlassH + 0.02 - 0.02, encFrontZ);
+  alan2Group.add(fixedRightTopRail);
+
+  const fixedRightMidRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedRightMidRail.position.set(5.0, encGlassH / 2 + 0.02, encFrontZ);
+  alan2Group.add(fixedRightMidRail);
+
+  const fixedRightBotRail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
+  fixedRightBotRail.position.set(5.0, 0.02 + 0.02, encFrontZ);
+  alan2Group.add(fixedRightBotRail);
+
+  // 4. 6 Adet 150 cm'lik Kademeli Kayar Kapı (Teleskopik / Çift Raylı Baypas Düzeni - Perfore Delikli Metal Kanat)
+  // X = [-4.5, +4.5] arası 9 metre, her biri 1.50m
+  // Birbirinin arkasına/yanına kayabilmesi için çift ray (Z = -0.03 ve Z = -0.07) üzerinde kademeli dizilim
+  const numDoors = 6;
+  const doorWidth = 1.50;
+  const doorHeight = encGlassH - 0.06; // 1.64m
+  const doorStartX = -4.5;
+  const doorPanelW = doorWidth - 0.06;
+  const doorPanelH = doorHeight - 0.06;
+  const doorPerforatedMat = createPerforatedMat(doorPanelW, doorPanelH);
+  const doorPanelGeo = new THREE.PlaneGeometry(doorPanelW, doorPanelH);
+
+  for (let d = 0; d < numDoors; d++) {
+    const doorGroup = new THREE.Group();
+    const doorCenterX = doorStartX + d * doorWidth + doorWidth / 2;
+    // İkili Eşleşme (Pairing): 1-2 (d=0,1), 3-4 (d=2,3), 5-6 (d=4,5)
+    // İlk kapı ön rayda (Z = -0.03), ikinci kapı arka rayda (Z = -0.07)
+    const isFirstInPair = (d % 2 === 0);
+    const trackZ = isFirstInPair ? -0.03 : -0.07;
+    doorGroup.position.set(doorCenterX, 0, trackZ);
+
+    // Eşinin X konumu (Kapı 1 -> Kapı 2'ye, Kapı 2 -> Kapı 1'e)
+    const partnerX = isFirstInPair ? (doorCenterX + doorWidth) : (doorCenterX - doorWidth);
+
+    // Rüzgar Geçirgen Delikli Metal Perfore Panel
+    const doorPanel = new THREE.Mesh(doorPanelGeo, doorPerforatedMat);
+    doorPanel.position.set(0, 0.03 + doorHeight / 2, 0);
+    doorGroup.add(doorPanel);
+
+    // Kapı Çerçevesi (Alüminyum Kanat Profili)
+    // Üst ve Alt Yatay Profil
+    const horizFrameGeo = new THREE.BoxGeometry(doorWidth, 0.04, 0.025);
+    const topFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
+    topFrame.position.set(0, 0.03 + doorHeight - 0.02, 0);
+    doorGroup.add(topFrame);
+
+    const botFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
+    botFrame.position.set(0, 0.03 + 0.02, 0);
+    doorGroup.add(botFrame);
+
+    // Orta Yatay Takviye Kuşağı (Rüzgar dalgalanmasını önleyen orta profil)
+    const midFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
+    midFrame.position.set(0, 0.03 + doorHeight / 2, 0);
+    doorGroup.add(midFrame);
+
+    // Sol ve Sağ Dikey Profil
+    const vertFrameGeo = new THREE.BoxGeometry(0.04, doorHeight, 0.025);
+    const leftFrame = new THREE.Mesh(vertFrameGeo, doorFrameMat);
+    leftFrame.position.set(-doorWidth / 2 + 0.02, 0.03 + doorHeight / 2, 0);
+    doorGroup.add(leftFrame);
+
+    const rightFrame = new THREE.Mesh(vertFrameGeo, doorFrameMat);
+    rightFrame.position.set(doorWidth / 2 - 0.02, 0.03 + doorHeight / 2, 0);
+    doorGroup.add(rightFrame);
+
+    // Üst Makara / Askı Pabuçları (Tekerlek Mekanizması)
+    const hangerGeo = new THREE.BoxGeometry(0.08, 0.05, 0.035);
+    const hanger1 = new THREE.Mesh(hangerGeo, doorTrackMat);
+    hanger1.position.set(-doorWidth / 3, 0.03 + doorHeight + 0.015, 0);
+    doorGroup.add(hanger1);
+
+    const hanger2 = new THREE.Mesh(hangerGeo, doorTrackMat);
+    hanger2.position.set(doorWidth / 3, 0.03 + doorHeight + 0.015, 0);
+    doorGroup.add(hanger2);
+
+    // Dikey Paslanmaz Çelik Çekme Kolu (İkili eşlerin ortasında buluşacak şekilde)
+    const handleGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.60, 16);
+    const handle = new THREE.Mesh(handleGeo, doorHandleMat);
+    const handleX = isFirstInPair ? (doorWidth / 2 - 0.12) : (-doorWidth / 2 + 0.12);
+    handle.position.set(handleX, 0.90, 0.025);
+    doorGroup.add(handle);
+
+    // Kulp Bağlantı Pabuçları
+    const handleMountGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.035, 12);
+    handleMountGeo.rotateX(Math.PI / 2);
+    const hMount1 = new THREE.Mesh(handleMountGeo, doorHandleMat);
+    hMount1.position.set(handleX, 0.90 + 0.25, 0.012);
+    doorGroup.add(hMount1);
+    const hMount2 = new THREE.Mesh(handleMountGeo, doorHandleMat);
+    hMount2.position.set(handleX, 0.90 - 0.25, 0.012);
+    doorGroup.add(hMount2);
+
+    doorGroup.userData.isSlidingDoor = true;
+    doorGroup.userData.doorIndex = d;
+    doorGroup.userData.closedX = doorCenterX;
+    doorGroup.userData.openX = partnerX;
+    doorGroup.userData.targetX = doorCenterX;
+    doorGroup.userData.isOpen = false;
+
+    alan2Group.add(doorGroup);
+    alan2SlidingDoors.push(doorGroup);
+  }
+
+  // 2. SOL YAN CAM CEPHE (X = -5.5, Z = -0.05'ten Z = -1.95'e, 170cm Cam)
+  const sideDepth = Math.abs(encBackZ - encFrontZ); // 1.90m
+  const sideMidZ = (encFrontZ + encBackZ) / 2;
+  // Orta direk
+  const sidePostGeo = new THREE.BoxGeometry(postDepth, encPostH, postWidth);
+  const leftMidPost = new THREE.Mesh(sidePostGeo, postMat);
+  leftMidPost.position.set(encMinX, encPostH / 2, sideMidZ);
+  alan2Group.add(leftMidPost);
+  // Arka köşe direk
+  const leftBackPost = new THREE.Mesh(sidePostGeo, postMat);
+  leftBackPost.position.set(encMinX, encPostH / 2, encBackZ);
+  alan2Group.add(leftBackPost);
+
+  // 2 parça 170cm yan cam panel
+  const sidePanelDepth = (sideDepth / 2) - postWidth;
+  const leftGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
+  leftGlass1.position.set(encMinX, encGlassH / 2 + 0.02, encFrontZ - sideDepth / 4);
+  alan2Group.add(leftGlass1);
+  const leftGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
+  leftGlass2.position.set(encMinX, encGlassH / 2 + 0.02, encBackZ + sideDepth / 4);
+  alan2Group.add(leftGlass2);
+
+  // 3. SAĞ YAN CAM CEPHE (X = +5.5, Z = -0.05'ten Z = -1.95'e, 170cm Cam)
+  const rightMidPost = new THREE.Mesh(sidePostGeo, postMat);
+  rightMidPost.position.set(encMaxX, encPostH / 2, sideMidZ);
+  alan2Group.add(rightMidPost);
+  const rightBackPost = new THREE.Mesh(sidePostGeo, postMat);
+  rightBackPost.position.set(encMaxX, encPostH / 2, encBackZ);
+  alan2Group.add(rightBackPost);
+
+  const rightGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
+  rightGlass1.position.set(encMaxX, encGlassH / 2 + 0.02, encFrontZ - sideDepth / 4);
+  alan2Group.add(rightGlass1);
+  const rightGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
+  rightGlass2.position.set(encMaxX, encGlassH / 2 + 0.02, encBackZ + sideDepth / 4);
+  alan2Group.add(rightGlass2);
+
+  // 4. ARKA CAM CEPHE (Z = -1.95, X = -5.5 ile X = +5.5 arası, 11 metre boyunda 170cm Cam)
+  const backLen = 11.0;
+  const backNumPosts = 8;
+  const backSpacing = backLen / (backNumPosts - 1); // ~1.57m
+  for (let i = 0; i < backNumPosts; i++) {
+    const xPos = encMinX + i * backSpacing;
+    if (i > 0 && i < backNumPosts - 1) {
+      const postGeo = new THREE.BoxGeometry(postWidth, encPostH, postDepth);
+      const post = new THREE.Mesh(postGeo, postMat);
+      post.position.set(xPos, encPostH / 2, encBackZ);
+      post.castShadow = true;
+      alan2Group.add(post);
+    }
+    if (i < backNumPosts - 1) {
+      const panelW = backSpacing - postWidth;
+      const glassGeo = new THREE.BoxGeometry(panelW, encGlassH, glassThickness);
+      const glass = new THREE.Mesh(glassGeo, glassMat);
+      glass.position.set(xPos + backSpacing / 2, encGlassH / 2 + 0.02, encBackZ);
+      alan2Group.add(glass);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // Dikey Taşıyıcı Çelik Silindir Direkler (6 metrede bir)
+  // Çap: 40 cm (yarıçap: 0.20 m)
+  // Konum: Cam tarafından 115 cm (1.15 m), uzak köşeden 45 cm (0.45 m) uzakta
+  // Z = -(1.15 + 0.20) = -1.35 m
+  // -------------------------------------------------------------
+  const colDiameter = 0.40;
+  const colRadius = colDiameter / 2; // 0.20 m
+  const colZ = -1.35; // Cam kenarı (Z=0) ile uzak köşe (Z=-2.0) arasında: Z=-1.35
+  const colHeight = 5.0; // 5 metre yükseklik (çatı makasına kadar)
+
+  const colMat = new THREE.MeshStandardMaterial({
+    color: 0xebedf0, // Açık gri / beyaz stadyum çelik boyası
+    roughness: 0.4,
+    metalness: 0.35
+  });
+
+  const steelPlateMat = new THREE.MeshStandardMaterial({
+    color: 0xc8ccd0,
+    roughness: 0.35,
+    metalness: 0.75
+  });
+
+  const basePedestalMat = new THREE.MeshStandardMaterial({
+    color: 0x585a5d, // Zemin beton pabuç
+    roughness: 0.95,
+    metalness: 0.05
+  });
+
+  const boltMat = new THREE.MeshStandardMaterial({
+    color: 0x222426,
+    roughness: 0.4,
+    metalness: 0.8
+  });
+
+  // 30m zemin boyunca 6m aralıkla yerleşim: X = [-12, -6, 0, 6, 12]
+  const colXPositions = [-12, -6, 0, 6, 12];
+
+  colXPositions.forEach((xPos) => {
+    const colGroup = new THREE.Group();
+    colGroup.position.set(xPos, 0, colZ);
+
+    // 1. Zemin Beton Pabuç / Kaidesi (Kare yükselti - 70cm x 70cm x 10cm)
+    const pedGeo = new THREE.BoxGeometry(0.70, 0.10, 0.70);
+    const pedestal = new THREE.Mesh(pedGeo, basePedestalMat);
+    pedestal.position.set(0, 0.05, 0);
+    pedestal.receiveShadow = true;
+    pedestal.castShadow = true;
+    colGroup.add(pedestal);
+
+    // 2. Çelik Taban Plakası (Kare - 60cm x 60cm x 3.5cm)
+    const plateGeo = new THREE.BoxGeometry(0.60, 0.035, 0.60);
+    const basePlate = new THREE.Mesh(plateGeo, steelPlateMat);
+    basePlate.position.set(0, 0.10 + 0.035 / 2, 0);
+    basePlate.castShadow = true;
+    basePlate.receiveShadow = true;
+    colGroup.add(basePlate);
+
+    // 4 Köşe Ankraj Civataları
+    const boltGeo = new THREE.CylinderGeometry(0.018, 0.018, 0.045, 8);
+    const boltOffset = 0.24;
+    [
+      [-boltOffset, -boltOffset],
+      [boltOffset, -boltOffset],
+      [-boltOffset, boltOffset],
+      [boltOffset, boltOffset]
+    ].forEach(([bx, bz]) => {
+      const bolt = new THREE.Mesh(boltGeo, boltMat);
+      bolt.position.set(bx, 0.10 + 0.035 + 0.02, bz);
+      colGroup.add(bolt);
+    });
+
+    // 3. Alt Dairesel Bağlantı Flanşı (Çap: 56cm, Kalınlık: 3cm)
+    const flangeGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.03, 32);
+    const baseFlange = new THREE.Mesh(flangeGeo, steelPlateMat);
+    baseFlange.position.set(0, 0.135 + 0.015, 0);
+    baseFlange.castShadow = true;
+    colGroup.add(baseFlange);
+
+    // Flanş Çember Civataları (8 adet dairesel dizilim)
+    const flBoltGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.025, 6);
+    for (let b = 0; b < 8; b++) {
+      const angle = (b / 8) * Math.PI * 2;
+      const flBolt = new THREE.Mesh(flBoltGeo, boltMat);
+      flBolt.position.set(Math.cos(angle) * 0.24, 0.15 + 0.0125, Math.sin(angle) * 0.24);
+      colGroup.add(flBolt);
+    }
+
+    // 4. Ana Dikey Silindir Boru Direk (Çap: 40 cm, Yarıçap: 0.20 m)
+    const pipeHeight = colHeight - 0.15;
+    const pipeGeo = new THREE.CylinderGeometry(colRadius, colRadius, pipeHeight, 36);
+    const pipe = new THREE.Mesh(pipeGeo, colMat);
+    pipe.position.set(0, 0.15 + pipeHeight / 2, 0);
+    pipe.castShadow = true;
+    pipe.receiveShadow = true;
+    colGroup.add(pipe);
+
+    // 5. Üst Çatı Bağlantı Flanşı (Fotoğraftaki çatı makasına bağlanan üst flanş)
+    const topFlangeY = 4.3;
+    const topFlangeGeo = new THREE.CylinderGeometry(0.27, 0.27, 0.04, 32);
+    const topFlange1 = new THREE.Mesh(topFlangeGeo, steelPlateMat);
+    topFlange1.position.set(0, topFlangeY, 0);
+    colGroup.add(topFlange1);
+
+    const topFlange2 = new THREE.Mesh(topFlangeGeo, steelPlateMat);
+    topFlange2.position.set(0, topFlangeY + 0.045, 0);
+    colGroup.add(topFlange2);
+
+    for (let tb = 0; tb < 8; tb++) {
+      const angle = (tb / 8) * Math.PI * 2;
+      const topBolt = new THREE.Mesh(flBoltGeo, boltMat);
+      topBolt.position.set(Math.cos(angle) * 0.24, topFlangeY + 0.022, Math.sin(angle) * 0.24);
+      colGroup.add(topBolt);
+    }
+
+    alan2Group.add(colGroup);
+  });
+
+  // -------------------------------------------------------------
+  // Silindir Direkleri 4. Metrede Birbirine Bağlayan Yatay Silindir Kiriş (Horizontal Tie Cylinder)
+  // Y = 4.0 m kotunda, Z = -1.35 m aksında, X = -12.0 m ile X = +12.0 m arasında (24 metre boyunda)
+  // Çap: 22 cm (Yarıçap: 0.11 m)
+  // -------------------------------------------------------------
+  const horizPipeGroup = new THREE.Group();
+  horizPipeGroup.name = 'alan2YataySilindirKiris';
+
+  const horizPipeRadius = 0.11; // 22 cm çapında yatay silindir boru
+  const horizPipeLen = 24.0; // 24 metre toplam uzunluk (-12m'den +12m'ye)
+
+  const horizPipeGeo = new THREE.CylinderGeometry(horizPipeRadius, horizPipeRadius, horizPipeLen, 32);
+  horizPipeGeo.rotateZ(Math.PI / 2); // X ekseni boyunca yatay konumlandır
+
+  const horizPipe = new THREE.Mesh(horizPipeGeo, colMat);
+  horizPipe.position.set(0, 4.0, colZ);
+  horizPipe.castShadow = true;
+  horizPipe.receiveShadow = true;
+  horizPipeGroup.add(horizPipe);
+
+  // Her bir direk kesişiminde (X = -12, -6, 0, 6, 12) güçlendirilmiş T-birleşim bileziği ve kaynak flanşları
+  const collarGeo = new THREE.CylinderGeometry(colRadius + 0.008, colRadius + 0.008, horizPipeRadius * 2 + 0.06, 32);
+  const ringFlangeGeo = new THREE.CylinderGeometry(horizPipeRadius + 0.02, horizPipeRadius + 0.02, 0.025, 24);
+  ringFlangeGeo.rotateZ(Math.PI / 2);
+
+  colXPositions.forEach((cx) => {
+    // Dikey direk üzerine sarılan T-bağlantı kuşağı / bileziği
+    const collar = new THREE.Mesh(collarGeo, steelPlateMat);
+    collar.position.set(cx, 4.0, colZ);
+    collar.castShadow = true;
+    horizPipeGroup.add(collar);
+
+    // Yatay borunun direğe giriş yaptığı her iki yana kaynak/bağlantı flanş halkaları
+    if (cx > -12) {
+      const ringL = new THREE.Mesh(ringFlangeGeo, steelPlateMat);
+      ringL.position.set(cx - (colRadius + 0.015), 4.0, colZ);
+      horizPipeGroup.add(ringL);
+    }
+    if (cx < 12) {
+      const ringR = new THREE.Mesh(ringFlangeGeo, steelPlateMat);
+      ringR.position.set(cx + (colRadius + 0.015), 4.0, colZ);
+      horizPipeGroup.add(ringR);
+    }
+  });
+
+  // Uç Direklerdeki (X = -12 ve X = +12) Dış Flanş Kapakları
+  const endCapGeo = new THREE.CylinderGeometry(horizPipeRadius + 0.025, horizPipeRadius + 0.025, 0.03, 24);
+  endCapGeo.rotateZ(Math.PI / 2);
+
+  const capLeft = new THREE.Mesh(endCapGeo, steelPlateMat);
+  capLeft.position.set(-12.0 - colRadius, 4.0, colZ);
+  horizPipeGroup.add(capLeft);
+
+  const capRight = new THREE.Mesh(endCapGeo, steelPlateMat);
+  capRight.position.set(12.0 + colRadius, 4.0, colZ);
+  horizPipeGroup.add(capRight);
+
+  alan2Group.add(horizPipeGroup);
+
+  // -------------------------------------------------------------
+  // Dikey Kablo Merdiveni (Vertical Cable Ladder)
+  // Konum: X = -3.0 m (0 referanslı direk ile X=-6m direğinin tam ortası)
+  // Z konumu: Z = -0.75 m (Kayar kapı düzleminden [Z=-0.05] 70 cm betonun içine doğru)
+  // Genişlik: 50 cm (0.50 m, X ekseninde: X = [-3.25, -2.75])
+  // Yükseklik: Zeminden 4 metreye ulaşır (Y = 0.0 m'den Y = 4.0 m'ye)
+  // -------------------------------------------------------------
+  const ladderGroup = new THREE.Group();
+  ladderGroup.name = 'dikeyKabloMerdiveniAlan2';
+
+  const ladderW = 0.50; // 50 cm genişlik
+  const ladderH = 4.00; // 4 metre yükseklik
+  const ladderD = 0.07; // 7 cm profil derinliği
+  const ladderX = -3.00; // X=-6 ile X=0 tam ortası
+  const ladderZ = colZ; // Yatay silindir kiriş hizası (Z = -1.35 m)
+
+  ladderGroup.position.set(ladderX, 0, ladderZ);
+
+  // Sıcak daldırma galvaniz çelik malzeme
+  const ladderMat = new THREE.MeshStandardMaterial({
+    color: 0xa4b0be, // Galvaniz çelik rengi
+    metalness: 0.85,
+    roughness: 0.3
+  });
+
+  const ladderDarkMat = new THREE.MeshStandardMaterial({
+    color: 0x475569, // Koyu çelik aksam / kelepçeler
+    metalness: 0.8,
+    roughness: 0.35
+  });
+
+  const railW = 0.04; // 40mm yan profil et kalınlığı
+  const railD = ladderD; // 70mm yan profil derinliği
+
+  // 1. Sol ve Sağ Dikey Taşıyıcı Kolları (Vertical Side Rails / Stringers)
+  const vertRailGeo = new THREE.BoxGeometry(railW, ladderH, railD);
+  
+  const leftRail = new THREE.Mesh(vertRailGeo, ladderMat);
+  leftRail.position.set(-ladderW / 2 + railW / 2, ladderH / 2, 0);
+  leftRail.castShadow = true;
+  leftRail.receiveShadow = true;
+  ladderGroup.add(leftRail);
+
+  const rightRail = new THREE.Mesh(vertRailGeo, ladderMat);
+  rightRail.position.set(ladderW / 2 - railW / 2, ladderH / 2, 0);
+  rightRail.castShadow = true;
+  rightRail.receiveShadow = true;
+  ladderGroup.add(rightRail);
+
+  // Yan profillerin üzerine montaj kanalları / yarıkları
+  const slotCount = Math.floor(ladderH / 0.15); // her 15 cm'de bir montaj yarığı
+  const slotGeo = new THREE.BoxGeometry(railW + 0.002, 0.06, 0.015);
+  for (let s = 1; s <= slotCount; s++) {
+    const slotY = s * 0.15;
+    const slotL = new THREE.Mesh(slotGeo, ladderDarkMat);
+    slotL.position.set(-ladderW / 2 + railW / 2, slotY, 0);
+    ladderGroup.add(slotL);
+
+    const slotR = new THREE.Mesh(slotGeo, ladderDarkMat);
+    slotR.position.set(ladderW / 2 - railW / 2, slotY, 0);
+    ladderGroup.add(slotR);
+  }
+
+  // 2. Yatay Kablo Bağlantı Basamakları (Horizontal Rungs)
+  const rungSpacing = 0.25; // 25 cm adım mesafesi
+  const rungW = ladderW - 2 * railW; // ~42 cm net basamak iç açıklığı
+  const rungH = 0.025; // 25 mm yükseklik
+  const rungD = 0.035; // 35 mm basamak derinliği
+  const rungGeo = new THREE.BoxGeometry(rungW, rungH, rungD);
+
+  const numRungs = Math.floor((ladderH - 0.20) / rungSpacing);
+  for (let r = 1; r <= numRungs; r++) {
+    const rungY = 0.10 + r * rungSpacing;
+    const rung = new THREE.Mesh(rungGeo, ladderMat);
+    rung.position.set(0, rungY, 0);
+    rung.castShadow = true;
+    rung.receiveShadow = true;
+    ladderGroup.add(rung);
+
+    // Basamak kablo bağlama yuvası
+    const rungSlotGeo = new THREE.BoxGeometry(rungW * 0.65, 0.008, rungD + 0.002);
+    const rungSlot = new THREE.Mesh(rungSlotGeo, ladderDarkMat);
+    rungSlot.position.set(0, rungY, 0);
+    ladderGroup.add(rungSlot);
+  }
+
+  // 3. Yatay Silindir Kirişe Üst Bağlantı Kelepçeleri (Pipe Clamps / Saddle Brackets at Y = 4.0m)
+  // Merdivenin üst uçları Y = 4.0m kotundaki Ø22cm yatay silindir kirişe kelepçelenir (destek ayakları kaldırıldı)
+  const pipeClampGeo = new THREE.CylinderGeometry(horizPipeRadius + 0.012, horizPipeRadius + 0.012, 0.05, 24);
+  pipeClampGeo.rotateZ(Math.PI / 2);
+  const clampFlangeGeo = new THREE.BoxGeometry(railW + 0.016, 0.07, railD + 0.016);
+
+  [-ladderW / 2 + railW / 2, ladderW / 2 - railW / 2].forEach(cx => {
+    // Yatay boruyu saran çelik kuşak / kelepçe
+    const clampMesh = new THREE.Mesh(pipeClampGeo, ladderDarkMat);
+    clampMesh.position.set(cx, 4.0, 0);
+    ladderGroup.add(clampMesh);
+
+    // Kiriş ile dikey ray arasındaki montaj pabucu
+    const flangeMesh = new THREE.Mesh(clampFlangeGeo, ladderMat);
+    flangeMesh.position.set(cx, 3.93, 0);
+    flangeMesh.castShadow = true;
+    ladderGroup.add(flangeMesh);
+  });
+
+  // 4. Kablo Merdiveni Üzerinde Dikey Kablo Demetleri (48 adet 7/8" Feeder + 16 adet 2x25 mm² Enerji)
+  const ladderCables = getTelecomCableBundleConfigs();
+
+  ladderCables.forEach(cfg => {
+    // Basamak ön yüzeyinden (Z = 0.0175) dışarıya doğru katman katman (Tier 1-4) dizilim
+    const zPos = 0.0175 + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
+
+    const cableGeo = new THREE.CylinderGeometry(cfg.r, cfg.r, ladderH, 12);
+    const cable = new THREE.Mesh(cableGeo, cfg.mat);
+    cable.position.set(cfg.x, ladderH / 2, zPos);
+    cable.castShadow = true;
+    ladderGroup.add(cable);
+  });
+
+  // Basamaklara bağlanan çok katmanlı ağır hizmet kablo kelepçeleri (Heavy-duty Cable Cleats)
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+  const clampGeo = new THREE.BoxGeometry(0.44, 0.02, 0.13);
+  for (let c = 1; c <= numRungs; c += 2) {
+    const clampY = 0.10 + c * rungSpacing;
+    const clamp = new THREE.Mesh(clampGeo, clampMat);
+    clamp.position.set(0.0, clampY, 0.075);
+    ladderGroup.add(clamp);
+  }
+
+  alan2Group.add(ladderGroup);
+
+  // -------------------------------------------------------------
+  // Videodaki Taşıyıcı Sistem: Çatı Makası, Çapraz Taşıyıcı Borular ve 50x15cm Delikli Kablo Tavası
+  // Kullanıcı İsteği: 1s ve 5s görünen 2 köşeye çapraz açılan beyaz borular arasına,
+  // alttaki silindir taşıyıcının üstüne, yağmur suyu drenaj delikli 50cm x 15cm kablo tavası
+  // -------------------------------------------------------------
+  createAlan2RoofTrussAndCableTray(alan2Group);
+
   scene.add(alan2Group);
+}
+
+// Çatı Makası, Çapraz Taşıyıcı Beyaz Borular ve 50cm x 15cm Delikli Kablo Tavası Üretici Fonksiyonu
+// Kullanıcı İsteği:
+// 1. Açı 10 dereceye düşürüldü (slope = 10°).
+// 2. Tavalar doğrudan alt taşıyıcı gövdeye sabitlenmeyecek.
+// 3. İki çapraz kolun yaklaşık 60 cm açıldığı alana taşıyıcı bir kaide/travers aparatı konulup tava buna sabitlendi.
+// 4. Çapraz ayakların boyu ~3 metre.
+function createAlan2RoofTrussAndCableTray(alan2Group) {
+  const trussGroup = new THREE.Group();
+  trussGroup.name = 'alan2RoofTrussAndCableTray';
+
+  // 1. MALZEMELER
+  const pipeWhiteMat = new THREE.MeshStandardMaterial({
+    color: 0xebedf0, // Stadyum beyaz çelik boyası (videodaki borular)
+    roughness: 0.38,
+    metalness: 0.35
+  });
+
+  const steelFlangeMat = new THREE.MeshStandardMaterial({
+    color: 0xc8ccd0,
+    roughness: 0.35,
+    metalness: 0.75
+  });
+
+  const darkJointMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.45,
+    metalness: 0.7
+  });
+
+  // Galvaniz Delikli Kablo Tavası Malzemesi (Yağmur suyu drenaj delikli)
+  const trayPerforatedTex = createCableTrayPerforatedTexture();
+  trayPerforatedTex.repeat.set(1, 16);
+  const trayBottomMat = new THREE.MeshStandardMaterial({
+    map: trayPerforatedTex,
+    transparent: true,
+    alphaTest: 0.25,
+    color: 0xb0bec5,
+    metalness: 0.85,
+    roughness: 0.25,
+    side: THREE.DoubleSide
+  });
+
+  const traySideMat = new THREE.MeshStandardMaterial({
+    color: 0x90a4ae,
+    metalness: 0.85,
+    roughness: 0.3,
+    side: THREE.DoubleSide
+  });
+
+  // İki 3D nokta arasına yönlendirilmiş silindir boru üretici
+  function createPipe(p1, p2, radius, mat) {
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+    const geo = new THREE.CylinderGeometry(radius, radius, len, 24);
+    const mesh = new THREE.Mesh(geo, mat);
+    const yAxis = new THREE.Vector3(0, 1, 0);
+    const quat = new THREE.Quaternion().setFromUnitVectors(yAxis, dir.clone().normalize());
+    mesh.quaternion.copy(quat);
+    mesh.position.copy(mid);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  // -------------------------------------------------------------
+  // 2. 10 DERECE AÇILI YUKARI YÜKSELEN TAŞIYICI GRUP (Sloped Truss Assembly at 10°)
+  // Konum: Tam olarak Dikey Kablo Merdiveni hizasında (X = -3.00 m)
+  // Başlangıç: Z = -1.35m (kablo merdiveni ve yatay silindir kiriş üstü), Y = 4.10m
+  // Eğim: 10 derece açıyla sahaya doğru tatlı bir eğimle yükselir
+  // -------------------------------------------------------------
+  const slopeAngleDeg = 10;
+  const slopeAngleRad = THREE.MathUtils.degToRad(slopeAngleDeg);
+
+  const slopedGroup = new THREE.Group();
+  slopedGroup.position.set(-3.00, 4.10, -1.35); // Dikey merdiven tepesi (X=-3, Y=4.10, Z=-1.35)
+  slopedGroup.rotation.x = -slopeAngleRad; // Üç boyutlu uzayda +Z yönünde 10° yukarı eğim
+  trussGroup.add(slopedGroup);
+
+  const slopeLen = 12.00; // Eğim boyunca 12 metre uzanır (sahaya doğru)
+  const carrierRadius = 0.14; // Ø28cm beyaz ana silindir taşıyıcı
+
+  // A) Altta Kalan Silindir Taşıyıcı Boru (Boyuna ana gövde, 10° eğimli)
+  const carrierGeo = new THREE.CylinderGeometry(carrierRadius, carrierRadius, slopeLen, 32);
+  carrierGeo.rotateX(Math.PI / 2); // Yerel Z ekseni boyunca uzat
+  const carrierMesh = new THREE.Mesh(carrierGeo, pipeWhiteMat);
+  carrierMesh.position.set(0, 0, slopeLen / 2);
+  carrierMesh.castShadow = true;
+  carrierMesh.receiveShadow = true;
+  slopedGroup.add(carrierMesh);
+
+  // Uç kapakları
+  const capGeo = new THREE.CylinderGeometry(carrierRadius + 0.02, carrierRadius + 0.02, 0.03, 32);
+  capGeo.rotateX(Math.PI / 2);
+  const backCap = new THREE.Mesh(capGeo, steelFlangeMat);
+  backCap.position.set(0, 0, 0);
+  slopedGroup.add(backCap);
+  const frontCap = new THREE.Mesh(capGeo, steelFlangeMat);
+  frontCap.position.set(0, 0, slopeLen);
+  slopedGroup.add(frontCap);
+
+  // -------------------------------------------------------------
+  // 3. YAKLAŞIK 3 METRE UZUNLUĞUNDA ÇAPRAZ TAŞIYICI KOLLAR (3m V-Strut Diagonal Arms)
+  // Alttaki silindir taşıyıcıdan iki üst köşeye doğru açılan ~3m uzunluğunda çelik borular
+  // Y = 0.42m kotunda iki kol arası mesafe net 60 cm (X = -0.30m ve X = +0.30m) olur
+  // -------------------------------------------------------------
+  const armStationsZ = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]; // Eğim boyunca her 2 metrede bir istasyon
+  const diagonalRadius = 0.07; // Ø14cm kalın beyaz çelik boru
+  const armBaseX = 0.12; // Alt bağlantı noktası X (±0.12m)
+  const armBaseY = 0.08; // Alt bağlantı noktası Y
+  const armTopX = 1.52;  // Üst uç açılması X (±1.52m, toplam 3.04m tepe açıklığı)
+  const armTopY = 2.73;  // Üst tepe yüksekliği Y (dx=1.40m, dy=2.65m => Kol Boyu = sqrt(1.40^2 + 2.65^2) = 2.997m ≈ 3.0 METRE)
+
+  // Taşıyıcı Kaide / Travers Aparatı Parametreleri:
+  // Kolların tam 60 cm açıldığı yükseklik: Y = 0.42m (X = ±0.30m)
+  const pedestalY = 0.42; 
+  const pedestalSpan = 0.60; // 60 cm net açıklık
+
+  armStationsZ.forEach((stZ) => {
+    // Alttaki silindir üzerindeki güçlendirilmiş montaj bileziği
+    const ringGeo = new THREE.CylinderGeometry(carrierRadius + 0.015, carrierRadius + 0.015, 0.18, 24);
+    ringGeo.rotateX(Math.PI / 2);
+    const ringMesh = new THREE.Mesh(ringGeo, steelFlangeMat);
+    ringMesh.position.set(0, 0, stZ);
+    slopedGroup.add(ringMesh);
+
+    // Sol Çapraz Kol (~3.0m uzunluğunda)
+    const leftBase = new THREE.Vector3(-armBaseX, armBaseY, stZ);
+    const leftTop = new THREE.Vector3(-armTopX, armTopY, stZ);
+    const leftArm = createPipe(leftBase, leftTop, diagonalRadius, pipeWhiteMat);
+    slopedGroup.add(leftArm);
+
+    // Sağ Çapraz Kol (~3.0m uzunluğunda)
+    const rightBase = new THREE.Vector3(armBaseX, armBaseY, stZ);
+    const rightTop = new THREE.Vector3(armTopX, armTopY, stZ);
+    const rightArm = createPipe(rightBase, rightTop, diagonalRadius, pipeWhiteMat);
+    slopedGroup.add(rightArm);
+
+    // Üstte iki kol arasındaki enine gergi borusu
+    const topStrut = createPipe(leftTop, rightTop, 0.05, pipeWhiteMat);
+    slopedGroup.add(topStrut);
+
+    // -----------------------------------------------------------
+    // TAŞIYICI KAİDE / TRAVERS APARATI (Kolların ~60 cm açıldığı yerde)
+    // Kullanıcı İsteği: "tavalar dogrudan taşıyıcı gövdesine sabitlenmeyecek
+    // çapraz ilerleyen 2 kirişin arasına takılacak olan taşıyıcı bir aparatın üzerine tavayı oturtacagız.
+    // Bunun için yaklaşık 60 cm kadar açıldıgı alana bir taşıyıcı kaide koy ve tavayı buna sabitle."
+    // -----------------------------------------------------------
+    // A) İki çapraz kol arasına gerilen 60 cm'lik çelik travers profil (80x40x4mm Kutu Profil)
+    const crossBeamGeo = new THREE.BoxGeometry(pedestalSpan + 0.04, 0.04, 0.08);
+    const crossBeam = new THREE.Mesh(crossBeamGeo, steelFlangeMat);
+    crossBeam.position.set(0, pedestalY, stZ);
+    crossBeam.castShadow = true;
+    slopedGroup.add(crossBeam);
+
+    // B) Her iki yandaki çapraz boruları saran ağır hizmet boru kelepçeleri (Pipe Clamps)
+    const armClampGeo = new THREE.CylinderGeometry(diagonalRadius + 0.012, diagonalRadius + 0.012, 0.06, 16);
+    [-pedestalSpan / 2, pedestalSpan / 2].forEach(cx => {
+      const clamp = new THREE.Mesh(armClampGeo, darkJointMat);
+      // Kolun eğim açısına göre hafif eğimli kelepçe
+      clamp.rotation.z = cx < 0 ? 0.48 : -0.48;
+      clamp.position.set(cx, pedestalY, stZ);
+      slopedGroup.add(clamp);
+    });
+
+    // C) Travers üzerindeki yükseltilmiş tava montaj kaidesi (54 cm genişlik, amortisörlü pabuç)
+    const bedGeo = new THREE.BoxGeometry(0.54, 0.025, 0.10);
+    const bedMesh = new THREE.Mesh(bedGeo, steelFlangeMat);
+    bedMesh.position.set(0, pedestalY + 0.03, stZ);
+    bedMesh.castShadow = true;
+    slopedGroup.add(bedMesh);
+
+    // D) Tavanın kaideye sabitlendiği kenar tespit çeneleri / kelepçeleri (Tray Hold-down Clamps)
+    const holdClampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.05);
+    [-0.26, 0.26].forEach(hx => {
+      const holdClamp = new THREE.Mesh(holdClampGeo, darkJointMat);
+      holdClamp.position.set(hx, pedestalY + 0.045, stZ);
+      slopedGroup.add(holdClamp);
+    });
+  });
+
+  // Üst Boyuna Aşık Boruları (Sol ve Sağ Çatı Üst Başlıkları)
+  const topChordGeo = new THREE.CylinderGeometry(0.09, 0.09, slopeLen, 24);
+  topChordGeo.rotateX(Math.PI / 2);
+
+  const leftTopChord = new THREE.Mesh(topChordGeo, pipeWhiteMat);
+  leftTopChord.position.set(-armTopX, armTopY, slopeLen / 2);
+  leftTopChord.castShadow = true;
+  slopedGroup.add(leftTopChord);
+
+  const rightTopChord = new THREE.Mesh(topChordGeo, pipeWhiteMat);
+  rightTopChord.position.set(armTopX, armTopY, slopeLen / 2);
+  rightTopChord.castShadow = true;
+  slopedGroup.add(rightTopChord);
+
+  // Üst Başlıklar Arası Çapraz Kafes Gergileri (X-Bracing between stations)
+  for (let i = 0; i < armStationsZ.length - 1; i++) {
+    const z1 = armStationsZ[i];
+    const z2 = armStationsZ[i + 1];
+    const brace1 = createPipe(
+      new THREE.Vector3(-armTopX, armTopY, z1),
+      new THREE.Vector3(armTopX, armTopY, z2),
+      0.035,
+      pipeWhiteMat
+    );
+    slopedGroup.add(brace1);
+    const brace2 = createPipe(
+      new THREE.Vector3(armTopX, armTopY, z1),
+      new THREE.Vector3(-armTopX, armTopY, z2),
+      0.035,
+      pipeWhiteMat
+    );
+    slopedGroup.add(brace2);
+  }
+
+  // -------------------------------------------------------------
+  // 4. 50 CM GENİŞLİK, 15 CM YÜKSEKLİKTE DELİKLİ KABLO TAVASI (Kaide Üzerinde)
+  // Alttaki silindir gövdeye DEĞİL, 60 cm'lik kaide aparatının üstüne oturtulur
+  // Alttaki silindir üstü (Y=0.14m) ile tava tabanı (Y=0.445m) arasında ~30cm açık hava payı kalır
+  // -------------------------------------------------------------
+  const trayW = 0.50; // 50 cm net genişlik
+  const trayH = 0.15; // 15 cm kenar yüksekliği
+  const trayWallThick = 0.003; // 3 mm sac kalınlığı
+  const trayBottomY = pedestalY + 0.0425; // 60cm açıklıktaki kaide aparatının tam üstü
+  const trayCenterZ = slopeLen / 2;
+
+  // A) Delikli Alt Taban Sacı (Yağmur suyu drenaj delikleriyle)
+  const bottomPlateGeo = new THREE.BoxGeometry(trayW, trayWallThick, slopeLen);
+  const bottomPlate = new THREE.Mesh(bottomPlateGeo, trayBottomMat);
+  bottomPlate.position.set(0, trayBottomY + trayWallThick / 2, trayCenterZ);
+  bottomPlate.receiveShadow = true;
+  bottomPlate.castShadow = true;
+  slopedGroup.add(bottomPlate);
+
+  // B) Sol Yan Duvar (15 cm Yükseklik)
+  const sideWallGeo = new THREE.BoxGeometry(trayWallThick, trayH, slopeLen);
+  const leftSideWall = new THREE.Mesh(sideWallGeo, traySideMat);
+  leftSideWall.position.set(-trayW / 2 + trayWallThick / 2, trayBottomY + trayH / 2, trayCenterZ);
+  leftSideWall.castShadow = true;
+  slopedGroup.add(leftSideWall);
+
+  // C) Sağ Yan Duvar (15 cm Yükseklik)
+  const rightSideWall = new THREE.Mesh(sideWallGeo, traySideMat);
+  rightSideWall.position.set(trayW / 2 - trayWallThick / 2, trayBottomY + trayH / 2, trayCenterZ);
+  rightSideWall.castShadow = true;
+  slopedGroup.add(rightSideWall);
+
+  // D) Yan Duvarların Üst Güvenlik Flanşları (Rolled Safety Lips)
+  const lipGeo = new THREE.BoxGeometry(0.015, trayWallThick, slopeLen);
+  const leftLip = new THREE.Mesh(lipGeo, steelFlangeMat);
+  leftLip.position.set(-trayW / 2 + 0.0075, trayBottomY + trayH, trayCenterZ);
+  slopedGroup.add(leftLip);
+
+  const rightLip = new THREE.Mesh(lipGeo, steelFlangeMat);
+  rightLip.position.set(trayW / 2 - 0.0075, trayBottomY + trayH, trayCenterZ);
+  slopedGroup.add(rightLip);
+
+  // E) Tava İçi Rijitlik Köprüleri (Her 1.5 metrede bir)
+  const ribGeo = new THREE.BoxGeometry(trayW - 0.01, 0.01, 0.02);
+  for (let zRib = 0.5; zRib <= slopeLen - 0.5; zRib += 1.5) {
+    const rib = new THREE.Mesh(ribGeo, darkJointMat);
+    rib.position.set(0, trayBottomY + 0.008, zRib);
+    slopedGroup.add(rib);
+  }
+
+  // -------------------------------------------------------------
+  // 5. 50x15cm TAVA İÇİNDEKİ TELEKOM KABLOLARI (10° Eğimli Hat)
+  // Kullanıcı İsteği: 48 adet 7/8" feeder + 16 adet 2x25 mm² enerji (Üst üste 4 katmanlı dizilim)
+  // -------------------------------------------------------------
+  const telecomCables = getTelecomCableBundleConfigs();
+
+  telecomCables.forEach(cfg => {
+    // Üst üste dizilim: Kat 1 tava tabanında, Kat 2-3-4 sırayla üst üste oturur
+    const yOffset = trayBottomY + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
+
+    const rCableGeo = new THREE.CylinderGeometry(cfg.r, cfg.r, slopeLen, 12);
+    rCableGeo.rotateX(Math.PI / 2);
+    const rCable = new THREE.Mesh(rCableGeo, cfg.mat);
+    rCable.position.set(cfg.x, yOffset, trayCenterZ);
+    rCable.castShadow = true;
+    slopedGroup.add(rCable);
+  });
+
+  // Tava İçi Paslanmaz Çok Katmanlı Kablo Kelepçeleri (Multi-tier Cable Cleats)
+  const cleatMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+  const cleatGeo1 = new THREE.BoxGeometry(trayW - 0.04, 0.012, 0.03);
+  const cleatGeo2 = new THREE.BoxGeometry(trayW - 0.04, 0.012, 0.03);
+  const cleatGeo3 = new THREE.BoxGeometry(trayW - 0.04, 0.012, 0.03);
+  const cleatGeo4 = new THREE.BoxGeometry(trayW - 0.04, 0.015, 0.04);
+  for (let zCl = 1.0; zCl <= slopeLen - 0.5; zCl += 2.0) {
+    const cleat1 = new THREE.Mesh(cleatGeo1, cleatMat);
+    cleat1.position.set(0, trayBottomY + 0.043, zCl);
+    slopedGroup.add(cleat1);
+
+    const cleat2 = new THREE.Mesh(cleatGeo2, cleatMat);
+    cleat2.position.set(0, trayBottomY + 0.073, zCl);
+    slopedGroup.add(cleat2);
+
+    const cleat3 = new THREE.Mesh(cleatGeo3, cleatMat);
+    cleat3.position.set(0, trayBottomY + 0.103, zCl);
+    slopedGroup.add(cleat3);
+
+    const cleat4 = new THREE.Mesh(cleatGeo4, cleatMat);
+    cleat4.position.set(0, trayBottomY + 0.135, zCl);
+    slopedGroup.add(cleat4);
+  }
+
+  // -------------------------------------------------------------
+  // 6. DİKEY MERDİVEN (X = -3.00m) İLE EĞİMLİ ÇATI TAVASI BAĞLANTI DÜĞÜMÜ
+  // -------------------------------------------------------------
+  const jointGroup = new THREE.Group();
+  jointGroup.name = 'ladderToSlopedTrayJoint';
+  jointGroup.position.set(-3.00, 4.00, -1.35); // Dikey merdivenin en üst ucu
+
+  // Yatay boru kiriş ile eğimli ana boru arasındaki ağır taşıyıcı çelik eyer/pabuç (Mounting Saddle)
+  const saddleGeo = new THREE.BoxGeometry(0.36, 0.20, 0.36);
+  const saddle = new THREE.Mesh(saddleGeo, steelFlangeMat);
+  saddle.position.set(0, 0.08, 0);
+  saddle.castShadow = true;
+  jointGroup.add(saddle);
+
+  // Merdivenden yükseltilmiş kaide tavasına geçiş yan kılavuz sacları
+  const guideH = trayBottomY + 0.15;
+  [-trayW / 2, trayW / 2].forEach(gx => {
+    const guideGeo = new THREE.BoxGeometry(0.006, guideH, 0.35);
+    const guide = new THREE.Mesh(guideGeo, traySideMat);
+    guide.position.set(gx, guideH / 2, 0.08);
+    jointGroup.add(guide);
+  });
+
+  // Dikey merdivenden eğimli kaide tavasına yumuşak kablo akış geçiş kavisleri (40 kablo, 2 katman)
+  telecomCables.forEach(cfg => {
+    const startZ = (cfg.tier === 1) ? 0.031 : 0.060;
+    const targetY = 0.10 + ((cfg.tier === 1) ? (trayBottomY + cfg.r + 0.003) : (trayBottomY + 3 * cfg.r + 0.005));
+    const targetZ = 0.12 * Math.cos(slopeAngleRad);
+
+    const bendCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(cfg.x, 0.0, startZ),
+      new THREE.Vector3(cfg.x, targetY * 0.5, startZ + 0.02),
+      new THREE.Vector3(cfg.x, targetY, targetZ)
+    );
+    const bendGeo = new THREE.TubeGeometry(bendCurve, 10, cfg.r, 8, false);
+    const bendCable = new THREE.Mesh(bendGeo, cfg.mat);
+    jointGroup.add(bendCable);
+  });
+
+  trussGroup.add(jointGroup);
+  alan2Group.add(trussGroup);
 }
 
 // Generate Alan 3 Representation (Tribün Üstü Taşıyıcı Beton Alan - Alan 3)
@@ -2780,11 +3939,25 @@ function spawn42UTekliCerceveKabin() {
 }
 
 function build42UPoiRackBlok(targetArea = state.currentArea) {
-  const areaSuffix = targetArea === 'alan3' ? ' (Alan 3)' : (targetArea === 'alan2' ? ' (Alan 2)' : '');
+  const isAlan2 = (targetArea === 'alan2');
+  const areaSuffix = targetArea === 'alan3' ? ' (Alan 3)' : (isAlan2 ? ' (Alan 2)' : '');
   
-  const rackGroup = build42UIkiliCerceveKabin();
-  rackGroup.userData.blockType = '42u-poi-rack-blok';
-  rackGroup.userData.name = `42U POI Rack Blok (6x POI Dolu)${areaSuffix}`;
+  // Alan 2 için 4 POI sığacak boya (30U / 1.48m) indirildi
+  const customConfig = isAlan2 ? {
+    uCount: 30,
+    height: 1.48,
+    blockType: 'alan2-4poi-rack-blok',
+    name: `30U POI Rack Blok (4x POI Dolu)${areaSuffix}`,
+    modelNo: 'CSL-X-30YYA2',
+    weight: 48
+  } : null;
+
+  const rackGroup = build42UIkiliCerceveKabin(0xd4d8dd, false, customConfig);
+  rackGroup.userData.blockType = isAlan2 ? 'alan2-4poi-rack-blok' : '42u-poi-rack-blok';
+  rackGroup.userData.name = isAlan2 ? `30U POI Rack Blok (4x POI Dolu)${areaSuffix}` : `42U POI Rack Blok (6x POI Dolu)${areaSuffix}`;
+  if (isAlan2) {
+    rackGroup.userData.height = 1.48;
+  }
   rackGroup.userData.lockedX = false;
   rackGroup.userData.lockedY = false;
   rackGroup.userData.lockedZ = false;
@@ -2798,8 +3971,9 @@ function build42UPoiRackBlok(targetArea = state.currentArea) {
   const poiHeight = poiCatalogItem.height;
   const startY = baseH + poiHeight / 2 + 0.005;
   const stepY = 0.315;
+  const poiCount = isAlan2 ? 4 : 6;
 
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < poiCount; i++) {
     const poiModel = buildProsePoiModel(poiCatalogItem);
     poiModel.userData.name = `POI Modül ${i + 1} (CB-12-POI-64F-A12)`;
     poiModel.userData.interactive = true;
@@ -2809,6 +3983,7 @@ function build42UPoiRackBlok(targetArea = state.currentArea) {
 
   return rackGroup;
 }
+
 
 function spawn42UPoiRackBlok() {
   const rackGroup = build42UPoiRackBlok(state.currentArea);
@@ -4061,8 +5236,8 @@ function buildAlan2OzelKarmaBlok(targetArea = state.currentArea) {
     name: 'Özel Alan 2 Kompleksi (Platform + POI + RRU)',
     width: 1.20,
     depth: 2.00,
-    height: 2.40,
-    weight: 550,
+    height: 1.65,
+    weight: 500,
     interactive: true,
     lockedX: false,
     lockedY: false,
@@ -4082,7 +5257,7 @@ function buildAlan2OzelKarmaBlok(targetArea = state.currentArea) {
   subKarma.position.set(0, 0, -0.60);
   blockGroup.add(subKarma);
 
-  // 3. 42U POI Rack Blok - Arka tarafta (Z = 0.60), içe dönük
+  // 3. POI Rack Blok (Alan 2 için 4 POI'li 30U kabin) - Arka tarafta (Z = 0.60), içe dönük
   const subPoi = build42UPoiRackBlok(targetArea);
   subPoi.userData.interactive = false;
   subPoi.position.set(0, 0, 0.60);
@@ -4210,7 +5385,7 @@ function buildAlan2Karsilikli11BoruRRUBlok(targetArea = state.currentArea) {
     category: 'Karma',
     name: 'Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok',
     width: 1.5,
-    height: 2.2,
+    height: 1.70,
     depth: 1.2,
     weight: 750,
     interactive: true,
@@ -4256,10 +5431,12 @@ function buildAlan2Karsilikli11BoruRRUBlok(targetArea = state.currentArea) {
     { bottom: tcellItem, top: null }
   ];
 
+  const pipeH = 1.70; // 170 cm boru boyu
+  const verticalPipeGeo = new THREE.CylinderGeometry(0.03175, 0.03175, pipeH, 32);
+
   const createPipeAndRRU = (posX, posZ, config, pipeIndex, isLeft) => {
-    const verticalPipeGeo = new THREE.CylinderGeometry(0.03175, 0.03175, 2.0, 32);
     const verticalPipe = new THREE.Mesh(verticalPipeGeo, pipeMat);
-    verticalPipe.position.set(posX, 1.0, posZ);
+    verticalPipe.position.set(posX, pipeH / 2, posZ);
     verticalPipe.castShadow = true;
     blockGroup.add(verticalPipe);
 
@@ -4269,8 +5446,8 @@ function buildAlan2Karsilikli11BoruRRUBlok(targetArea = state.currentArea) {
     blockGroup.add(pipeFlange);
 
     const levels = [
-      { y: 0.75, item: config.bottom },
-      { y: 1.50, item: config.top }
+      { y: 0.60, item: config.bottom },
+      { y: 1.38, item: config.top }
     ];
 
     levels.forEach((lvl, lvlIndex) => {
@@ -4319,29 +5496,40 @@ function buildAlan2Kediyolu42UKompleksBlok(targetArea = state.currentArea) {
     type: 'rru', 
     blockType: 'alan2-kediyolu-42u-kompleks',
     category: 'Canovate',
-    name: 'Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)',
-    width: 1.2,
-    depth: 1.2,
-    height: 2.15,
+    name: '30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)',
+    width: 0.60,
+    depth: 0.70,
+    height: 1.48,
+    weight: 136,
     interactive: true,
     lockedX: false,
     lockedY: false,
     lockedZ: false,
+    isFreestanding: true,
     allowPassThrough: true
   };
 
-  // Taban: İki adet çentiksiz Tabla-2 (120cm)
-  const t2_1 = buildTabla2(true); t2_1.userData.interactive = false; t2_1.position.set(-0.1, -0.0090, -0.1645); blockGroup.add(t2_1);
-  const t2_2 = buildTabla2(true); t2_2.userData.interactive = false; t2_2.position.set(0.1, -0.0090, -0.1645); blockGroup.add(t2_2);
-
-  // 42U POI Rack
+  // 30U POI Rack (4 POI Dolu) - Doğrudan beton zemin üstünde (Y = 0)
   const subPoi = build42UPoiRackBlok('alan2');
   subPoi.userData.interactive = false;
-  // Alan 2'de koridor Z ekseninde. Rack'i Z ekseninde konumlandırıyoruz.
-  // Ön yüzü Z'ye (-Z veya +Z) bakacak şekilde.
-  subPoi.position.set(0, 0, -0.1645); 
+  subPoi.position.set(0, 0, 0); 
   subPoi.rotation.set(0, 0, 0); 
   blockGroup.add(subPoi);
+
+  // 4 Adet Zemin Beton Ankraj Cıvatası (M16 Kimyasal Dübel & Somun)
+  const boltGeo = new THREE.CylinderGeometry(0.010, 0.010, 0.025, 12);
+  const nutGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.014, 6);
+  const boltMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+  for (let xPos of [-0.24, 0.24]) {
+    for (let zPos of [-0.28, 0.28]) {
+      const bolt = new THREE.Mesh(boltGeo, boltMat);
+      bolt.position.set(xPos, 0.0125, zPos);
+      blockGroup.add(bolt);
+      const nut = new THREE.Mesh(nutGeo, boltMat);
+      nut.position.set(xPos, 0.014, zPos);
+      blockGroup.add(nut);
+    }
+  }
 
   return blockGroup;
 }
@@ -4349,7 +5537,7 @@ function buildAlan2Kediyolu42UKompleksBlok(targetArea = state.currentArea) {
 function spawnAlan2Kediyolu42UKompleksBlok() {
   const blockGroup = buildAlan2Kediyolu42UKompleksBlok();
   blockGroup.userData.id = state.nextId++;
-  setupPlatformTransform(blockGroup, 0, -1.0); 
+  setupPlatformTransform(blockGroup, 0, -0.70); 
   addPlatformToActiveArea(blockGroup);
 }
 
@@ -4625,6 +5813,31 @@ renderer.domElement.addEventListener('pointerdown', (event) => {
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
   raycaster.setFromCamera(mouse, camera);
+
+  // Handle Alan 2 sliding door click interaction (1-2, 3-4, 5-6 ikili eşleşmeli kayma)
+  if (state.currentArea === 'alan2' && alan2SlidingDoors && alan2SlidingDoors.length > 0) {
+    const doorHits = raycaster.intersectObjects(alan2SlidingDoors, true);
+    if (doorHits.length > 0) {
+      let doorObj = doorHits[0].object;
+      while (doorObj.parent && !doorObj.userData.isSlidingDoor) {
+        doorObj = doorObj.parent;
+      }
+      if (doorObj.userData && doorObj.userData.isSlidingDoor) {
+        if (!doorObj.userData.isOpen) {
+          // Eşinin yanına/arkasına kaydır
+          doorObj.userData.targetX = doorObj.userData.openX;
+          doorObj.userData.isOpen = true;
+        } else {
+          // Kendi kapalı konumuna geri dön
+          doorObj.userData.targetX = doorObj.userData.closedX;
+          doorObj.userData.isOpen = false;
+        }
+        event.stopPropagation();
+        return;
+      }
+    }
+  }
+
   const activePlatforms = getActivePlatforms();
   const intersects = raycaster.intersectObjects(activePlatforms, true);
 
@@ -4706,6 +5919,17 @@ renderer.domElement.addEventListener('pointermove', (event) => {
 
         updateBOM();
       }
+    }
+  } else if (!isDragging && state.currentArea === 'alan2' && alan2SlidingDoors && alan2SlidingDoors.length > 0) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const doorHits = raycaster.intersectObjects(alan2SlidingDoors, true);
+    if (doorHits.length > 0) {
+      renderer.domElement.style.cursor = 'pointer';
+    } else if (renderer.domElement.style.cursor === 'pointer') {
+      renderer.domElement.style.cursor = 'default';
     }
   }
 });
@@ -4845,7 +6069,13 @@ function updateAreaButtonVisibility() {
 
   if (btnRru) btnRru.style.display = 'flex';
   if (btnRack) btnRack.style.display = 'flex';
-  if (btnPoiBlok) btnPoiBlok.style.display = 'flex';
+  if (btnPoiBlok) {
+    const nameSpan = btnPoiBlok.querySelector('.name');
+    if (nameSpan) {
+      nameSpan.textContent = isAlan2 ? '30U POI Rack (4x POI) (Alan 2)' : (isAlan4 ? '42U POI Rack (6x POI) (Alan 4)' : '42U POI Rack Blok (6x POI)');
+    }
+    btnPoiBlok.style.display = 'flex';
+  }
   if (btnTT5527) btnTT5527.style.display = 'flex';
   if (btnTT5818w) btnTT5818w.style.display = 'flex';
   if (btnVoda3li) btnVoda3li.style.display = 'flex';
@@ -4863,7 +6093,11 @@ function updateAreaButtonVisibility() {
     if (btnAlan2OzelKarma) btnAlan2OzelKarma.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
   if (btnAlan4CiftRRU) btnAlan4CiftRRU.style.display = isAlan4 ? 'flex' : 'none';
   const btnAlan2Kediyolu42U = document.getElementById('btn-add-alan2-kediyolu-42u-kompleks');
-  if (btnAlan2Kediyolu42U) btnAlan2Kediyolu42U.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
+  if (btnAlan2Kediyolu42U) {
+    const nameSpan = btnAlan2Kediyolu42U.querySelector('.name');
+    if (nameSpan) nameSpan.textContent = '30U POI Rack (4 POI) (Alan 2)';
+    btnAlan2Kediyolu42U.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
+  }
   const btnAlan2Karsilikli = document.getElementById('btn-add-alan2-karsilikli-rru');
   if (btnAlan2Karsilikli) btnAlan2Karsilikli.style.display = (isAlan2 || isAlan3) ? 'flex' : 'none';
   
@@ -6230,6 +7464,7 @@ function updateBOM() {
     else if (p.userData.name.includes('Çemberli H-Beam')) totalWeight += 480;
     else if (p.userData.name.includes('Çift RRU Kompleksi')) totalWeight += 860;
     else if (p.userData.name.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U')) totalWeight += 385;
+    else if (p.userData.name.includes('30U POI Rack') || p.userData.name.includes('POI Kompleks (4 POI)') || p.userData.name.includes('30U POI Kompleks')) totalWeight += 136;
     else if (p.userData.name.includes('Kedi Yolu Tabla + 42U')) totalWeight += 295;
     else if (p.userData.name.includes('Kedi Yolu İçi Korkuluksuz Tabla') || p.userData.name.includes('Kedi Yolu Korkuluksuz Tabla')) totalWeight += 145;
 
@@ -6280,6 +7515,7 @@ function updateBOM() {
       else if (p.userData.name.includes('Çemberli H-Beam')) rowWeightText = '480 kg / 480 kg';
       else if (p.userData.name.includes('Çift RRU Kompleksi')) rowWeightText = '860 kg / 860 kg';
       else if (p.userData.name.includes('Kedi Yolu Tabla + Flanşlı Pol + 42U')) rowWeightText = '385 kg / 385 kg';
+      else if (p.userData.name.includes('30U POI Rack') || p.userData.name.includes('POI Kompleks (4 POI)') || p.userData.name.includes('30U POI Kompleks')) rowWeightText = '136 kg / 136 kg';
       else if (p.userData.name.includes('Kedi Yolu Tabla + 42U')) rowWeightText = '295 kg / 295 kg';
       else if (p.userData.name.includes('Kedi Yolu İçi Korkuluksuz Tabla') || p.userData.name.includes('Kedi Yolu Korkuluksuz Tabla')) rowWeightText = '145 kg / 145 kg';
 
@@ -6671,10 +7907,10 @@ function deserializeItemToArea(item, targetArea) {
   // PRIORITIZE NAME MATCHING OVER LEGACY BLOCKTYPE:
   // Legacy JSON files saved 42U POI Racks with blockType: "42u-canovate-kabin".
   // Matching itemName.includes('42U POI Rack') FIRST ensures POI Racks are built with all 6 POI modules inside!
-  if (itemName.includes('42U POI Rack') || blockType === '42u-poi-rack-blok') {
+  if (itemName.includes('42U POI Rack') || itemName.includes('30U POI Rack') || blockType === '42u-poi-rack-blok' || blockType === 'alan2-4poi-rack-blok') {
     group = build42UPoiRackBlok(targetArea);
   } else if (itemName.includes('20U POI Rack') || blockType === '20u-poi-rack-blok' || blockType === '5poi-rack-blok' || itemName.includes('5x POI') || itemName.includes('5 POI') || itemName.includes('POI Rack Blok')) {
-    group = build20UPoiRackBlok(targetArea);
+    group = (targetArea === 'alan2') ? build42UPoiRackBlok('alan2') : build20UPoiRackBlok(targetArea);
   } else if (
     blockType === 'rectifier-20u-eltek' || 
     item.catalogId === 'rectifier-20u-eltek' || 
@@ -6719,7 +7955,7 @@ function deserializeItemToArea(item, targetArea) {
     group = buildAlan1OzelKarma13RRUBlok(targetArea);
   } else if (blockType === 'alan2-ozel-karma-blok' || itemName.includes('Özel Alan 2 Kompleksi')) {
       group = buildAlan2OzelKarmaBlok(targetArea);
-    } else if (blockType === 'alan2-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + 42U')) {
+    } else if (blockType === 'alan2-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + 42U') || itemName.includes('Kedi Yolu Tabla + POI Kompleks') || itemName.includes('30U POI Kompleks')) {
       group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
     } else if (blockType === 'alan2-karsilikli-11boru-rru-blok' || itemName.includes('Karşılıklı 11 Boru')) {
       group = buildAlan2Karsilikli11BoruRRUBlok(targetArea);
@@ -7007,7 +8243,7 @@ const PRESET_DRAFTS = {
   'taslak-v2': {
         "version": "2.0",
         "savedAt": "2026-09-20T20:49:07.094Z",
-        "currentArea": "alan1",
+        "currentArea": "alan2",
         "areas": {
               "alan1": [
                     {
@@ -7039,12 +8275,12 @@ const PRESET_DRAFTS = {
               ],
               "alan2": [
                     {
-                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
                           "blockType": "alan2-kediyolu-42u-kompleks",
                           "catalogId": null,
                           "type": "rru",
                           "category": "Canovate",
-                          "isFreestanding": false,
+                          "isFreestanding": true,
                           "isOffsetArmModule": false,
                           "isOffsetCarrier": false,
                           "isInclinedPipe": false,
@@ -7065,12 +8301,12 @@ const PRESET_DRAFTS = {
                           "allowPassThrough": true
                     },
                     {
-                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
                           "blockType": "alan2-kediyolu-42u-kompleks",
                           "catalogId": null,
                           "type": "rru",
                           "category": "Canovate",
-                          "isFreestanding": false,
+                          "isFreestanding": true,
                           "isOffsetArmModule": false,
                           "isOffsetCarrier": false,
                           "isInclinedPipe": false,
@@ -7091,12 +8327,12 @@ const PRESET_DRAFTS = {
                           "allowPassThrough": true
                     },
                     {
-                          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 2)",
+                          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
                           "blockType": "alan2-kediyolu-42u-kompleks",
                           "catalogId": null,
                           "type": "rru",
                           "category": "Canovate",
-                          "isFreestanding": false,
+                          "isFreestanding": true,
                           "isOffsetArmModule": false,
                           "isOffsetCarrier": false,
                           "isInclinedPipe": false,
@@ -7493,6 +8729,19 @@ if (state.currentArea === 'alan4') {
 // Animation Loop
 function animate() {
   requestAnimationFrame(animate);
+
+  // Smooth sliding animation for Alan 2 doors
+  if (alan2SlidingDoors && alan2SlidingDoors.length > 0) {
+    for (let i = 0; i < alan2SlidingDoors.length; i++) {
+      const door = alan2SlidingDoors[i];
+      if (Math.abs(door.position.x - door.userData.targetX) > 0.001) {
+        door.position.x += (door.userData.targetX - door.position.x) * 0.14;
+      } else {
+        door.position.x = door.userData.targetX;
+      }
+    }
+  }
+
   controls.update();
   renderer.render(scene, camera);
 }
