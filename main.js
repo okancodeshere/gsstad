@@ -38,7 +38,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0xf1f5f9); // Clean light grey background
 
 // Add Grid & Helpers (High contrast)
-const gridHelper = new THREE.GridHelper(50, 50, 0x94a3b8, 0xcb2e3e);
+const gridHelper = new THREE.GridHelper(100, 100, 0x94a3b8, 0xcb2e3e);
 gridHelper.position.y = -1.5;
 scene.add(gridHelper);
 
@@ -1233,7 +1233,7 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
 
   // Galvaniz Delikli Kablo Tavası Malzemesi (Yağmur suyu drenaj delikli)
   const trayPerforatedTex = createCableTrayPerforatedTexture();
-  trayPerforatedTex.repeat.set(1, 16);
+  trayPerforatedTex.repeat.set(1, 60);
   const trayBottomMat = new THREE.MeshStandardMaterial({
     map: trayPerforatedTex,
     transparent: true,
@@ -1281,7 +1281,7 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   slopedGroup.rotation.x = -slopeAngleRad; // Üç boyutlu uzayda +Z yönünde 10° yukarı eğim
   trussGroup.add(slopedGroup);
 
-  const slopeLen = 12.00; // Eğim boyunca 12 metre uzanır (sahaya doğru)
+  const slopeLen = 45.00; // Eğim boyunca 45 metre uzanır (sahaya doğru)
   const carrierRadius = 0.14; // Ø28cm beyaz ana silindir taşıyıcı
 
   // A) Altta Kalan Silindir Taşıyıcı Boru (Boyuna ana gövde, 10° eğimli)
@@ -1308,7 +1308,11 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   // Alttaki silindir taşıyıcıdan iki üst köşeye doğru açılan ~3m uzunluğunda çelik borular
   // Y = 0.42m kotunda iki kol arası mesafe net 60 cm (X = -0.30m ve X = +0.30m) olur
   // -------------------------------------------------------------
-  const armStationsZ = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0]; // Eğim boyunca her 2 metrede bir istasyon
+  const stationSpacing = 2.5; // Her 2.5 metrede bir çatı makası istasyonu (45 / 2.5 = 18 bay)
+  const armStationsZ = [];
+  for (let z = 0.0; z <= slopeLen + 0.01; z += stationSpacing) {
+    armStationsZ.push(Number(z.toFixed(2)));
+  }
   const diagonalRadius = 0.07; // Ø14cm kalın beyaz çelik boru
   const armBaseX = 0.12; // Alt bağlantı noktası X (±0.12m)
   const armBaseY = 0.08; // Alt bağlantı noktası Y
@@ -1532,10 +1536,10 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
     jointGroup.add(guide);
   });
 
-  // Dikey merdivenden eğimli kaide tavasına yumuşak kablo akış geçiş kavisleri (40 kablo, 2 katman)
+  // Dikey merdivenden eğimli kaide tavasına yumuşak kablo akış geçiş kavisleri (64 kablo, 4 katman)
   telecomCables.forEach(cfg => {
-    const startZ = (cfg.tier === 1) ? 0.031 : 0.060;
-    const targetY = 0.10 + ((cfg.tier === 1) ? (trayBottomY + cfg.r + 0.003) : (trayBottomY + 3 * cfg.r + 0.005));
+    const startZ = 0.0175 + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
+    const targetY = 0.10 + trayBottomY + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
     const targetZ = 0.12 * Math.cos(slopeAngleRad);
 
     const bendCurve = new THREE.QuadraticBezierCurve3(
