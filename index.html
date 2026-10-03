@@ -79,6 +79,8 @@
           <div class="view-modes">
             <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">📐 2D Görünüm</button>
             <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif Görünüm">🧊 3D Perspektif</button>
+            <button id="btn-focus-ground" class="btn-icon" title="Zemin / Kabinlere Odaklan" style="border-left: 2px solid #0284c7;">🏠 Zemin</button>
+            <button id="btn-focus-antennas" class="btn-icon" title="Çatı Taşıyıcısı & Antenlere Odaklan" style="border-left: 2px solid #eab308;">📡 Antenler</button>
             <button id="btn-toggle-fullscreen" class="btn-icon" title="Tam Ekran / Sunum Modu (F / F11)">⛶ Tam Ekran</button>
           </div>
           <div class="helper-text">
@@ -157,7 +159,11 @@
               
                 <button class="btn-eq" id="btn-add-alan2-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
                   <span class="icon">🚀</span>
-                  <span class="name" style="color: white; font-weight: bold;">Özel Alan 2 Kompleksi (Platform + POI + RRU)</span>
+                  <span class="name" style="color: white; font-weight: bold;">Özel Alan 2 RRU Grubu (Beton Zemin Flanşlı, 7 RRU)</span>
+                </button>
+                <button class="btn-eq" id="btn-add-ikili-42u-poi-blok" style="background: linear-gradient(135deg, #ea580c, #c2410c); color: white; border: none; grid-column: span 2; display: none;">
+                  <span class="icon">🗄️⚡</span>
+                  <span class="name" style="color: white; font-weight: bold;">2'li POI Küçük Rack Bloğu (2x POI Dolu)</span>
                 </button>
 
                 <button class="btn-eq" id="btn-add-alan4-ozel-karma-blok" style="background: linear-gradient(135deg, #0d9488, #14b8a6); color: white; border: none; grid-column: span 2; display: none;">
