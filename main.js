@@ -6727,10 +6727,10 @@ function createAlan4Structure() {
   // - Üst kedi yolundan (Y = 7.35m, Z = -0.10m) beton kaideye (Z = 59.67m, Y = 2.12m) uzanır
   // - Eğim açısı: Tam 5 derece (θ = 5.0°)
   // - Ø350mm ana omurga borusu, 2 adet Ø120mm üst aşık, her 3m'de bir V-strut ayakları
+  // - Kullanıcı İsteği: "mevcut 60 metrelik çatı taşıyıcısına her iki yönde Merkezden merkeze 16,5m mesafede
+  //   toplam uzunlugu mevcut kedi yolu kadar olan birer tane daha çatı taşıyıcı ekle. Toplam uzunlukları yine aynı olsun"
+  // - 3 Adet Çatı Taşıyıcı: Sol (X = -16.5m), Merkez (X = 0.0m), Sağ (X = +16.5m)
   // =========================================================================
-  const carrier60mGroup = new THREE.Group();
-  carrier60mGroup.name = 'scoreboard60mRoofCarrier';
-
   const trussLen = 60.0;
   const slopeRad = THREE.MathUtils.degToRad(5.0); // Tam 5 derece eğim
   const trussStartY = upperCwWalkY - 0.15; // 7.35m
@@ -6742,102 +6742,453 @@ function createAlan4Structure() {
   const pipeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xebedf0, roughness: 0.38, metalness: 0.35 });
   const flangeSteelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.40, metalness: 0.75 });
 
-  // 9.1. Ana Taşıyıcı Omurga Borusu (Ø350mm / R = 0.175m)
-  const spineGeo = new THREE.CylinderGeometry(0.175, 0.175, trussLen, 36);
-  spineGeo.rotateX(Math.PI / 2);
-  const spineMesh = new THREE.Mesh(spineGeo, pipeWhiteMat);
-  spineMesh.position.set(0, 0, trussLen / 2);
-  spineMesh.castShadow = true;
-  spineMesh.receiveShadow = true;
+  function buildScoreboardRoofTruss60m(xOffset, trussName) {
+    const trussGroup = new THREE.Group();
+    trussGroup.name = trussName;
 
-  // Taşıyıcı Grubu Eğim ve Konumlandırma
-  carrier60mGroup.position.set(0, trussStartY, trussStartZ);
-  carrier60mGroup.rotation.x = slopeRad; // +Z yönüne doğru aşağı 5 derece eğim
-  carrier60mGroup.add(spineMesh);
+    // 9.1. Ana Taşıyıcı Omurga Borusu (Ø350mm / R = 0.175m)
+    const spineGeo = new THREE.CylinderGeometry(0.175, 0.175, trussLen, 36);
+    spineGeo.rotateX(Math.PI / 2);
+    const spineMesh = new THREE.Mesh(spineGeo, pipeWhiteMat);
+    spineMesh.position.set(0, 0, trussLen / 2);
+    spineMesh.castShadow = true;
+    spineMesh.receiveShadow = true;
+    trussGroup.add(spineMesh);
 
-  // 9.2. Üst İki Boyuna Aşık Borusu (Ø120mm / R = 0.06m) ve V-Kafes Strutlar
-  const chordOffsetW = 0.55; // 1.10m genişlik
-  const chordHeightH = 1.15; // Omurganın 1.15m üzerinde
-  const chordGeo = new THREE.CylinderGeometry(0.06, 0.06, trussLen, 24);
-  chordGeo.rotateX(Math.PI / 2);
+    // 9.2. Üst İki Boyuna Aşık Borusu (Ø160mm / R = 0.08m) ve V-Kafes Strutlar
+    // Alan 1-3 Standardı: Tepe yüksekliği Y = 2.73m, Tepe açıklığı ±1.52m (~3.04m toplam tepe genişliği)
+    // Böylece kedi yolunun içinden geçen yürüme alanı 2.33m tavan yüksekliğiyle tamamen konforlu ve kullanılabilir olur
+    const chordOffsetW = 1.52; // ±1.52m genişlik (Alan 1 standardı: armTopX = 1.52m)
+    const chordHeightH = 2.73; // Omurganın 2.73m üzerinde (Alan 1 standardı: armTopY = 2.73m)
+    const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
+    chordGeo.rotateX(Math.PI / 2);
 
-  const leftChord = new THREE.Mesh(chordGeo, pipeWhiteMat);
-  leftChord.position.set(-chordOffsetW, chordHeightH, trussLen / 2);
-  leftChord.castShadow = true;
-  carrier60mGroup.add(leftChord);
+    const leftChord = new THREE.Mesh(chordGeo, pipeWhiteMat);
+    leftChord.position.set(-chordOffsetW, chordHeightH, trussLen / 2);
+    leftChord.castShadow = true;
+    trussGroup.add(leftChord);
 
-  const rightChord = new THREE.Mesh(chordGeo, pipeWhiteMat);
-  rightChord.position.set(chordOffsetW, chordHeightH, trussLen / 2);
-  rightChord.castShadow = true;
-  carrier60mGroup.add(rightChord);
+    const rightChord = new THREE.Mesh(chordGeo, pipeWhiteMat);
+    rightChord.position.set(chordOffsetW, chordHeightH, trussLen / 2);
+    rightChord.castShadow = true;
+    trussGroup.add(rightChord);
 
-  // Her 3 metrede bir V-Strut ve Güçlendirme İstasyonları (20 Adet İstasyon)
-  const vStrutRadius = 0.045;
-  const topTieRadius = 0.035;
-  const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
-  collarGeo.rotateX(Math.PI / 2);
+    // Her 3 metrede bir V-Strut ve Güçlendirme İstasyonları (20 Adet İstasyon)
+    const vStrutRadius = 0.07; // Ø140mm kalın beyaz çelik boru (Alan 1 standardı: diagonalRadius = 0.07m)
+    const topTieRadius = 0.05; // Ø100mm üst gergi borusu
+    const armBaseX = 0.14;     // Alt omurga üzerindeki montaj ayrımı (±0.14m)
+    const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
+    collarGeo.rotateX(Math.PI / 2);
 
-  for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
-    // Omurgayı saran çelik bilezik
-    const collar = new THREE.Mesh(collarGeo, flangeSteelMat);
-    collar.position.set(0, 0, zSt);
-    carrier60mGroup.add(collar);
+    for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
+      // Omurgayı saran çelik bilezik
+      const collar = new THREE.Mesh(collarGeo, flangeSteelMat);
+      collar.position.set(0, 0, zSt);
+      trussGroup.add(collar);
 
-    // Sol V-Kolu
-    const leftV = createPipeHelper(
-      new THREE.Vector3(0, 0.15, zSt),
-      new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-      vStrutRadius,
-      pipeWhiteMat
-    );
-    carrier60mGroup.add(leftV);
-
-    // Sağ V-Kolu
-    const rightV = createPipeHelper(
-      new THREE.Vector3(0, 0.15, zSt),
-      new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-      vStrutRadius,
-      pipeWhiteMat
-    );
-    carrier60mGroup.add(rightV);
-
-    // Üst Yatay Gergi Borusu
-    const topTie = createPipeHelper(
-      new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-      new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-      topTieRadius,
-      pipeWhiteMat
-    );
-    carrier60mGroup.add(topTie);
-
-    // İstasyonlar arası X-çapraz gergi bağları
-    if (zSt + 3.0 <= trussLen) {
-      const diag1 = createPipeHelper(
+      // Sol V-Kolu (Alt omurga kenarından sol üst aşığa)
+      const leftV = createPipeHelper(
+        new THREE.Vector3(-armBaseX, 0.175, zSt),
         new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-        new THREE.Vector3(chordOffsetW, chordHeightH, zSt + 3.0),
-        0.022,
-        flangeSteelMat
+        vStrutRadius,
+        pipeWhiteMat
       );
-      carrier60mGroup.add(diag1);
+      trussGroup.add(leftV);
 
-      const diag2 = createPipeHelper(
+      // Sağ V-Kolu (Alt omurga kenarından sağ üst aşığa)
+      const rightV = createPipeHelper(
+        new THREE.Vector3(armBaseX, 0.175, zSt),
         new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-        new THREE.Vector3(-chordOffsetW, chordHeightH, zSt + 3.0),
-        0.022,
-        flangeSteelMat
+        vStrutRadius,
+        pipeWhiteMat
       );
-      carrier60mGroup.add(diag2);
+      trussGroup.add(rightV);
+
+      // Üst Yatay Gergi Borusu
+      const topTie = createPipeHelper(
+        new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
+        new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
+        topTieRadius,
+        pipeWhiteMat
+      );
+      trussGroup.add(topTie);
+
+      // İstasyonlar arası X-çapraz gergi bağları
+      if (zSt + 3.0 <= trussLen) {
+        const diag1 = createPipeHelper(
+          new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
+          new THREE.Vector3(chordOffsetW, chordHeightH, zSt + 3.0),
+          0.028,
+          flangeSteelMat
+        );
+        trussGroup.add(diag1);
+
+        const diag2 = createPipeHelper(
+          new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
+          new THREE.Vector3(-chordOffsetW, chordHeightH, zSt + 3.0),
+          0.028,
+          flangeSteelMat
+        );
+        trussGroup.add(diag2);
+      }
     }
+
+    // 9.2.B. 50CM GENİŞLİK, 15CM YÜKSEKLİKTE DELİKLİ KABLO TAVASI VE TAVA TAŞIYICILARI (BATTI-ÇIKTI / KOT DÜŞÜRMELİ)
+    // Kullanıcı İsteği: "taşıyıcı üstüne 50mm tava ve tava taşıyıcısı koy. tavaları kedi yollarının kesiştigi yerde kot düşür"
+    if (xOffset !== 0) {
+      const trayGroup = new THREE.Group();
+      trayGroup.name = `scoreboardTruss50cmTray_${xOffset < 0 ? 'left' : 'right'}`;
+
+      const trayW = 0.50; // 500mm genişlik
+      const trayH = 0.15; // 150mm kenar yüksekliği
+      const trayWallThick = 0.003;
+      const trayBottomYNormal = 0.45; // Normal seyir kotu (travers kaidesi üzerinde)
+      const trayBottomYDip = 0.18;    // Kedi yolları altı kot düşürülmüş alçak havuz kotu (kedi yolunun altından rahatça geçer)
+
+      // Tava Malzemeleri
+      const trayPerforatedTex = createCableTrayPerforatedTexture();
+      trayPerforatedTex.repeat.set(1, 40);
+      const sbTrayBottomMat = new THREE.MeshStandardMaterial({
+        map: trayPerforatedTex,
+        transparent: true,
+        alphaTest: 0.2,
+        color: 0x94a3b8,
+        metalness: 0.85,
+        roughness: 0.3,
+        side: THREE.DoubleSide
+      });
+      const sbTraySideMat = new THREE.MeshStandardMaterial({
+        color: 0x90a4ae,
+        metalness: 0.85,
+        roughness: 0.35,
+        side: THREE.DoubleSide
+      });
+      const sbDarkJointMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.8,
+        roughness: 0.4
+      });
+
+      // 1. Tava Taşıyıcı Travers Kaideleri (Her 3 metrede bir V-strut kolları arasına gerilen travers kirişi ve kelepçeler)
+      const crossBeamGeo = new THREE.BoxGeometry(0.66, 0.05, 0.08);
+      const pedestalGeo = new THREE.BoxGeometry(0.52, 0.03, 0.10);
+      const holdClampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.06);
+
+      for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
+        const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
+        if (!isNearDip) {
+          const cBeam = new THREE.Mesh(crossBeamGeo, flangeSteelMat);
+          cBeam.position.set(0, 0.38, zSt);
+          cBeam.castShadow = true;
+          trayGroup.add(cBeam);
+
+          const ped = new THREE.Mesh(pedestalGeo, flangeSteelMat);
+          ped.position.set(0, 0.42, zSt);
+          trayGroup.add(ped);
+
+          [-0.26, 0.26].forEach(hx => {
+            const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
+            hClamp.position.set(hx, 0.445, zSt);
+            trayGroup.add(hClamp);
+          });
+        }
+      }
+
+      // Kedi yolları altında alçak geçiş havuzu taşıyıcı eyerleri (s = 16.0m ve s = 32.0m)
+      const dipSaddleGeo = new THREE.BoxGeometry(trayW + 0.06, 0.04, 0.25);
+      [16.0, 32.0].forEach(dipZ => {
+        const dipSaddle = new THREE.Mesh(dipSaddleGeo, flangeSteelMat);
+        dipSaddle.position.set(0, trayBottomYDip - 0.02, dipZ);
+        trayGroup.add(dipSaddle);
+      });
+
+      // 2. Battı-Çıktı (Kot Düşürmeli) Tava Segmentleri
+      // Catwalk 2 (s = 16m) ve Catwalk 1 (s = 32m) kesişimlerinde kot düşürme
+      const traySegments = [
+        { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 14.60 },
+        { yStart: trayBottomYNormal, zStart: 14.60, yEnd: trayBottomYDip, zEnd: 15.20 }, // 1. Battı (Catwalk 2 inişi)
+        { yStart: trayBottomYDip, zStart: 15.20, yEnd: trayBottomYDip, zEnd: 16.80 },    // Catwalk 2 altı alçak geçiş
+        { yStart: trayBottomYDip, zStart: 16.80, yEnd: trayBottomYNormal, zEnd: 17.40 }, // 1. Çıktı (Normal kota dönüş)
+        { yStart: trayBottomYNormal, zStart: 17.40, yEnd: trayBottomYNormal, zEnd: 30.60 },
+        { yStart: trayBottomYNormal, zStart: 30.60, yEnd: trayBottomYDip, zEnd: 31.20 }, // 2. Battı (Catwalk 1 inişi)
+        { yStart: trayBottomYDip, zStart: 31.20, yEnd: trayBottomYDip, zEnd: 32.80 },    // Catwalk 1 altı alçak geçiş
+        { yStart: trayBottomYDip, zStart: 32.80, yEnd: trayBottomYNormal, zEnd: 33.40 }, // 2. Çıktı (Normal kota dönüş)
+        { yStart: trayBottomYNormal, zStart: 33.40, yEnd: trayBottomYNormal, zEnd: 59.80 }  // Beton kaideye kadar normal seyir
+      ];
+
+      traySegments.forEach(seg => {
+        const dy = seg.yEnd - seg.yStart;
+        const dz = seg.zEnd - seg.zStart;
+        const segLen = Math.hypot(dy, dz);
+        const segAngleX = Math.atan2(seg.yStart - seg.yEnd, dz);
+        const midY = (seg.yStart + seg.yEnd) / 2;
+        const midZ = (seg.zStart + seg.zEnd) / 2;
+
+        // Taban Sacı
+        const bGeo = new THREE.BoxGeometry(trayW, trayWallThick, segLen);
+        const bMesh = new THREE.Mesh(bGeo, sbTrayBottomMat);
+        bMesh.rotation.x = segAngleX;
+        bMesh.position.set(0, midY + (trayWallThick / 2) * Math.cos(segAngleX), midZ);
+        bMesh.receiveShadow = true;
+        bMesh.castShadow = true;
+        trayGroup.add(bMesh);
+
+        // Sol Yan Duvar
+        const sideGeo = new THREE.BoxGeometry(trayWallThick, trayH, segLen);
+        const lMesh = new THREE.Mesh(sideGeo, sbTraySideMat);
+        lMesh.rotation.x = segAngleX;
+        lMesh.position.set(-trayW / 2 + trayWallThick / 2, midY + (trayH / 2) * Math.cos(segAngleX), midZ);
+        lMesh.castShadow = true;
+        trayGroup.add(lMesh);
+
+        // Sağ Yan Duvar
+        const rMesh = new THREE.Mesh(sideGeo, sbTraySideMat);
+        rMesh.rotation.x = segAngleX;
+        rMesh.position.set(trayW / 2 - trayWallThick / 2, midY + (trayH / 2) * Math.cos(segAngleX), midZ);
+        rMesh.castShadow = true;
+        trayGroup.add(rMesh);
+
+        // Üst Güçlendirme Kıvrımları (Flange Lips)
+        const lipGeo = new THREE.BoxGeometry(0.015, trayWallThick, segLen);
+        const lLip = new THREE.Mesh(lipGeo, flangeSteelMat);
+        lLip.rotation.x = segAngleX;
+        lLip.position.set(-trayW / 2 + 0.0075, midY + trayH * Math.cos(segAngleX), midZ);
+        trayGroup.add(lLip);
+
+        const rLip = new THREE.Mesh(lipGeo, flangeSteelMat);
+        rLip.rotation.x = segAngleX;
+        rLip.position.set(trayW / 2 - 0.0075, midY + trayH * Math.cos(segAngleX), midZ);
+        trayGroup.add(rLip);
+      });
+
+      // 3. Tava İçi Feeder Kabloları (6 Adet 7/8" Feeder Kablo Demeti)
+      const feederMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.1 });
+      const fRadius = 0.014;
+      const numFeeders = 6;
+      for (let fi = 0; fi < numFeeders; fi++) {
+        const fx = -trayW / 2 + 0.07 + fi * 0.072;
+        const pts = [];
+        traySegments.forEach((seg, sIdx) => {
+          if (sIdx === 0) pts.push(new THREE.Vector3(fx, seg.yStart + fRadius + 0.005, seg.zStart));
+          pts.push(new THREE.Vector3(fx, seg.yEnd + fRadius + 0.005, seg.zEnd));
+        });
+        const cableCurve = new THREE.CatmullRomCurve3(pts);
+        const cableGeo = new THREE.TubeGeometry(cableCurve, 64, fRadius, 8, false);
+        const cableMesh = new THREE.Mesh(cableGeo, feederMat);
+        cableMesh.castShadow = true;
+        trayGroup.add(cableMesh);
+      }
+
+      // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)
+      const elbowGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.45, 16);
+      elbowGeo.rotateZ(Math.PI / 2);
+      const elbowMesh = new THREE.Mesh(elbowGeo, flangeSteelMat);
+      elbowMesh.position.set(0, trayBottomYNormal + 0.05, 59.80);
+      trayGroup.add(elbowMesh);
+
+      trussGroup.add(trayGroup);
+    }
+
+    // Taşıyıcı Grubu Eğim ve Konumlandırma
+    trussGroup.position.set(xOffset, trussStartY, trussStartZ);
+    trussGroup.rotation.x = slopeRad; // +Z yönüne doğru aşağı 5 derece eğim
+
+    return trussGroup;
   }
 
-  alan4Group.add(carrier60mGroup);
+  // 3 Adet 60 Metrelik Çatı Taşıyıcı: Merkez (0m), Sol (-16.5m), Sağ (+16.5m) (Merkezden merkeze 16.5 metre)
+  const roofCarrierXLocs = [-16.5, 0.0, 16.5];
+  roofCarrierXLocs.forEach(rx => {
+    const name = rx === 0 ? 'scoreboard60mRoofCarrier' : (rx < 0 ? 'scoreboard60mRoofCarrierLeft' : 'scoreboard60mRoofCarrierRight');
+    const carrier = buildScoreboardRoofTruss60m(rx, name);
+    alan4Group.add(carrier);
+
+    // Yan taşıyıcılar (X = ±16.5m) için alt silindirlerden (Y = -0.95m) makas başına (Y = 7.35m) düşey çelik taşıyıcı kule dikmesi
+    if (rx !== 0) {
+      const sideStanchionGroup = new THREE.Group();
+      sideStanchionGroup.name = `scoreboardSideCarrierStanchion_${rx < 0 ? 'left' : 'right'}`;
+
+      // İki silindir arası enine ağır taşıyıcı kiriş (Z: -1.67 ile +0.55 arası)
+      const transBeam = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.25, 2.50), darkSteelMat);
+      transBeam.position.set(rx, -0.15, -0.56);
+      sideStanchionGroup.add(transBeam);
+
+      // Silindir 1 ve Silindir 2 üzerine binen eyer pabuçları
+      [-1.67, 0.55].forEach(sz => {
+        const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.16, 0.70), darkSteelMat);
+        saddle.position.set(rx, -0.22, sz);
+        sideStanchionGroup.add(saddle);
+      });
+
+      // Düşey ana taşıyıcı kolon (Y = -0.15m'den Y = 7.35m'ye)
+      const stanchionH = trussStartY - (-0.15);
+      const stanchionMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, stanchionH, 24), pipeWhiteMat);
+      stanchionMesh.position.set(rx, -0.15 + stanchionH / 2, trussStartZ);
+      stanchionMesh.castShadow = true;
+      sideStanchionGroup.add(stanchionMesh);
+
+      // Kolon tepesi makas mesnet flanşı ve başlığı
+      const headCap = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.15, 0.55), flangeSteelMat);
+      headCap.position.set(rx, trussStartY - 0.075, trussStartZ);
+      sideStanchionGroup.add(headCap);
+
+      alan4Group.add(sideStanchionGroup);
+    }
+  });
 
   // =========================================================================
-  // 10. 25M BETON KAİDE, CAM KORUMA, 3 DOLAPLI CAM & KAYAR KAPILI DOLAP VE 300MM KABLO MERDİVENİ
+  // 9.3. 2 ADET ARA KEDİ YOLU (3 ÇATI TAŞIYICISININ İÇİNDEN GEÇEN VE HEPSİNİ AŞAN)
+  // Kullanıcı İsteği: "betonun sınırından itibaren ilkini 28 metreye ikinisini de bundan 16 metre sonraya
+  // yerleştir uzunlugu 3 çatı taşıyıcısını da geçsin. Konumu yine taşıyıcının içinden geçecek şekilde olacak."
+  // Geometrik Hesaplar:
+  // - Makas boyu = 60m (Eğim = 5 derece). Beton kaide mesnet noktası station = 60.0m
+  // - 1. Kedi Yolu: Betondan 28m önce => Station s = 32.0m (Z ≈ 31.78m, Y_omurga ≈ 4.56m, Y_yürüme = 5.01m)
+  // - 2. Kedi Yolu: 1. Kedi yolundan 16m sonra => Station s = 16.0m (Z ≈ 15.84m, Y_omurga ≈ 5.96m, Y_yürüme = 6.41m)
+  // - Genişlik: 1.00m (Makasın 1.10m iç açıklığından tam geçer)
+  // - Uzunluk: 38.0m (X = -19.0m'den +19.0m'ye, X = -16.5m, 0m ve +16.5m olan 3 taşıyıcıyı da 2.5m geçer)
+  // =========================================================================
+  function buildScoreboardIntermediateCatwalk(stationS, name) {
+    const cwGroup = new THREE.Group();
+    cwGroup.name = name;
+
+    const cwCenterZ = trussStartZ + stationS * Math.cos(slopeRad);
+    const spineYAtStation = trussStartY - stationS * Math.sin(slopeRad);
+    const cwWalkY = spineYAtStation + 0.45; // Makas omurgasının 45 cm üstünde (makasın tam içinden geçer)
+    const cwRailTopY = cwWalkY + 1.00;
+    const cwRailMidY = cwWalkY + 0.50;
+
+    const cwLength = 38.0; // 3 çatı taşıyıcısını da geçer (X: -19.0m ile +19.0m arası, makaslar: -16.5m, 0m, +16.5m)
+    const cwWidth = 1.00;  // 100 cm net yürüme genişliği (Makasın 110 cm iç genişliğinden tam geçer)
+
+    // A) Yürüme Taban Sacı (Genişletilmiş Metal Izgara)
+    const cwFloorGeo = new THREE.BoxGeometry(cwLength, 0.05, cwWidth);
+    const cwFloor = new THREE.Mesh(cwFloorGeo, floorMat);
+    cwFloor.position.set(0, cwWalkY - 0.025, cwCenterZ);
+    cwFloor.receiveShadow = true;
+    cwGroup.add(cwFloor);
+
+    // B) Boyuna Taşıyıcı Kenar Kirişleri (Ön ve Arka Kenarlar)
+    const cwBeamGeo = new THREE.BoxGeometry(cwLength, 0.15, 0.08);
+    [-cwWidth / 2, cwWidth / 2].forEach(dz => {
+      const beam = new THREE.Mesh(cwBeamGeo, beamMat);
+      beam.position.set(0, cwWalkY - 0.025, cwCenterZ + dz);
+      beam.castShadow = true;
+      cwGroup.add(beam);
+    });
+
+    // C) Sarı Emniyet Korkulukları (1.00m Yükseklik, Etek Sacı, Dikmeler)
+    const postGeo = new THREE.CylinderGeometry(0.02, 0.02, 1.00, 16);
+    const topRailGeo = new THREE.CylinderGeometry(0.025, 0.025, cwLength, 16);
+    topRailGeo.rotateZ(Math.PI / 2);
+    const midRailGeo = new THREE.CylinderGeometry(0.016, 0.016, cwLength, 16);
+    midRailGeo.rotateZ(Math.PI / 2);
+    const kickPlateGeo = new THREE.BoxGeometry(cwLength, 0.15, 0.015);
+
+    [-cwWidth / 2, cwWidth / 2].forEach(dz => {
+      const topRail = new THREE.Mesh(topRailGeo, railMat);
+      topRail.position.set(0, cwRailTopY, cwCenterZ + dz);
+      topRail.castShadow = true;
+      cwGroup.add(topRail);
+
+      const midRail = new THREE.Mesh(midRailGeo, railMat);
+      midRail.position.set(0, cwRailMidY, cwCenterZ + dz);
+      cwGroup.add(midRail);
+
+      const kickPlate = new THREE.Mesh(kickPlateGeo, beamMat);
+      kickPlate.position.set(0, cwWalkY + 0.075, cwCenterZ + dz);
+      cwGroup.add(kickPlate);
+
+      // Korkuluk dikmeleri (her 1.5 metrede bir)
+      for (let x = -cwLength / 2 + 0.5; x <= cwLength / 2 - 0.5; x += 1.5) {
+        const post = new THREE.Mesh(postGeo, railMat);
+        post.position.set(x, cwWalkY + 0.50, cwCenterZ + dz);
+        post.castShadow = true;
+        cwGroup.add(post);
+      }
+    });
+
+    // D) Uç Emniyet Korkulukları (X = -19.0m ve X = +19.0m)
+    [-cwLength / 2, cwLength / 2].forEach(ex => {
+      const endTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, cwWidth, 16), railMat);
+      endTopRail.rotation.x = Math.PI / 2;
+      endTopRail.position.set(ex, cwRailTopY, cwCenterZ);
+      cwGroup.add(endTopRail);
+
+      const endMidRail = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, cwWidth, 16), railMat);
+      endMidRail.rotation.x = Math.PI / 2;
+      endMidRail.position.set(ex, cwRailMidY, cwCenterZ);
+      cwGroup.add(endMidRail);
+
+      const endKick = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.15, cwWidth), beamMat);
+      endKick.position.set(ex, cwWalkY + 0.075, cwCenterZ);
+      cwGroup.add(endKick);
+
+      [-cwWidth / 2 + 0.05, cwWidth / 2 - 0.05].forEach(dz => {
+        const endPost = new THREE.Mesh(postGeo, railMat);
+        endPost.position.set(ex, cwWalkY + 0.50, cwCenterZ + dz);
+        cwGroup.add(endPost);
+      });
+    });
+
+    // E) Makas Geçiş Kenetleme Mesnetleri ve Taşıyıcı Traversler (X = -16.5m, 0.0m, +16.5m)
+    roofCarrierXLocs.forEach(rx => {
+      // Makas alt omurgasına kenetlenen ağır çelik eyer ve travers kirişi
+      const saddleBeamGeo = new THREE.BoxGeometry(0.30, 0.20, cwWidth + 0.35);
+      const saddleBeam = new THREE.Mesh(saddleBeamGeo, darkSteelMat);
+      saddleBeam.position.set(rx, cwWalkY - 0.125, cwCenterZ);
+      saddleBeam.castShadow = true;
+      cwGroup.add(saddleBeam);
+
+      // Omurgayı (Ø350mm) saran ağır çelik montaj bileziği / flanşı
+      const clampCollarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.25, 24);
+      clampCollarGeo.rotateX(Math.PI / 2);
+      const clampCollar = new THREE.Mesh(clampCollarGeo, flangeSteelMat);
+      clampCollar.position.set(rx, spineYAtStation, cwCenterZ);
+      cwGroup.add(clampCollar);
+
+      // Yan bağlantı braketleri (Makas V-strut kollarına kenetlenen flanşlar)
+      [-0.32, 0.32].forEach(bx => {
+        [-0.45, 0.45].forEach(bz => {
+          const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.16), flangeSteelMat);
+          bracket.position.set(rx + bx, cwWalkY - 0.10, cwCenterZ + bz);
+          cwGroup.add(bracket);
+        });
+      });
+    });
+
+    // F) Çatı Askı Rotları (Her 3.5m'de bir çatı strüktürüne yükselen askı çubukları)
+    const hangerRodGeo = new THREE.CylinderGeometry(0.014, 0.014, 2.50, 16);
+    for (let x = -cwLength / 2 + 2.0; x <= cwLength / 2 - 2.0; x += 3.5) {
+      const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, cwWidth + 0.30), darkSteelMat);
+      crossBeam.position.set(x, cwWalkY - 0.12, cwCenterZ);
+      crossBeam.castShadow = true;
+      cwGroup.add(crossBeam);
+
+      [-cwWidth / 2 - 0.08, cwWidth / 2 + 0.08].forEach(dz => {
+        const rod = new THREE.Mesh(hangerRodGeo, flangeSteelMat);
+        rod.position.set(x, cwWalkY + 1.25, cwCenterZ + dz);
+        rod.castShadow = true;
+        cwGroup.add(rod);
+      });
+    }
+
+    return cwGroup;
+  }
+
+  // 1. Kedi Yolu: Betondan 28m önce (Station s = 32m)
+  const scoreboardIntermediateCw1 = buildScoreboardIntermediateCatwalk(32.0, 'scoreboardIntermediateCatwalk1_32m');
+  alan4Group.add(scoreboardIntermediateCw1);
+
+  // 2. Kedi Yolu: 1. Kedi yolundan 16m sonra (Station s = 16m)
+  const scoreboardIntermediateCw2 = buildScoreboardIntermediateCatwalk(16.0, 'scoreboardIntermediateCatwalk2_16m');
+  alan4Group.add(scoreboardIntermediateCw2);
+
+  // =========================================================================
+  // 10. 54M BETON KAİDE, 6 METREDE BİR DİREK, YATAY BİRLEŞTİRİCİLER, CAM KORUMA,
+  // 3 DOLAPLI CAM & KAYAR KAPILI DOLAP VE 300MM KABLO MERDİVENİ
   // Kullanıcı İsteği:
-  // - "Beton kaidenin temel formunu diger alanlardan kopyala ve cam koruma genişlik vs degerleri oradan al"
-  // - "Beton kaide tarafında ise 3 adet outdoor dollap sıgacak şekilde bir cam ve kayar kapılı dolap yapacagız"
-  // - "bir de taşıyıcı 4 metrelik diregin hemen yanına yaklaşık 300mm bir kablo merdiveni koy"
+  // - "BEton kaideyi her iki yönde 27 olacak şekilde toplamda 54 metreye kadar uzat"
+  // - "6 metrede bir direk ve yatay birleştiricileri de ekle"
   // =========================================================================
   const baseGroundY = trussEndY - 4.0; // -1.88m (Direklerin bastığı taban kotu)
   const baseZ = trussEndZ; // 59.67m
@@ -6845,8 +7196,8 @@ function createAlan4Structure() {
   const concreteGroup = new THREE.Group();
   concreteGroup.name = 'scoreboardRoofConcreteBase';
 
-  // 10.1. 25 Metrelik Masif Beton Kaide Bloğu (Alan 3 Referanslı: 25.0m x 2.0m x 0.40m)
-  const floorLength = 25.0;
+  // 10.1. 54 Metrelik Masif Beton Kaide Bloğu (54.0m x 2.0m x 0.40m, X: -27m ile +27m)
+  const floorLength = 54.0;
   const floorWidth = 2.0;
   const floorThickness = 0.40;
 
@@ -6861,7 +7212,7 @@ function createAlan4Structure() {
   concBaseMesh.receiveShadow = true;
   concreteGroup.add(concBaseMesh);
 
-  // Standart Cam Koruma Korkuluk Malzemeleri (Alan 3 Referanslı)
+  // Standart Cam Koruma Korkuluk Malzemeleri
   const glassMat = new THREE.MeshStandardMaterial({
     color: 0x99ccff,
     transparent: true,
@@ -6883,12 +7234,12 @@ function createAlan4Structure() {
   const stdGlassH = 1.10;
   const stdPostH = 1.20;
 
-  // 10.2. 6 Metre Arayla 4 Metrelik Çelik Silindir Direkler (5 Adet: X = -12, -6, 0, 6, 12)
+  // 10.2. 6 Metre Arayla 4 Metrelik Çelik Silindir Direkler (9 Adet: X = -24, -18, -12, -6, 0, 6, 12, 18, 24)
   const colDia = 0.40; // Ø400mm
   const colRad = colDia / 2;
   const colH = 4.00; // 4 metre boy
 
-  const colXLocs = [-12, -6, 0, 6, 12];
+  const colXLocs = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
   const steelPlatMat = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.35, metalness: 0.75 });
   const colMatWhite = new THREE.MeshStandardMaterial({ color: 0xebedf0, roughness: 0.40, metalness: 0.35 });
   const boltHardwareMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.4, metalness: 0.8 });
@@ -6935,18 +7286,54 @@ function createAlan4Structure() {
     concreteGroup.add(cGroup);
   });
 
-  // 10.3. Kolon Başlık Kirişi (5 Kolonu Birleştiren Yatay Ağır Kiriş, L = 25m)
+  // 10.3. Kolon Başlık Kirişi ve Yatay Birleştiriciler (9 Kolonu Birleştiren Yatay Ağır Kiriş, L = 54m)
   const headerBeamGeo = new THREE.CylinderGeometry(colRad, colRad, floorLength, 32);
   headerBeamGeo.rotateZ(Math.PI / 2);
   const headerBeam = new THREE.Mesh(headerBeamGeo, colMatWhite);
   headerBeam.position.set(0, trussEndY, baseZ);
   concreteGroup.add(headerBeam);
 
-  // 60m Taşıyıcı Kolonun Beton Kaide Mesnet Pabucu (Merkez Kolonda Mafsallı Mesnet)
+  // Yatay Birleştirici Bağlantı Bilezikleri ve Flanş Halkaları (Her 9 direk kesişiminde)
+  const colCollarGeo = new THREE.CylinderGeometry(colRad + 0.015, colRad + 0.015, colRad * 2 + 0.08, 32);
+  const ringFlangeGeo = new THREE.CylinderGeometry(colRad + 0.03, colRad + 0.03, 0.03, 24);
+  ringFlangeGeo.rotateZ(Math.PI / 2);
+
+  colXLocs.forEach(cx => {
+    // Dikey direk üzerine sarılan T-bağlantı kuşağı / bileziği
+    const collar = new THREE.Mesh(colCollarGeo, steelPlatMat);
+    collar.position.set(cx, trussEndY, baseZ);
+    collar.castShadow = true;
+    concreteGroup.add(collar);
+
+    // Yatay borunun direğe giriş yaptığı her iki yana bağlantı flanş halkaları
+    if (cx > -24) {
+      const ringL = new THREE.Mesh(ringFlangeGeo, steelPlatMat);
+      ringL.position.set(cx - (colRad + 0.02), trussEndY, baseZ);
+      concreteGroup.add(ringL);
+    }
+    if (cx < 24) {
+      const ringR = new THREE.Mesh(ringFlangeGeo, steelPlatMat);
+      ringR.position.set(cx + (colRad + 0.02), trussEndY, baseZ);
+      concreteGroup.add(ringR);
+    }
+  });
+
+  // Dış Uç Flanş Kapakları (X = -27m ve X = +27m)
+  const endCapGeo = new THREE.CylinderGeometry(colRad + 0.03, colRad + 0.03, 0.04, 32);
+  endCapGeo.rotateZ(Math.PI / 2);
+  [-floorLength / 2, floorLength / 2].forEach(ex => {
+    const endCap = new THREE.Mesh(endCapGeo, steelPlatMat);
+    endCap.position.set(ex, trussEndY, baseZ);
+    concreteGroup.add(endCap);
+  });
+
+  // 60m Taşıyıcı Kolonların Beton Kaide Mesnet Pabuçları (3 Adet: Sol -16.5m, Merkez 0.0m, Sağ +16.5m)
   const shoeGeo = new THREE.BoxGeometry(0.60, 0.35, 0.60);
-  const trussShoe = new THREE.Mesh(shoeGeo, steelPlatMat);
-  trussShoe.position.set(0, trussEndY + 0.15, baseZ);
-  concreteGroup.add(trussShoe);
+  roofCarrierXLocs.forEach(rx => {
+    const trussShoe = new THREE.Mesh(shoeGeo, steelPlatMat);
+    trussShoe.position.set(rx, trussEndY + 0.15, baseZ);
+    concreteGroup.add(trussShoe);
+  });
 
   // =========================================================================
   // 10.4. 300MM DİKEY KABLO MERDİVENİ (4 METRELİK TAŞIYICI DİREĞİN HEMEN YANINDA)
@@ -7030,6 +7417,88 @@ function createAlan4Structure() {
   }
 
   concreteGroup.add(cableLadderGroup);
+
+  // 10.4.B. SOL VE SAĞ ÇATI TAŞIYICILARI İÇİN 4 METRELİK DİKEY KABLO MERDİVENLERİ
+  // Kullanıcı İsteği: "sag ve soldaki taşıyıcılardan beton kaideye birer tane kablo merdiveni ... koy"
+  function buildScoreboardCarrierVerticalLadder(ladderX, ladderName) {
+    const vLadderGroup = new THREE.Group();
+    vLadderGroup.name = ladderName;
+
+    const vLadderW = 0.40; // 400mm genişlik (50cm tavaya uygun geniş merdiven)
+    const vLadderH = 4.00; // 4 metre yükseklik (Header kirişten beton taban kotuna)
+    const vLadderD = 0.07; // 70mm derinlik
+    const vRailW = 0.035;
+
+    vLadderGroup.position.set(ladderX, baseGroundY, baseZ);
+
+    const vRailGeo = new THREE.BoxGeometry(vRailW, vLadderH, vLadderD);
+
+    // Sol ve Sağ Taşıyıcı Kolları
+    const vLeft = new THREE.Mesh(vRailGeo, cLadderGalvMat);
+    vLeft.position.set(-vLadderW / 2 + vRailW / 2, vLadderH / 2, 0);
+    vLeft.castShadow = true;
+    vLadderGroup.add(vLeft);
+
+    const vRight = new THREE.Mesh(vRailGeo, cLadderGalvMat);
+    vRight.position.set(vLadderW / 2 - vRailW / 2, vLadderH / 2, 0);
+    vRight.castShadow = true;
+    vLadderGroup.add(vRight);
+
+    // Yan montaj yarıkları (her 20 cm'de bir)
+    const vSlotGeo = new THREE.BoxGeometry(vRailW + 0.002, 0.05, 0.015);
+    for (let sy = 0.20; sy < vLadderH; sy += 0.20) {
+      const sL = new THREE.Mesh(vSlotGeo, cLadderDarkMat);
+      sL.position.set(-vLadderW / 2 + vRailW / 2, sy, 0);
+      vLadderGroup.add(sL);
+      const sR = new THREE.Mesh(vSlotGeo, cLadderDarkMat);
+      sR.position.set(vLadderW / 2 - vRailW / 2, sy, 0);
+      vLadderGroup.add(sR);
+    }
+
+    // Yatay Delikli C-profil basamaklar (her 25 cm'de bir)
+    const vRungW = vLadderW - 2 * vRailW;
+    const vRungGeo = new THREE.BoxGeometry(vRungW, 0.025, 0.035);
+    for (let ry = 0.25; ry < vLadderH; ry += 0.25) {
+      const rung = new THREE.Mesh(vRungGeo, cLadderDarkMat);
+      rung.position.set(0, ry, 0);
+      vLadderGroup.add(rung);
+    }
+
+    // Header kirişe ve betona sabitleme standoff kelepçeleri
+    const clampGeo = new THREE.BoxGeometry(0.10, 0.04, 0.10);
+    [0.60, 1.80, 3.00, 3.85].forEach(cy => {
+      [-vLadderW / 2 + 0.02, vLadderW / 2 - 0.02].forEach(cx => {
+        const cl = new THREE.Mesh(clampGeo, cLadderDarkMat);
+        cl.position.set(cx, cy, -0.05);
+        vLadderGroup.add(cl);
+      });
+    });
+
+    // Merdivenden yukarı uzanan 6 adet 7/8" Feeder Kablosu (Tavaya bağlanan hat)
+    for (let fi = 0; fi < 6; fi++) {
+      const fx = -vRungW / 2 + 0.035 + fi * 0.052;
+      const fMesh = new THREE.Mesh(fCableGeo, fCableMat);
+      fMesh.position.set(fx, vLadderH / 2, 0.022);
+      vLadderGroup.add(fMesh);
+    }
+
+    // Tepe geçiş dirseği (Tava iniş flanşı)
+    const topElbowGeo = new THREE.CylinderGeometry(0.04, 0.04, vLadderW, 16);
+    topElbowGeo.rotateZ(Math.PI / 2);
+    const topElbow = new THREE.Mesh(topElbowGeo, steelPlatMat);
+    topElbow.position.set(0, vLadderH + 0.02, -0.035);
+    vLadderGroup.add(topElbow);
+
+    return vLadderGroup;
+  }
+
+  // Sol Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = -16.5m mesnet yanı: -16.85m)
+  const leftCarrierLadder = buildScoreboardCarrierVerticalLadder(-16.85, 'scoreboardLeftCarrierCableLadder');
+  concreteGroup.add(leftCarrierLadder);
+
+  // Sağ Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = +16.5m mesnet yanı: +16.85m)
+  const rightCarrierLadder = buildScoreboardCarrierVerticalLadder(16.85, 'scoreboardRightCarrierCableLadder');
+  concreteGroup.add(rightCarrierLadder);
 
   // =========================================================================
   // 10.5. KABLO MERDİVENİ VE TAŞIYICI DİREĞİ KAPSAYAN YÜKSEK CAMLI VE KAYAR KAPILI İZOLE ALAN
@@ -7287,50 +7756,239 @@ function createAlan4Structure() {
   concreteGroup.add(backGlass2);
 
   // =========================================================================
-  // 10.6. STANDART ÖN VE YAN CAM KORUMA KORKULUKLARI (UZAK TARAF CAMLARI KALDIRILDI)
-  // Kullanıcı İsteği: "beton kaidenin uzak tarafındaki 100 100 cm olan camları da kaldır"
-  // - Ön Cephe (Z = baseZ - 0.95m): İzole alan hariç Sol (X = -12.5'ten -1.70'e) ve Sağ (X = +1.70'ten +12.5'e)
-  // - Yan Uçlar (X = -12.5m ve X = +12.5m)
-  // - Uzak Taraf Arka Kenar (Z = baseZ + 0.95m): 100cm camlar tamamen KALDIRILDI
+  // 10.5.B. SOL VE SAĞ KEDİ YOLLARI / ÇATI TAŞIYICILARI İÇİN YÜKSEK CAMLI VE
+  //         KAYAR KAPILI İZOLE ALANLAR & TAM EKİPMAN SETİ (3 DOLAP + RRU SETİ + POI SETİ)
+  // Kullanıcı İsteği:
+  // "sağ ve soldaki kedi yollarının beton kaideye denk gelen yerlerinde Alan-1 meton kaidede kullandıgımız
+  //  doplaplardan 3 tane rru setinin tamamını ve poı setinini tamamını yerleştir. Bunları kablo merdiveni
+  //  ve dikey taşıyıcı ile kesişmeyecek şekilde konumlandır ve etrafını yüksek cam ve kapanır kapılarla
+  //  çevrele alan-1 den kopya çekebilirsin :)"
   // =========================================================================
-  // Ön Sol Cam: X = [-12.5, -1.70] (L = 10.80m)
-  const leftFrontLen = Math.abs(encMinX - (-floorLength / 2)); // 10.80m
-  const leftFrontNumPosts = Math.max(2, Math.round(leftFrontLen / 1.5) + 1);
-  const leftFrontSpacing = leftFrontLen / (leftFrontNumPosts - 1);
-  for (let i = 0; i < leftFrontNumPosts - 1; i++) {
-    const xPos = -floorLength / 2 + i * leftFrontSpacing;
-    const post = new THREE.Mesh(new THREE.BoxGeometry(postWidth, stdPostH, postDepth), postMat);
-    post.position.set(xPos, baseGroundY + stdPostH / 2, encFrontZ);
-    post.castShadow = true;
-    concreteGroup.add(post);
+  function buildSideStationEnclosureWithEquipment(minX, maxX, sideName, isLeftSide) {
+    const sEncWidth = maxX - minX; // 9.40m (Kullanıcı İsteği: sola ve sağa doğru 1'er metre daha açıldı)
+    const sEncCenterX = (minX + maxX) / 2; // Sol: -16.80m, Sağ: +16.80m
+    const numDoors = 6; // Kullanıcı İsteği: "toplam 6 kapak olsun ve 2 2 gruplandır kaymaları için"
+    const sDoorW = 1.50; // 150 cm kayar kapılar (6 x 1.50 = 9.00m toplam kapı hattı)
+    const sDoorH = encGlassH - 0.06; // 1.64m
+    const fixedEndW = 0.20; // 20 cm sabit yan bitiş panelleri (2 x 0.20 + 9.00 = 9.40m)
+    const doorStartX = minX + fixedEndW; // Kapı dizilim başlangıç X
 
-    const panelW = leftFrontSpacing - postWidth;
-    const glass = new THREE.Mesh(new THREE.BoxGeometry(panelW, stdGlassH, glassThickness), glassMat);
-    glass.position.set(xPos + leftFrontSpacing / 2, baseGroundY + stdGlassH / 2 + 0.05, encFrontZ);
-    concreteGroup.add(glass);
+    // 1. Üst ve Alt Kayar Kapı Kılavuz Rayları (9.50m boyunda)
+    const sTrackSpan = sEncWidth + 0.10;
+    const sTopTrackGeo = new THREE.BoxGeometry(sTrackSpan, 0.06, 0.10);
+    const sTopTrack = new THREE.Mesh(sTopTrackGeo, doorTrackMat);
+    sTopTrack.position.set(sEncCenterX, baseGroundY + encGlassH + 0.03, encFrontZ);
+    sTopTrack.castShadow = true;
+    concreteGroup.add(sTopTrack);
+
+    const sFloorTrackGeo = new THREE.BoxGeometry(sTrackSpan, 0.015, 0.08);
+    const sFloorTrack = new THREE.Mesh(sFloorTrackGeo, doorTrackMat);
+    sFloorTrack.position.set(sEncCenterX, baseGroundY + 0.0075, encFrontZ);
+    sFloorTrack.receiveShadow = true;
+    concreteGroup.add(sFloorTrack);
+
+    // 2. Yan Sabit Paneller (Sol: [minX, minX + 0.20], Sağ: [maxX - 0.20, maxX])
+    [
+      { startX: minX, endX: minX + fixedEndW, midX: minX + fixedEndW / 2 },
+      { startX: maxX - fixedEndW, endX: maxX, midX: maxX - fixedEndW / 2 }
+    ].forEach(fPanel => {
+      const pPost1 = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
+      pPost1.position.set(fPanel.startX, baseGroundY + encPostH / 2, encFrontZ);
+      pPost1.castShadow = true;
+      concreteGroup.add(pPost1);
+
+      const pPost2 = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
+      pPost2.position.set(fPanel.endX, baseGroundY + encPostH / 2, encFrontZ);
+      pPost2.castShadow = true;
+      concreteGroup.add(pPost2);
+
+      const pGlassW = fixedEndW - postWidth;
+      const pGlass = new THREE.Mesh(new THREE.BoxGeometry(pGlassW, encGlassH, glassThickness), glassMat);
+      pGlass.position.set(fPanel.midX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ);
+      concreteGroup.add(pGlass);
+
+      const pRailGeo = new THREE.BoxGeometry(pGlassW, 0.035, 0.03);
+      [encGlassH + 0.02 - 0.02, encGlassH / 2 + 0.02, 0.02 + 0.02].forEach(ry => {
+        const rail = new THREE.Mesh(pRailGeo, doorFrameMat);
+        rail.position.set(fPanel.midX, baseGroundY + ry, encFrontZ);
+        concreteGroup.add(rail);
+      });
+    });
+
+    // 3. 6 Adet 150 cm'lik Kademeli Kayar Kapı (Teleskopik / Çift Raylı 2'şerli Baypas Eşleşmesi - Alan 1 Standartı)
+    // Kullanıcı İsteği: "toplam 6 kapak olsun ve 2 2 gruplandır kaymaları için"
+    // İkili Gruplar: (0-1), (2-3), (4-5)
+    const sDoorPanelW = sDoorW - 0.06;
+    const sDoorPanelH = sDoorH - 0.06;
+    const sDoorPerforatedMat = createPerforatedMat(sDoorPanelW, sDoorPanelH);
+    const sDoorPanelGeo = new THREE.PlaneGeometry(sDoorPanelW, sDoorPanelH);
+
+    for (let d = 0; d < numDoors; d++) {
+      const doorCenterX = doorStartX + d * sDoorW + sDoorW / 2;
+      const isFirstInPair = (d % 2 === 0);
+      const trackZ = isFirstInPair ? (encFrontZ + 0.025) : (encFrontZ - 0.025);
+      const partnerX = isFirstInPair ? (doorCenterX + sDoorW) : (doorCenterX - sDoorW);
+
+      const dGroup = new THREE.Group();
+      dGroup.name = `scoreboard_${sideName}_sliding_door_${d}`;
+      dGroup.position.set(doorCenterX, baseGroundY, trackZ);
+
+      const dPanel = new THREE.Mesh(sDoorPanelGeo, sDoorPerforatedMat);
+      dPanel.position.set(0, 0.03 + sDoorH / 2, 0);
+      dGroup.add(dPanel);
+
+      const hFrameGeo = new THREE.BoxGeometry(sDoorW, 0.04, 0.025);
+      const topF = new THREE.Mesh(hFrameGeo, doorFrameMat);
+      topF.position.set(0, 0.03 + sDoorH - 0.02, 0);
+      dGroup.add(topF);
+
+      const botF = new THREE.Mesh(hFrameGeo, doorFrameMat);
+      botF.position.set(0, 0.03 + 0.02, 0);
+      dGroup.add(botF);
+
+      const midF = new THREE.Mesh(hFrameGeo, doorFrameMat);
+      midF.position.set(0, 0.03 + sDoorH / 2, 0);
+      dGroup.add(midF);
+
+      const vFrameGeo = new THREE.BoxGeometry(0.04, sDoorH, 0.025);
+      const leftF = new THREE.Mesh(vFrameGeo, doorFrameMat);
+      leftF.position.set(-sDoorW / 2 + 0.02, 0.03 + sDoorH / 2, 0);
+      dGroup.add(leftF);
+
+      const rightF = new THREE.Mesh(vFrameGeo, doorFrameMat);
+      rightF.position.set(sDoorW / 2 - 0.02, 0.03 + sDoorH / 2, 0);
+      dGroup.add(rightF);
+
+      // Üst Askı Makara Pabuçları
+      const hgrGeo = new THREE.BoxGeometry(0.08, 0.05, 0.035);
+      const hgr1 = new THREE.Mesh(hgrGeo, doorTrackMat);
+      hgr1.position.set(-sDoorW / 3, 0.03 + sDoorH + 0.015, 0);
+      dGroup.add(hgr1);
+
+      const hgr2 = new THREE.Mesh(hgrGeo, doorTrackMat);
+      hgr2.position.set(sDoorW / 3, 0.03 + sDoorH + 0.015, 0);
+      dGroup.add(hgr2);
+
+      // Dikey Paslanmaz Çelik Çekme Kolu (2'li eşlerin ortasında buluşacak şekilde)
+      const hndlGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.60, 16);
+      const hndl = new THREE.Mesh(hndlGeo, doorHandleMat);
+      const hndlX = isFirstInPair ? (sDoorW / 2 - 0.10) : (-sDoorW / 2 + 0.10);
+      hndl.position.set(hndlX, 0.90, 0.025);
+      dGroup.add(hndl);
+
+      const hndlMountGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.035, 12);
+      hndlMountGeo.rotateX(Math.PI / 2);
+      const m1 = new THREE.Mesh(hndlMountGeo, doorHandleMat);
+      m1.position.set(hndlX, 0.90 + 0.25, 0.012);
+      dGroup.add(m1);
+      const m2 = new THREE.Mesh(hndlMountGeo, doorHandleMat);
+      m2.position.set(hndlX, 0.90 - 0.25, 0.012);
+      dGroup.add(m2);
+
+      // Görünmez tıklama alanı
+      const hitBoxGeo = new THREE.BoxGeometry(sDoorW, sDoorH, 0.08);
+      const hitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+      const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
+      hitBox.position.set(0, 0.03 + sDoorH / 2, 0);
+      dGroup.add(hitBox);
+
+      dGroup.userData.isSlidingDoor = true;
+      dGroup.userData.doorIndex = `${sideName}_${d}`;
+      dGroup.userData.closedX = doorCenterX;
+      dGroup.userData.openX = partnerX;
+      dGroup.userData.targetX = doorCenterX;
+      dGroup.userData.isOpen = false;
+
+      concreteGroup.add(dGroup);
+      alan4SlidingDoors.push(dGroup);
+    }
+
+    // 4. 170cm Yüksek Camlı Sol ve Sağ Yan Cepheler
+    const sDepth = Math.abs(encBackZ - encFrontZ); // 1.90m
+    const sMidZ = (encFrontZ + encBackZ) / 2;
+    const sSidePostGeo = new THREE.BoxGeometry(postDepth, encPostH, postWidth);
+    const sSideGlassDepth = (sDepth / 2) - postWidth;
+
+    [minX, maxX].forEach(sideX => {
+      const midP = new THREE.Mesh(sSidePostGeo, postMat);
+      midP.position.set(sideX, baseGroundY + encPostH / 2, sMidZ);
+      concreteGroup.add(midP);
+
+      const backP = new THREE.Mesh(sSidePostGeo, postMat);
+      backP.position.set(sideX, baseGroundY + encPostH / 2, encBackZ);
+      concreteGroup.add(backP);
+
+      const g1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sSideGlassDepth), glassMat);
+      g1.position.set(sideX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ + sDepth / 4);
+      concreteGroup.add(g1);
+
+      const g2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sSideGlassDepth), glassMat);
+      g2.position.set(sideX, baseGroundY + encGlassH / 2 + 0.02, encBackZ - sDepth / 4);
+      concreteGroup.add(g2);
+    });
+
+    // 5. Arka Yüksek Cam Cephe (Z = encBackZ, 9.40m Açıklık, 6 Cam Panel)
+    const backPanelCount = 6;
+    const backSpacing = sEncWidth / backPanelCount; // ~1.567m
+    for (let bi = 1; bi < backPanelCount; bi++) {
+      const bPostX = minX + bi * backSpacing;
+      const bPost = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
+      bPost.position.set(bPostX, baseGroundY + encPostH / 2, encBackZ);
+      bPost.castShadow = true;
+      concreteGroup.add(bPost);
+    }
+    for (let bi = 0; bi < backPanelCount; bi++) {
+      const bMidX = minX + bi * backSpacing + backSpacing / 2;
+      const bGlassW = backSpacing - postWidth;
+      const bGlass = new THREE.Mesh(new THREE.BoxGeometry(bGlassW, encGlassH, glassThickness), glassMat);
+      bGlass.position.set(bMidX, baseGroundY + encGlassH / 2 + 0.02, encBackZ);
+      concreteGroup.add(bGlass);
+    }
+
+    // 6. Ekipmanlar (3 Dolap, 3 POI Rack, 11 Borulu RRU Blok) kullanıcı tarafından serbestçe seçilip taşınabilmesi için
+    // statik beton grubuna değil, bağımsız interaktif model olarak sahneye (state.alan4Platforms) yüklenir.
   }
 
-  // Ön Sağ Cam: X = [+1.70, +12.5] (L = 10.80m)
-  const rightFrontLen = Math.abs(floorLength / 2 - encMaxX); // 10.80m
-  const rightFrontNumPosts = Math.max(2, Math.round(rightFrontLen / 1.5) + 1);
-  const rightFrontSpacing = rightFrontLen / (rightFrontNumPosts - 1);
-  for (let i = 0; i < rightFrontNumPosts; i++) {
-    const xPos = encMaxX + i * rightFrontSpacing;
-    if (i > 0) {
+  // Sol İzole Alanı ve Ekipmanlarını Oluştur (X = -21.50m ile -12.10m arası, 6 Kapaklı 2'şerli Kayar Kapı, 3 POI Rack)
+  buildSideStationEnclosureWithEquipment(-21.50, -12.10, 'left', true);
+
+  // Sağ İzole Alanı ve Ekipmanlarını Oluştur (X = +12.10m ile +21.50m arası, 6 Kapaklı 2'şerli Kayar Kapı, 3 POI Rack)
+  buildSideStationEnclosureWithEquipment(12.10, 21.50, 'right', false);
+
+  // =========================================================================
+  // 10.6. STANDART ÖN VE YAN CAM KORUMA KORKULUKLARI (54M BETON KAİDE BOYUNCA)
+  // Üç izole alan (Sol: [-21.50, -12.10], Merkez: [-0.50, +3.30], Sağ: [+12.10, +21.50])
+  // haricindeki 4 açık aralıkta 1.10m standart cam korkuluklar yer alır.
+  // =========================================================================
+  const frontRailingSpans = [
+    { startX: -floorLength / 2, endX: -21.50 }, // [-27.00, -21.50] (L = 5.50m)
+    { startX: -12.10, endX: encMinX },          // [-12.10, -0.50]  (L = 11.60m)
+    { startX: encMaxX, endX: 12.10 },           // [+3.30, +12.10]  (L = 8.80m)
+    { startX: 21.50, endX: floorLength / 2 }    // [+21.50, +27.00] (L = 5.50m)
+  ];
+
+  frontRailingSpans.forEach(span => {
+    const spanLen = span.endX - span.startX;
+    if (spanLen < 0.20) return;
+    const numPosts = Math.max(2, Math.round(spanLen / 1.5) + 1);
+    const spacing = spanLen / (numPosts - 1);
+    for (let i = 0; i < numPosts; i++) {
+      const xPos = span.startX + i * spacing;
       const post = new THREE.Mesh(new THREE.BoxGeometry(postWidth, stdPostH, postDepth), postMat);
       post.position.set(xPos, baseGroundY + stdPostH / 2, encFrontZ);
       post.castShadow = true;
       concreteGroup.add(post);
-    }
-    if (i < rightFrontNumPosts - 1) {
-      const panelW = rightFrontSpacing - postWidth;
-      const glass = new THREE.Mesh(new THREE.BoxGeometry(panelW, stdGlassH, glassThickness), glassMat);
-      glass.position.set(xPos + rightFrontSpacing / 2, baseGroundY + stdGlassH / 2 + 0.05, encFrontZ);
-      concreteGroup.add(glass);
-    }
-  }
 
-  // Yan Camlar: Sol Uç (X = -12.5m) ve Sağ Uç (X = +12.5m)
+      if (i < numPosts - 1) {
+        const panelW = spacing - postWidth;
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(panelW, stdGlassH, glassThickness), glassMat);
+        glass.position.set(xPos + spacing / 2, baseGroundY + stdGlassH / 2 + 0.05, encFrontZ);
+        concreteGroup.add(glass);
+      }
+    }
+  });
+
+  // Yan Camlar: Sol Uç (X = -27.0m) ve Sağ Uç (X = +27.0m)
   [-floorLength / 2, floorLength / 2].forEach(ex => {
     const endGlass = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, stdGlassH, floorWidth - 0.10), glassMat);
     endGlass.position.set(ex, baseGroundY + stdGlassH / 2 + 0.05, baseZ);
@@ -11362,6 +12020,7 @@ function buildAlan2Karsilikli11BoruRRUBlok(targetArea = state.currentArea) {
     lockedX: false,
     lockedY: false,
     lockedZ: false,
+    isFreestanding: true,
     allowPassThrough: true
   };
 
@@ -12251,10 +12910,10 @@ function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, drop
   const galvPipeMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.8, roughness: 0.35 });
   const darkHardwareMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.4 });
 
-  const slopeAngleRad = Math.asin(6.0 / 45.0);
+  const slopeAngleRad = (targetArea === 'alan4') ? THREE.MathUtils.degToRad(5.0) : Math.asin(6.0 / 45.0);
 
   // 1. ÇATI TAŞIYICISINA SARAN 2 ADET AĞIR HİZMET KELEPÇESİ (Z = -0.4048m ve Z = +0.4048m)
-  const carrierRadius = 0.14;
+  const carrierRadius = (targetArea === 'alan4') ? 0.175 : 0.14;
   const carrierClampR = carrierRadius + 0.014;
   const carrierClampW = 0.16;
 
@@ -12519,6 +13178,22 @@ function spawnMatsingTrussMidOffsetAssembly() {
     const blockGroup = buildMatsingTrussMidOffsetAssembly(state.currentArea, dropDist, suffix);
     blockGroup.userData.id = state.nextId++;
     blockGroup.position.set(-3.00, targetY, targetZ);
+    addPlatformToActiveArea(blockGroup);
+  } else if (state.currentArea === 'alan4') {
+    const existing = state.alan4Platforms.filter(p => p.userData && p.userData.blockType === 'matsing-mid-offset-assembly');
+    const slots = [
+      { x: -16.50, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 37m)' },
+      { x: -16.50, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 40m)' },
+      { x: 16.50, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 37m)' },
+      { x: 16.50, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 40m)' }
+    ];
+    let chosenSlot = slots.find(s => !existing.some(e => Math.abs(e.position.x - s.x) < 0.5 && Math.abs(e.position.z - s.z) < 0.5));
+    if (!chosenSlot) chosenSlot = slots[0];
+    const blockGroup = buildMatsingTrussMidOffsetAssembly('alan4', 2.0, ` (Alan 4 - ${chosenSlot.x < 0 ? 'Sol' : 'Sağ'} ${chosenSlot.z > 21 ? '37m' : '40m'})`);
+    blockGroup.userData.id = state.nextId++;
+    blockGroup.userData.name = chosenSlot.name;
+    blockGroup.position.set(chosenSlot.x, chosenSlot.y, chosenSlot.z);
+    blockGroup.rotation.y = Math.PI;
     addPlatformToActiveArea(blockGroup);
   } else {
     const blockGroup = buildMatsingTrussMidOffsetAssembly(state.currentArea);
@@ -15362,6 +16037,10 @@ function deserializeItemToArea(item, targetArea) {
     }
     const op = item.operator || (blockType.includes('turkcell') ? 'turkcell' : (blockType.includes('vodafone') ? 'vodafone' : 'tt'));
     group = buildScoreboardSingleRRU(op, item.position ? item.position.x : 0);
+  } else if (blockType === 'alan2-kediyolu-42u-kompleks') {
+    group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
+  } else if (blockType === 'alan2-karsilikli-11boru-rru-blok') {
+    group = buildAlan2Karsilikli11BoruRRUBlok(targetArea);
   } else if (blockType === '4poi-rack-blok' || itemName.includes('4 POI Rack') || itemName.includes('4x POI Dolu, 42U Referanslı')) {
     group = build4PoiRackBlok(targetArea);
   } else if (itemName.includes('42U POI Rack') || itemName.includes('30U POI Rack') || blockType === '42u-poi-rack-blok' || blockType === 'alan2-4poi-rack-blok') {
@@ -15450,8 +16129,9 @@ function deserializeItemToArea(item, targetArea) {
     group = buildRRUBlokModel();
   } else if (blockType === 'matsing-mid-offset-assembly' || itemName.includes('Ara Bölge') || itemName.includes('Çatı Taşıyıcısı Asılı')) {
     const isAntenna2 = (itemName && itemName.includes('2')) || (item.position && Math.abs(item.position.z - 35.234) < 0.6);
-    const dropDist = isAntenna2 ? 1.637 : 2.0;
-    group = buildMatsingTrussMidOffsetAssembly(targetArea, dropDist, isAntenna2 ? ' (Ara Bölge - 2)' : ' (Ara Bölge - 1)');
+    const dropDist = (targetArea === 'alan4') ? 2.0 : (isAntenna2 ? 1.637 : 2.0);
+    const suffix = (targetArea === 'alan4') ? '' : (isAntenna2 ? ' (Ara Bölge - 2)' : ' (Ara Bölge - 1)');
+    group = buildMatsingTrussMidOffsetAssembly(targetArea, dropDist, suffix);
   } else if (blockType === 'matsing-offset-assembly' || itemName.includes('Matsing')) {
     group = buildMatsingDiagonalOffsetAssembly(targetArea);
   } else if (blockType === 'rack-blok-korkuluklu' || (itemName.includes('Rack Blok') && itemName.includes('Korkuluklu'))) {
@@ -15574,7 +16254,7 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
 
 // Preset Draft Templates Registry
 const PRESET_DRAFTS = {
-  'taslak-v3': {
+  "taslak-v3": {
     "version": "2.0",
     "savedAt": "2026-09-11T10:29:55.105Z",
     "currentArea": "alan4",
@@ -15609,6 +16289,266 @@ const PRESET_DRAFTS = {
       ],
       "alan2": [
         {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -4.361001259960455,
+            "y": 0,
+            "z": -1.1805947860171155
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.615809390325525,
+            "y": 0,
+            "z": -1.1914694272152344
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -5.103055270452055,
+            "y": 0,
+            "z": -1.216680015245864
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.520515241914614,
+            "y": 0,
+            "z": -1.164294472925311
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 4.194284776610373,
+            "y": 0,
+            "z": -1.4117056039669595
+          },
+          "rotation": {
+            "x": 0,
+            "y": 6.283185307179586,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.4028464432652448,
+            "y": 0,
+            "z": -1.4206267185693213
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.605808707734417,
+            "y": 0,
+            "z": -1.4547246070415678
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.7417955494464192,
+            "y": 0,
+            "z": -1.4595080285942583
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 0.8394722597445441,
+            "y": 0,
+            "z": -1.4119842935578095
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 5.050704812315493,
+            "y": 0,
+            "z": -1.4139675859568794
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
           "name": "Matsing 4-Beam Çapraz Kol & Dikey Çift Ofset Montajı",
           "blockType": "matsing-offset-assembly",
           "catalogId": "matsing-4-beam",
@@ -15619,7 +16559,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -3.00,
+            "x": -3,
             "y": 6.976,
             "z": 41.568
           },
@@ -15645,7 +16585,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -3.00,
+            "x": -3,
             "y": 9.385,
             "z": 37.934
           },
@@ -15671,7 +16611,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -3.00,
+            "x": -3,
             "y": 9.022,
             "z": 35.234
           },
@@ -15688,126 +16628,126 @@ const PRESET_DRAFTS = {
         }
       ],
       "alan3": [
-      {
-        "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 1)",
-        "blockType": "spot-beam-truss-offset-assembly",
-        "catalogId": "doy15x3030md4tre",
-        "type": "antenna",
-        "category": "Panel Anten",
-        "isFreestanding": true,
-        "isOffsetArmModule": false,
-        "isOffsetCarrier": false,
-        "isInclinedPipe": false,
-        "position": {
-          "x": -3,
-          "y": 8.533,
-          "z": 31.603
+        {
+          "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 1)",
+          "blockType": "spot-beam-truss-offset-assembly",
+          "catalogId": "doy15x3030md4tre",
+          "type": "antenna",
+          "category": "Panel Anten",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 8.533,
+            "z": 31.603
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
         },
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0
+        {
+          "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 2)",
+          "blockType": "spot-beam-truss-offset-assembly",
+          "catalogId": "doy15x3030md4tre",
+          "type": "antenna",
+          "category": "Panel Anten",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 8.667,
+            "z": 32.594
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
         },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
-        "allowPassThrough": true
-      },
-      {
-        "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 2)",
-        "blockType": "spot-beam-truss-offset-assembly",
-        "catalogId": "doy15x3030md4tre",
-        "type": "antenna",
-        "category": "Panel Anten",
-        "isFreestanding": true,
-        "isOffsetArmModule": false,
-        "isOffsetCarrier": false,
-        "isInclinedPipe": false,
-        "position": {
-          "x": -3,
-          "y": 8.667,
-          "z": 32.594
+        {
+          "name": "2'li POI Küçük Rack Bloğu (2x POI Dolu) (Alan 3)",
+          "blockType": "ikili-42u-poi-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.7241268085306904,
+            "y": 0,
+            "z": -1.2734661913443657
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
         },
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0
-        },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
-        "allowPassThrough": true
-      },
-      {
-        "name": "2'li POI Küçük Rack Bloğu (2x POI Dolu) (Alan 3)",
-        "blockType": "ikili-42u-poi-blok",
-        "catalogId": null,
-        "type": "rru",
-        "category": "Canovate",
-        "isFreestanding": true,
-        "isOffsetArmModule": false,
-        "isOffsetCarrier": false,
-        "isInclinedPipe": false,
-        "position": {
-          "x": -3.7241268085306904,
-          "y": 0,
-          "z": -1.2734661913443657
-        },
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0
-        },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
-        "allowPassThrough": true
-      },
-      {
-        "name": "Özel Alan 2 RRU Grubu (Beton Zemin Flanşlı, 7 RRU) (Alan 3)",
-        "blockType": "alan2-ozel-karma-blok",
-        "catalogId": null,
-        "type": "rru",
-        "category": "Karma",
-        "isFreestanding": true,
-        "isOffsetArmModule": false,
-        "isOffsetCarrier": false,
-        "isInclinedPipe": false,
-        "position": {
-          "x": -2.3755680487727076,
-          "y": 0,
-          "z": -1.1827264864581115
-        },
-        "rotation": {
-          "x": 0,
-          "y": 0,
-          "z": 0
-        },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
-        "allowPassThrough": true
-      }
-    ],
+        {
+          "name": "Özel Alan 2 RRU Grubu (Beton Zemin Flanşlı, 7 RRU) (Alan 3)",
+          "blockType": "alan2-ozel-karma-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.3755680487727076,
+            "y": 0,
+            "z": -1.1827264864581115
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ],
       "alan4": [
         {
-          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)",
-          "blockType": "alan4-kediyolu-42u-kompleks",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
-          "isFreestanding": false,
+          "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sol - 20m Ofset)",
+          "blockType": "scoreboard-matsing-cylinder-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 6.87137451195054,
-            "y": 0,
-            "z": 0
+            "x": -20,
+            "y": 19.05,
+            "z": 0.55
           },
           "rotation": {
             "x": 0,
@@ -15821,19 +16761,19 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)",
-          "blockType": "alan4-cift-rru-kompleks",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
-          "isFreestanding": false,
+          "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sağ - 20m Ofset)",
+          "blockType": "scoreboard-matsing-cylinder-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -8.4671429562844,
-            "y": 0,
-            "z": 0
+            "x": 20,
+            "y": 19.05,
+            "z": 0.55
           },
           "rotation": {
             "x": 0,
@@ -15847,19 +16787,19 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Özel Alan 4 Çift RRU Kompleksi (Platform + Çift RRU)",
-          "blockType": "alan4-cift-rru-kompleks",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
           "isFreestanding": false,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 8.3919,
-            "y": 0,
-            "z": 0
+            "x": -2.703637443576455,
+            "y": 21.7,
+            "z": -2.2
           },
           "rotation": {
             "x": 0,
@@ -15873,19 +16813,19 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)",
-          "blockType": "alan4-kediyolu-42u-kompleks",
-          "catalogId": null,
-          "type": "platform",
-          "category": "Karma",
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
           "isFreestanding": false,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -6.895658789047658,
-            "y": 0,
-            "z": 0
+            "x": -1.7953099309417897,
+            "y": 21.7,
+            "z": -2.2
           },
           "rotation": {
             "x": 0,
@@ -15899,7 +16839,371 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4)",
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.2185347466891363,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.464618246320079,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.577867792495959,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.0118187976274076,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.36,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.8535870100363512,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.0715340877360644,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.29,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.51,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.95,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.17,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.729765253185134,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
+          "blockType": "4poi-rack-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.247543458474242,
+            "y": 20,
+            "z": -0.919987257110642
+          },
+          "rotation": {
+            "x": 0,
+            "y": 1.5707963267948966,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
+          "blockType": "4poi-rack-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.15004498709286,
+            "y": 20,
+            "z": -0.9023812996691016
+          },
+          "rotation": {
+            "x": 0,
+            "y": 4.71238898038469,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Sol)",
           "blockType": "rectifier-mts9304a",
           "catalogId": "rectifier-mts9304a",
           "type": "rru",
@@ -15909,9 +17213,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 2.8038885350626814,
+            "x": -18.904367698817854,
             "y": 18.121,
-            "z": 60.01790401088669
+            "z": 59.923778081882354
           },
           "rotation": {
             "x": 0,
@@ -15925,7 +17229,7 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4)",
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sol #1)",
           "blockType": "rectifier-20u-eltek",
           "catalogId": "rectifier-20u-eltek",
           "type": "rru",
@@ -15935,9 +17239,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 1.853395863164834,
+            "x": -19.891477635101115,
             "y": 18.121,
-            "z": 60.02759372658983
+            "z": 59.92760781677324
           },
           "rotation": {
             "x": 0,
@@ -15951,7 +17255,7 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4)",
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sol #2)",
           "blockType": "rectifier-20u-eltek",
           "catalogId": "rectifier-20u-eltek",
           "type": "rru",
@@ -15961,9 +17265,477 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 0.9624809556912614,
+            "x": -20.852499127629343,
             "y": 18.121,
-            "z": 60.003050182966
+            "z": 59.946156104057025
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #1)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -15.9,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -15.15,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #3)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -14.4,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok (Alan 4 - Sol)",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -13.1,
+            "y": 18.121,
+            "z": 59.67
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok (Alan 4 - Sağ)",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 13.1,
+            "y": 18.121,
+            "z": 59.67
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #3)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 14.4,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 15.15,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #1)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 15.9,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Sağ)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 18.939452135483496,
+            "y": 18.121,
+            "z": 59.98847605333506
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sağ #1)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 19.895991244901825,
+            "y": 18.121,
+            "z": 59.941324133445974
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sağ #2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 20.906794171321522,
+            "y": 18.121,
+            "z": 59.949520721251254
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Orta)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.0,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Orta #1)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.8,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Orta #2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.6,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 37m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -16.5,
+            "y": 25.35,
+            "z": 22.81
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 40m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -16.5,
+            "y": 25.61,
+            "z": 19.82
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 37m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 16.5,
+            "y": 25.35,
+            "z": 22.81
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 40m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 16.5,
+            "y": 25.61,
+            "z": 19.82
           },
           "rotation": {
             "x": 0,
@@ -15979,1036 +17751,1506 @@ const PRESET_DRAFTS = {
       ]
     }
   },
-  'taslak-v2': {
-      "version": "2.0",
-      "savedAt": "2026-10-03T15:29:52.349Z",
-      "currentArea": "alan4",
-      "areas": {
-        "alan1": [
-          {
-            "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
-            "blockType": "alan1-7boru-ozel-karma-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Karma",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 0,
-              "y": 0,
-              "z": -1.1855
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
-          }
-        ],
-        "alan2": [
-          {
-            "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-            "blockType": "alan2-kediyolu-42u-kompleks",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -4.361001259960455,
-              "y": 0,
-              "z": -1.1805947860171155
-            },
-            "rotation": {
-              "x": 0,
-              "y": 18.84955592153876,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+  "taslak-v2": {
+    "version": "2.0",
+    "savedAt": "2026-10-03T22:07:48.353Z",
+    "currentArea": "alan4",
+    "areas": {
+      "alan1": [
+        {
+          "name": "Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU + 10 POI, 140cm)",
+          "blockType": "alan1-7boru-ozel-karma-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": -1.1855
           },
-          {
-            "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-            "blockType": "alan2-kediyolu-42u-kompleks",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3.615809390325525,
-              "y": 0,
-              "z": -1.1914694272152344
-            },
-            "rotation": {
-              "x": 0,
-              "y": 18.84955592153876,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
-            "blockType": "alan2-kediyolu-42u-kompleks",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -5.103055270452055,
-              "y": 0,
-              "z": -1.216680015245864
-            },
-            "rotation": {
-              "x": 0,
-              "y": 18.84955592153876,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ],
+      "alan2": [
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -4.361001259960455,
+            "y": 0,
+            "z": -1.1805947860171155
           },
-          {
-            "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
-            "blockType": "alan2-karsilikli-11boru-rru-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Karma",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -1.520515241914614,
-              "y": 0,
-              "z": -1.164294472925311
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
           },
-          {
-            "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-            "blockType": "rectifier-20u-eltek",
-            "catalogId": "rectifier-20u-eltek",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 4.194284776610373,
-              "y": 0,
-              "z": -1.4117056039669595
-            },
-            "rotation": {
-              "x": 0,
-              "y": 6.283185307179586,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.615809390325525,
+            "y": 0,
+            "z": -1.1914694272152344
           },
-          {
-            "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-            "blockType": "rectifier-20u-eltek",
-            "catalogId": "rectifier-20u-eltek",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 3.4028464432652448,
-              "y": 0,
-              "z": -1.4206267185693213
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
           },
-          {
-            "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
-            "blockType": "rectifier-mts9304a",
-            "catalogId": "rectifier-mts9304a",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.605808707734417,
-              "y": 0,
-              "z": -1.4547246070415678
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -5.103055270452055,
+            "y": 0,
+            "z": -1.216680015245864
           },
-          {
-            "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
-            "blockType": "rectifier-mts9304a",
-            "catalogId": "rectifier-mts9304a",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 1.7417955494464192,
-              "y": 0,
-              "z": -1.4595080285942583
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
           },
-          {
-            "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
-            "blockType": "rectifier-20u-eltek",
-            "catalogId": "rectifier-20u-eltek",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 0.8394722597445441,
-              "y": 0,
-              "z": -1.4119842935578095
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.520515241914614,
+            "y": 0,
+            "z": -1.164294472925311
           },
-          {
-            "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
-            "blockType": "rectifier-mts9304a",
-            "catalogId": "rectifier-mts9304a",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 5.050704812315493,
-              "y": 0,
-              "z": -1.4139675859568794
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Matsing 4-Beam Çapraz Kol & Dikey Çift Ofset Montajı",
-            "blockType": "matsing-offset-assembly",
-            "catalogId": "matsing-4-beam",
-            "type": "antenna",
-            "category": "Matsing",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3,
-              "y": 6.976,
-              "z": 41.568
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 4.194284776610373,
+            "y": 0,
+            "z": -1.4117056039669595
           },
-          {
-            "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 1)",
-            "blockType": "matsing-mid-offset-assembly",
-            "catalogId": "matsing-4-beam",
-            "type": "antenna",
-            "category": "Matsing",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3,
-              "y": 9.385,
-              "z": 37.934
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 6.283185307179586,
+            "z": 0
           },
-          {
-            "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 2)",
-            "blockType": "matsing-mid-offset-assembly",
-            "catalogId": "matsing-4-beam",
-            "type": "antenna",
-            "category": "Matsing",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3,
-              "y": 9.022,
-              "z": 35.234
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
-          }
-        ],
-        "alan3": [
-          {
-            "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 1)",
-            "blockType": "spot-beam-truss-offset-assembly",
-            "catalogId": "doy15x3030md4tre",
-            "type": "antenna",
-            "category": "Panel Anten",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3,
-              "y": 8.533,
-              "z": 31.603
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.4028464432652448,
+            "y": 0,
+            "z": -1.4206267185693213
           },
-          {
-            "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 2)",
-            "blockType": "spot-beam-truss-offset-assembly",
-            "catalogId": "doy15x3030md4tre",
-            "type": "antenna",
-            "category": "Panel Anten",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3,
-              "y": 8.667,
-              "z": 32.594
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "2'li POI Küçük Rack Bloğu (2x POI Dolu) (Alan 3)",
-            "blockType": "ikili-42u-poi-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3.7241268085306904,
-              "y": 0,
-              "z": -1.2734661913443657
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.605808707734417,
+            "y": 0,
+            "z": -1.4547246070415678
           },
-          {
-            "name": "Özel Alan 2 RRU Grubu (Beton Zemin Flanşlı, 7 RRU) (Alan 3)",
-            "blockType": "alan2-ozel-karma-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Karma",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -2.3755680487727076,
-              "y": 0,
-              "z": -1.1827264864581115
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
-          }
-        ],
-        "alan4": [
-          {
-            "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sol - 20m Ofset)",
-            "blockType": "scoreboard-matsing-cylinder-assembly",
-            "catalogId": "matsing-4-beam",
-            "type": "antenna",
-            "category": "Matsing",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -20,
-              "y": 19.05,
-              "z": 0.55
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sağ - 20m Ofset)",
-            "blockType": "scoreboard-matsing-cylinder-assembly",
-            "catalogId": "matsing-4-beam",
-            "type": "antenna",
-            "category": "Matsing",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 20,
-              "y": 19.05,
-              "z": 0.55
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.7417955494464192,
+            "y": 0,
+            "z": -1.4595080285942583
           },
-          {
-            "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-turkcell",
-            "catalogId": "turkcell-4485",
-            "type": "rru",
-            "category": "Turkcell",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -2.703637443576455,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -1.7953099309417897,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 0.8394722597445441,
+            "y": 0,
+            "z": -1.4119842935578095
           },
-          {
-            "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-tt",
-            "catalogId": "tt-5818w",
-            "type": "rru",
-            "category": "Türk Telekom",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -2.2185347466891363,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-turkcell",
-            "catalogId": "turkcell-4485",
-            "type": "rru",
-            "category": "Turkcell",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -2.464618246320079,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 5.050704812315493,
+            "y": 0,
+            "z": -1.4139675859568794
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -1.577867792495959,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-tt",
-            "catalogId": "tt-5818w",
-            "type": "rru",
-            "category": "Türk Telekom",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -2.0118187976274076,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çapraz Kol & Dikey Çift Ofset Montajı",
+          "blockType": "matsing-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 6.976,
+            "z": 41.568
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -1.36,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-turkcell",
-            "catalogId": "turkcell-4485",
-            "type": "rru",
-            "category": "Turkcell",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 1.8535870100363512,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 1)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 9.385,
+            "z": 37.934
           },
-          {
-            "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-turkcell",
-            "catalogId": "turkcell-4485",
-            "type": "rru",
-            "category": "Turkcell",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.0715340877360644,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-tt",
-            "catalogId": "tt-5818w",
-            "type": "rru",
-            "category": "Türk Telekom",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.29,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 2)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 9.022,
+            "z": 35.234
           },
-          {
-            "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-tt",
-            "catalogId": "tt-5818w",
-            "type": "rru",
-            "category": "Türk Telekom",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.51,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.95,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ],
+      "alan3": [
+        {
+          "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 1)",
+          "blockType": "spot-beam-truss-offset-assembly",
+          "catalogId": "doy15x3030md4tre",
+          "type": "antenna",
+          "category": "Panel Anten",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 8.533,
+            "z": 31.603
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 3.17,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-            "blockType": "scoreboard-rru-vodafone",
-            "catalogId": "vodafone-5526t",
-            "type": "rru",
-            "category": "Vodafone",
-            "isFreestanding": false,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.729765253185134,
-              "y": 21.7,
-              "z": -2.2
-            },
-            "rotation": {
-              "x": 0,
-              "y": 0,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": true,
-            "lockedZ": true,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Spot Beam 30/30 Panel Anten Çatı Taşıyıcısı Asılı Montajı (Alan 3 - Anten 2)",
+          "blockType": "spot-beam-truss-offset-assembly",
+          "catalogId": "doy15x3030md4tre",
+          "type": "antenna",
+          "category": "Panel Anten",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3,
+            "y": 8.667,
+            "z": 32.594
           },
-          {
-            "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
-            "blockType": "4poi-rack-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": -3.247543458474242,
-              "y": 20,
-              "z": -0.919987257110642
-            },
-            "rotation": {
-              "x": 0,
-              "y": 1.5707963267948966,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
-            "blockType": "4poi-rack-blok",
-            "catalogId": null,
-            "type": "rru",
-            "category": "Canovate",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 3.15004498709286,
-              "y": 20,
-              "z": -0.9023812996691016
-            },
-            "rotation": {
-              "x": 0,
-              "y": 4.71238898038469,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "2'li POI Küçük Rack Bloğu (2x POI Dolu) (Alan 3)",
+          "blockType": "ikili-42u-poi-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.7241268085306904,
+            "y": 0,
+            "z": -1.2734661913443657
           },
-          {
-            "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4)",
-            "blockType": "rectifier-mts9304a",
-            "catalogId": "rectifier-mts9304a",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 2.8038885350626814,
-              "y": 18.121,
-              "z": 60.01790401088669
-            },
-            "rotation": {
-              "x": 0,
-              "y": 3.141592653589793,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
           },
-          {
-            "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4)",
-            "blockType": "rectifier-20u-eltek",
-            "catalogId": "rectifier-20u-eltek",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 1.853395863164834,
-              "y": 18.121,
-              "z": 60.02759372658983
-            },
-            "rotation": {
-              "x": 0,
-              "y": 3.141592653589793,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Özel Alan 2 RRU Grubu (Beton Zemin Flanşlı, 7 RRU) (Alan 3)",
+          "blockType": "alan2-ozel-karma-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.3755680487727076,
+            "y": 0,
+            "z": -1.1827264864581115
           },
-          {
-            "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4)",
-            "blockType": "rectifier-20u-eltek",
-            "catalogId": "rectifier-20u-eltek",
-            "type": "rru",
-            "category": "Rectifier",
-            "isFreestanding": true,
-            "isOffsetArmModule": false,
-            "isOffsetCarrier": false,
-            "isInclinedPipe": false,
-            "position": {
-              "x": 0.9624809556912614,
-              "y": 18.121,
-              "z": 60.003050182966
-            },
-            "rotation": {
-              "x": 0,
-              "y": 3.141592653589793,
-              "z": 0
-            },
-            "locked": false,
-            "lockedX": false,
-            "lockedY": false,
-            "lockedZ": false,
-            "allowPassThrough": true
-          }
-        ]
-      }
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ],
+      "alan4": [
+        {
+          "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sol - 20m Ofset)",
+          "blockType": "scoreboard-matsing-cylinder-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -20,
+            "y": 19.05,
+            "z": 0.55
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Silindir Doğrudan 45° Montajı (Sağ - 20m Ofset)",
+          "blockType": "scoreboard-matsing-cylinder-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 20,
+            "y": 19.05,
+            "z": 0.55
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.703637443576455,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.7953099309417897,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.2185347466891363,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.464618246320079,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.577867792495959,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -2.0118187976274076,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.36,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.8535870100363512,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-turkcell",
+          "catalogId": "turkcell-4485",
+          "type": "rru",
+          "category": "Turkcell",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.0715340877360644,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.29,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-tt",
+          "catalogId": "tt-5818w",
+          "type": "rru",
+          "category": "Türk Telekom",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.51,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.95,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.17,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
+          "blockType": "scoreboard-rru-vodafone",
+          "catalogId": "vodafone-5526t",
+          "type": "rru",
+          "category": "Vodafone",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.729765253185134,
+            "y": 21.7,
+            "z": -2.2
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": true,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
+          "blockType": "4poi-rack-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -3.247543458474242,
+            "y": 20,
+            "z": -0.919987257110642
+          },
+          "rotation": {
+            "x": 0,
+            "y": 1.5707963267948966,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "4 POI Rack Blok (4x POI Dolu) (Alan 4)",
+          "blockType": "4poi-rack-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 3.15004498709286,
+            "y": 20,
+            "z": -0.9023812996691016
+          },
+          "rotation": {
+            "x": 0,
+            "y": 4.71238898038469,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Sol)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -18.904367698817854,
+            "y": 18.121,
+            "z": 59.923778081882354
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sol #1)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -19.891477635101115,
+            "y": 18.121,
+            "z": 59.92760781677324
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sol #2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -20.852499127629343,
+            "y": 18.121,
+            "z": 59.946156104057025
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #1)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -15.9,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -15.15,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sol #3)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -14.4,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok (Alan 4 - Sol)",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -13.1,
+            "y": 18.121,
+            "z": 59.67
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok (Alan 4 - Sağ)",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 13.1,
+            "y": 18.121,
+            "z": 59.67
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #3)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 14.4,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 15.15,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 4 - Sağ #1)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 15.9,
+            "y": 18.121,
+            "z": 59.87
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Sağ)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 18.939452135483496,
+            "y": 18.121,
+            "z": 59.98847605333506
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sağ #1)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 19.895991244901825,
+            "y": 18.121,
+            "z": 59.941324133445974
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Sağ #2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 20.906794171321522,
+            "y": 18.121,
+            "z": 59.949520721251254
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Orta)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.0,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Orta #1)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.8,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4 - Orta #2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 2.6,
+            "y": 18.121,
+            "z": 59.90
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 37m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -16.5,
+            "y": 25.35,
+            "z": 22.81
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 40m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -16.5,
+            "y": 25.61,
+            "z": 19.82
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 37m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 16.5,
+            "y": 25.35,
+            "z": 22.81
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 40m)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 16.5,
+            "y": 25.61,
+            "z": 19.82
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        }
+      ]
     }
+  }
 };
+PRESET_DRAFTS['taslak-v1'] = PRESET_DRAFTS['taslak-v2'];
+
 
 
 function loadProjectFromData(importData) {

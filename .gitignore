@@ -37,4 +37,7 @@ _backups/
 *.txt
 null
 veriler/
+*.png
+*.pptx
+
 
