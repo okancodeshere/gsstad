@@ -30,9 +30,11 @@ Thumbs.db
 
 # Archive backups
 *.zip
+_backups/
 
 # Local scripts & data
 *.cjs
 *.txt
 null
 veriler/
+

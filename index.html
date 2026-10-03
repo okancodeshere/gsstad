@@ -19,7 +19,7 @@
   </script>
 
 </head>
-<body>
+<body class="hide-sidebars">
   <div id="app">
     <!-- Header -->
     <header class="app-header">
@@ -31,24 +31,23 @@
         <div class="area-selector" style="margin-left: 20px;">
           <label for="select-area" style="color: #475569; font-weight: 600; font-size: 13px; margin-right: 6px;">Çalışma Alanı:</label>
             <select id="select-area" style="background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
-              <option value="alan1">🏢 ALAN 1 (Silindir Taşıyıcı + Kediyolu)</option>
-              <option value="alan2" selected>🏢 ALAN 2 (Tribün Üstü Beton Alan)</option>
-                <option value="alan3">🏢 ALAN 3 (Tribün Üstü Beton Alan)</option>
-              <option value="alan4">🏢 ALAN 4 (Scoreboard Kesiti + Kediyolu)</option>
+              <option value="alan2" selected>🏢 ALAN 1 ve ALAN 3 (Maraton Tribünü ve Kedi Yolu)</option>
+              <option value="alan4">🏢 ALAN 2 (Scoreboard Kesiti + Kediyolu)</option>
+              <option value="alan3">🏢 ALAN 4 (Çapraz Köşe Tribün)</option>
             </select>
         </div>
       </div>
       <div class="controls-top" style="display: flex; gap: 8px; align-items: center;">
-        <button id="btn-export-json" class="btn btn-secondary">💾 Projeyi Kaydet</button>
-        <button id="btn-import-json" class="btn btn-secondary">📂 Proje Yükle</button>
+        <button id="btn-export-json" class="btn btn-secondary infrastructure-controls">💾 Projeyi Kaydet</button>
+        <button id="btn-import-json" class="btn btn-secondary infrastructure-controls">📂 Proje Yükle</button>
         <input type="file" id="input-import-file" style="display: none;" accept=".json">
-        <select id="select-preset-draft" class="btn btn-secondary" style="background: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
+        <select id="select-preset-draft" class="btn btn-secondary infrastructure-controls" style="background: #0284c7; color: #ffffff; border: 1px solid #0369a1; font-weight: bold; cursor: pointer; padding: 6px 12px; border-radius: 6px; font-size: 13px;">
           <option value="" disabled>📋 Hazır Taslaklar</option>
           <option value="taslak-v1" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 1</option>
           <option value="taslak-v2" selected style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 2 (Yeni Blok Düzeni)</option>
           <option value="taslak-v3" style="background: #ffffff; color: #1e293b;">🚀 Taslak Versiyon 3 (Alan 1 & Alan 4 Çift Kompleks)</option>
         </select>
-        <button id="btn-reset-project" class="btn btn-secondary" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
+        <button id="btn-reset-project" class="btn btn-secondary infrastructure-controls" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: bold;">🔄 Projeyi Sıfırla</button>
         <button id="btn-screenshot" class="btn btn-primary">Görsel Kaydet</button>
         <button id="btn-fullscreen-header" class="btn btn-accent" style="font-weight: bold; display: flex; align-items: center; gap: 6px;" title="Tam Ekran Sunum Modu (F / F11)">
           <span>⛶</span> <span>Tam Ekran Sunum</span>
@@ -79,12 +78,54 @@
           <div class="view-modes">
             <button id="btn-view-ortho" class="btn-icon" title="2D Üst Görünüm">📐 2D Görünüm</button>
             <button id="btn-view-persp" class="btn-icon active" title="3D Perspektif Görünüm">🧊 3D Perspektif</button>
-            <button id="btn-focus-ground" class="btn-icon" title="Zemin / Kabinlere Odaklan" style="border-left: 2px solid #0284c7;">🏠 Zemin</button>
-            <button id="btn-focus-antennas" class="btn-icon" title="Çatı Taşıyıcısı & Antenlere Odaklan" style="border-left: 2px solid #eab308;">📡 Antenler</button>
+            <span id="area-focus-buttons-container" style="display: flex; gap: 8px;"></span>
+            <button id="btn-get-cam-coords" class="btn-icon" title="Mevcut Kamera ve Hedef Pozisyonunu Al / Kopyala" style="border-left: 2px solid #10b981; color: #059669; font-weight: bold; display: none;">📷 Kamera Konumu</button>
             <button id="btn-toggle-fullscreen" class="btn-icon" title="Tam Ekran / Sunum Modu (F / F11)">⛶ Tam Ekran</button>
           </div>
           <div class="helper-text">
             <span>🕹️ WASD: Uçuş | Sol Tık: Serbest Bakış / Seç | Sağ Tık: Kaydır | Tekerlek: İleri/Geri | Shift: Hızlı | Space/C: Yukarı/Aşağı</span>
+          </div>
+        </div>
+
+        <!-- Kamera Konum Bilgisi Paneli (Geliştirici & Konum Belirleme Aracı) -->
+        <div id="cam-coords-modal" style="display: none; position: absolute; top: 60px; right: 20px; z-index: 1000; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); border: 1px solid #334155; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); width: 390px; color: #f8fafc; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; pointer-events: auto;">
+          <div id="cam-coords-header" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(30, 41, 59, 0.9); border-bottom: 1px solid #334155; border-top-left-radius: 8px; border-top-right-radius: 8px; cursor: move; user-select: none;">
+            <span style="font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+              📷 Kamera & Hedef Koordinatları
+            </span>
+            <button id="btn-close-cam-coords" style="background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 0 4px; line-height: 1;" title="Kapat">✕</button>
+          </div>
+          <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Kamera Pozisyonu (camera.position)</div>
+              <div id="cam-pos-text" style="background: #020617; padding: 6px 10px; border-radius: 4px; border: 1px solid #1e293b; color: #a7f3d0; font-weight: 600;">
+                X: 0.00, Y: 0.00, Z: 0.00
+              </div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Bakış Hedefi (controls.target)</div>
+              <div id="cam-target-text" style="background: #020617; padding: 6px 10px; border-radius: 4px; border: 1px solid #1e293b; color: #bae6fd; font-weight: 600;">
+                X: 0.00, Y: 0.00, Z: 0.00
+              </div>
+            </div>
+            <div>
+              <div style="color: #94a3b8; font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Hazır Buton Kodu (setCameraView)</div>
+              <input id="cam-code-input" readonly type="text" style="width: 100%; box-sizing: border-box; background: #020617; padding: 7px 10px; border-radius: 4px; border: 1px solid #1e293b; color: #fde047; font-family: inherit; font-size: 11px; font-weight: 500;" value="setCameraView(...)">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 4px;">
+              <button id="btn-copy-cam-code" style="flex: 1; background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;" title="setCameraView çağrısını kopyalar">
+                📋 Kodu Kopyala
+              </button>
+              <button id="btn-copy-cam-json" style="background: #334155; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer;" title="JSON formatında kopyalar">
+                JSON
+              </button>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px; font-size: 11px; color: #94a3b8;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="chk-live-cam" checked> Canlı Takip (Gezinirken Güncelle)
+              </label>
+              <span id="cam-copy-status" style="color: #34d399; font-weight: 600; display: none;">✅ Kopyalandı!</span>
+            </div>
           </div>
         </div>
 
@@ -96,10 +137,9 @@
           <div class="presentation-hud-controls">
             <!-- Alan Seçimi -->
             <select id="pres-select-area" class="hud-select" title="Çalışma Alanı Değiştir">
-              <option value="alan1">📍 Alan 1</option>
-              <option value="alan2" selected>📍 Alan 2</option>
-              <option value="alan3">📍 Alan 3</option>
-              <option value="alan4">📍 Alan 4</option>
+              <option value="alan2" selected>📍 ALAN 1 ve ALAN 3 (Maraton Tribünü ve Kedi Yolu)</option>
+              <option value="alan4">📍 ALAN 2 (Scoreboard Kesiti)</option>
+              <option value="alan3">📍 ALAN 4 (Çapraz Köşe Tribün)</option>
             </select>
             <!-- 2D / 3D Görünüm -->
             <button id="pres-btn-2d" class="hud-btn" title="2D Üst Görünüm">📐 2D</button>
@@ -147,6 +187,10 @@
               <button class="btn-eq" id="btn-add-42u-poi-blok" style="background: linear-gradient(135deg, #d97706, #ea580c); color: white; border: none; grid-column: span 2;">
                 <span class="icon">🗄️⚡</span>
                 <span class="name" style="color: white; font-weight: bold;">42U Rack + 6 POI Blok</span>
+              </button>
+              <button class="btn-eq" id="btn-add-4poi-rack-blok" style="background: linear-gradient(135deg, #c2410c, #ea580c); color: white; border: none; grid-column: span 2;">
+                <span class="icon">🗄️⚡</span>
+                <span class="name" style="color: white; font-weight: bold;">4 POI Rack Blok (4x POI Dolu)</span>
               </button>
               <button class="btn-eq" id="btn-add-20u-poi-blok" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; grid-column: span 2;">
                 <span class="icon">🗄️⚡</span>
@@ -197,18 +241,25 @@
                 <span class="icon">🚀🗄️</span>
                 <span class="name" style="color: white; font-weight: bold;">Kedi Yolu Tabla + 42U POI Kompleks (Alan 4)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan1-ozel-karma-blok" style="background: linear-gradient(135deg, #4338ca, #3730a3); color: white; border: none; grid-column: span 2;">
-                <span class="icon">🚀🧩</span>
-                <span class="name" style="color: white; font-weight: bold;">Özel Alan 1 Kompleksi (7 RRU + 10 POI)</span>
+
+              <!-- Skorboard Kirişi Tekli RRU Montaj Butonları (Alan 2 / Skorboard) -->
+              <button class="btn-eq" id="btn-add-sb-rru-turkcell" style="background: linear-gradient(135deg, #1d4ed8, #2563eb); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">📡🟦</span>
+                <span class="name" style="color: white; font-weight: bold;">Turkcell LTE RRU4485 (Kısa Kenar Montaj)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan1-13rru-ozel-karma-blok" style="background: linear-gradient(135deg, #3730a3, #1e1b4b); color: white; border: none; grid-column: span 2;">
-                <span class="icon">🚀⚡</span>
-                <span class="name" style="color: white; font-weight: bold;">Özel Alan 1 Kompleksi (13 RRU Sırt Sırta + 10 POI)</span>
+              <button class="btn-eq" id="btn-add-sb-rru-vodafone" style="background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">📡🟥</span>
+                <span class="name" style="color: white; font-weight: bold;">Vodafone RRU5526t (Kısa Kenar Montaj)</span>
               </button>
-              <button class="btn-eq" id="btn-add-alan1-7boru-ozel-karma-blok" style="background: linear-gradient(135deg, #1e1b4b, #312e81); color: white; border: none; grid-column: span 2;">
-                <span class="icon">🚀📐</span>
-                <span class="name" style="color: white; font-weight: bold;">Özel Alan 1 Kompleksi (7 Borulu Tek Cephe 13 RRU, 140cm)</span>
+              <button class="btn-eq" id="btn-add-sb-rru-tt" style="background: linear-gradient(135deg, #0891b2, #0284c7); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">📡🔷</span>
+                <span class="name" style="color: white; font-weight: bold;">Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)</span>
               </button>
+              <button class="btn-eq" id="btn-add-sb-matsing-cylinder" style="background: linear-gradient(135deg, #0369a1, #0f766e); color: white; border: none; grid-column: span 2; display: none;">
+                <span class="icon">📡🎯</span>
+                <span class="name" style="color: white; font-weight: bold;">Matsing 4-Beam Silindir Çember Montajı (20m Ofset)</span>
+              </button>
+
             </div>
           </div>
         </div>
@@ -360,7 +411,19 @@
               <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Sahnede X (kırmızı), Y (yeşil), Z (mavi) yön oklarını gösterir</div>
             </div>
             <label class="switch">
-              <input type="checkbox" id="setting-toggle-axes" checked>
+              <input type="checkbox" id="setting-toggle-axes">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <!-- Setting Item 2: Infrastructure / Sidebars Toggle -->
+          <div class="setting-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div>
+              <div style="font-weight: bold; font-size: 13px; color: #1e293b;">🛠️ Geliştirici Modu (Altyapı Menüleri & Kamera Koordinatları)</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Açıldığında blok yerleşimi, sağ & sol paneller ve kamera konumu alma butonu aktif hale gelir. Kapalıyken sade sunum görünümü sunulur.</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-toggle-menus">
               <span class="slider"></span>
             </label>
           </div>

@@ -158,6 +158,13 @@ body {
   overflow-y: auto;
 }
 
+/* Altyapı Hazırlık Menülerini Gizleme (Yalnızca 3D Ön Görünüm Modu) */
+body.hide-sidebars .sidebar-left,
+body.hide-sidebars .sidebar-right,
+body.hide-sidebars .infrastructure-controls {
+  display: none !important;
+}
+
 .sidebar-right {
   border-right: none;
   border-left: 1px solid var(--border-color);
