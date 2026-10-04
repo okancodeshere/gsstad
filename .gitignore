@@ -34,7 +34,11 @@ _backups/
 
 # Local scripts & data
 *.cjs
+!dxf_engine.cjs
+!generate_*.cjs
 *.txt
+!DXF_Ciktilari/README_DXF_BILGI.txt
+equipment_full_dump.json
 null
 veriler/
 *.png

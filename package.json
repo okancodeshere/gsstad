@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "export:dxf": "node generate_all_dxfs.cjs"
   },
   "dependencies": {
+    "dxf-writer": "^1.18.4",
     "three": "^0.160.0",
     "xlsx": "^0.18.5"
   },
