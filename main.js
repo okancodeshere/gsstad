@@ -5864,14 +5864,16 @@ function createAlan4Structure() {
   const topRailRearGeo = new THREE.CylinderGeometry(0.025, 0.025, catwalkLength);
   const midRailRearGeo = new THREE.CylinderGeometry(0.018, 0.018, catwalkLength);
 
-  // 3.1. Arka Kenar Korkuluğu (Z = -0.10m, Gemici Merdiveni İniş/Biniş Açıklığı X = [-1.45, -0.55] 90cm Genişletilmiş)
-  // Kullanıcı İsteği: "giriş noktalarını her iki kedi yolu için inecek şekilde genişlet"
-  const landingOpenMinX = -1.45;
-  const landingOpenMaxX = -0.55;
+  // 3.1. Arka Kenar Korkuluğu (Z = -0.10m, Gemici Merdiveni İniş/Biniş Açıklığı X = [-2.40m, -0.50m] 1.90m Tam Açık)
+  // Kullanıcı İsteği: "gemici merdiveni alt kedi yolunda hatalı karşılanıyor. İnen boşluga düşer baksana"
+  // Düzeltme: Gemici merdiveni (X=-1.45m), dikey kablo merdiveni (X=-1.75m) ve güvenlik kafesi (X=-2.20m)
+  // alt kedi yolunda 1.90m genişliğindeki çıkıntı sahanlık ile TAM MERKEZİNDE karşılanır, iniş boşluğu sıfırlanır!
+  const landingOpenMinX = -2.40;
+  const landingOpenMaxX = -0.50;
 
-  // Sol Parça: X = -3.70m ile X = -1.45m arası (L = 2.25m)
-  const lowerRearLeftLen = landingOpenMinX - (-catwalkLength / 2); // 2.25m
-  const lowerRearLeftCenterX = -catwalkLength / 2 + lowerRearLeftLen / 2; // -2.575m
+  // Sol Parça: X = -3.70m ile X = -2.40m arası (L = 1.30m)
+  const lowerRearLeftLen = landingOpenMinX - (-catwalkLength / 2); // 1.30m
+  const lowerRearLeftCenterX = -catwalkLength / 2 + lowerRearLeftLen / 2; // -3.05m
   const lowerTopRailLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, lowerRearLeftLen), railMat);
   lowerTopRailLeft.rotation.z = Math.PI / 2;
   lowerTopRailLeft.position.set(lowerRearLeftCenterX, 1.10, -0.10);
@@ -5886,9 +5888,9 @@ function createAlan4Structure() {
   lowerKickLeft.position.set(lowerRearLeftCenterX, 0.06, -0.09);
   alan4Group.add(lowerKickLeft);
 
-  // Sağ Parça: X = -0.55m ile X = +3.70m arası (L = 4.25m)
-  const lowerRearRightLen = catwalkLength / 2 - landingOpenMaxX; // 4.25m
-  const lowerRearRightCenterX = landingOpenMaxX + lowerRearRightLen / 2; // 1.575m
+  // Sağ Parça: X = -0.50m ile X = +3.70m arası (L = 4.20m)
+  const lowerRearRightLen = catwalkLength / 2 - landingOpenMaxX; // 4.20m
+  const lowerRearRightCenterX = landingOpenMaxX + lowerRearRightLen / 2; // 1.60m
   const lowerTopRailRight = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, lowerRearRightLen), railMat);
   lowerTopRailRight.rotation.z = Math.PI / 2;
   lowerTopRailRight.position.set(lowerRearRightCenterX, 1.10, -0.10);
@@ -5903,8 +5905,8 @@ function createAlan4Structure() {
   lowerKickRight.position.set(lowerRearRightCenterX, 0.06, -0.09);
   alan4Group.add(lowerKickRight);
 
-  // Dikmeler (Açıklık kenarları X = -1.45 ve X = -0.55 dahil)
-  [-3.6, -2.4, landingOpenMinX, landingOpenMaxX, 0.6, 1.8, 3.0, 3.6].forEach(px => {
+  // Dikmeler (Açıklık kenarları X = -2.40 ve X = -0.50 dahil)
+  [-3.6, landingOpenMinX, landingOpenMaxX, 0.6, 1.8, 3.0, 3.6].forEach(px => {
     const post = new THREE.Mesh(postGeo, railMat);
     post.position.set(px, 0.55, -0.10);
     alan4Group.add(post);
@@ -5920,16 +5922,17 @@ function createAlan4Structure() {
   });
 
   // 3.1.1. Alt Kedi Yolu Gemici Merdiveni Çıkıntı İniş Sahanlığı (Konsol Çıkıntılı Platform)
-  // Kullanıcı İsteği: "Alttaki kedi yolunu da ona göre inecek kadar kısmını çıkıntı şeklinde genişlet"
-  // - Konum: X = [-1.60m, -0.50m] (Genişlik 1.10m), Z = [-0.10m, +0.70m] (60m taşıyıcı tarafına doğru +0.80m çıkıntı)
-  const projMinX = -1.60;
+  // Kullanıcı İsteği: "gemici merdiveni alt kedi yolunda hatalı karşılanıyor. İnen boşluga düşer baksana"
+  // - Konum: X = [-2.40m, -0.50m] (Genişlik 1.90m, Merkez X = -1.45m - Merdiven stiles X=-1.45 ve dikey kablo merdiveni X=-1.75 TAM MERKEZİNDE KARŞILANIR)
+  // - Z ekseninde: Z = [-0.10m, +0.75m] (Derinlik 0.85m, Kedi yolu arkasında 60m taşıyıcı tarafına doğru konsol çıkıntı)
+  const projMinX = -2.40;
   const projMaxX = -0.50;
-  const projW = projMaxX - projMinX; // 1.10m
-  const projCenterX = (projMinX + projMaxX) / 2; // -1.05m
+  const projW = projMaxX - projMinX; // 1.90m
+  const projCenterX = (projMinX + projMaxX) / 2; // -1.45m (Merdiven aksıyla tam simetrik)
   const projStartZ = -0.10;
-  const projEndZ = 0.70;
-  const projDepth = projEndZ - projStartZ; // 0.80m
-  const projCenterZ = (projStartZ + projEndZ) / 2; // +0.30m
+  const projEndZ = 0.75;
+  const projDepth = projEndZ - projStartZ; // 0.85m
+  const projCenterZ = (projStartZ + projEndZ) / 2; // +0.325m
 
   // Sahanlık taban ızgarası (Alt kedi yolu yürüme düzlemiyle aynı kotta: Y = 0.0m)
   const lowerProjFloor = new THREE.Mesh(new THREE.BoxGeometry(projW, 0.05, projDepth), floorMat);
@@ -5937,9 +5940,9 @@ function createAlan4Structure() {
   lowerProjFloor.receiveShadow = true;
   alan4Group.add(lowerProjFloor);
 
-  // Konsol taşıyıcı çelik kirişler (Ana kedi yolu şasesine alttan bağlanan 2 adet ağır konsol I-kiriş)
+  // Konsol taşıyıcı çelik kirişler (Ana kedi yolu şasesine alttan bağlanan 3 adet ağır konsol I-kiriş)
   const projBeamGeo = new THREE.BoxGeometry(0.12, 0.14, projDepth + 0.40);
-  [projMinX + 0.08, projMaxX - 0.08].forEach(bx => {
+  [projMinX + 0.10, projCenterX, projMaxX - 0.10].forEach(bx => {
     const cBeam = new THREE.Mesh(projBeamGeo, darkSteelMat);
     cBeam.position.set(bx, -0.115, projCenterZ - 0.20);
     alan4Group.add(cBeam);
@@ -5954,8 +5957,8 @@ function createAlan4Structure() {
     alan4Group.add(strutMesh);
   });
 
-  // Çıkıntı Sahanlık Dış Çevre Emniyet Korkulukları (Z = +0.70m arka kenar ve yan kenarlar)
-  // Arka Kenar Korkuluğu (Z = +0.70m, L = 1.10m)
+  // Çıkıntı Sahanlık Dış Çevre Emniyet Korkulukları (Z = +0.75m arka kenar ve yan kenarlar)
+  // Arka Kenar Korkuluğu (Z = +0.75m, L = 1.90m)
   const projRearTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, projW), railMat);
   projRearTopRail.rotation.z = Math.PI / 2;
   projRearTopRail.position.set(projCenterX, 1.10, projEndZ);
@@ -5970,7 +5973,7 @@ function createAlan4Structure() {
   projRearKick.position.set(projCenterX, 0.06, projEndZ - 0.01);
   alan4Group.add(projRearKick);
 
-  // Sağ Kenar Korkuluğu (X = -0.50m, Z = [-0.10, +0.70], L = 0.80m)
+  // Sağ Kenar Korkuluğu (X = -0.50m, Z = [-0.10, +0.75], L = 0.85m)
   const projSideTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, projDepth), railMat);
   projSideTopRail.rotation.x = Math.PI / 2;
   projSideTopRail.position.set(projMaxX, 1.10, projCenterZ);
@@ -5985,7 +5988,7 @@ function createAlan4Structure() {
   projSideKick.position.set(projMaxX - 0.01, 0.06, projCenterZ);
   alan4Group.add(projSideKick);
 
-  // Sol Arka Köşe Korkuluğu (X = -1.60m, merdiven arkası emniyeti)
+  // Sol Kenar Korkuluğu (X = -2.40m, Z = [-0.10, +0.75], L = 0.85m)
   const projLeftTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, projDepth), railMat);
   projLeftTopRail.rotation.x = Math.PI / 2;
   projLeftTopRail.position.set(projMinX, 1.10, projCenterZ);
@@ -6000,11 +6003,13 @@ function createAlan4Structure() {
   projLeftKick.position.set(projMinX + 0.01, 0.06, projCenterZ);
   alan4Group.add(projLeftKick);
 
-  // Sahanlık Köşe Dikmeleri
+  // Sahanlık Dikmeleri
   [
     [projMinX, projEndZ],
+    [projCenterX, projEndZ],
     [projMaxX, projEndZ],
-    [projMaxX, projStartZ]
+    [projMaxX, projStartZ],
+    [projMinX, projStartZ]
   ].forEach(([px, pz]) => {
     const post = new THREE.Mesh(postGeo, railMat);
     post.position.set(px, 0.55, pz);
@@ -6470,14 +6475,13 @@ function createAlan4Structure() {
     });
   });
 
-  // Arka Kenar Korkuluğu (Z = -0.10m, Gemici Merdiveni İniş/Biniş Açıklığı X = [-1.45, -0.55] 90cm Tam Açık)
-  // Kullanıcı İsteği: "giriş noktalarını her iki kedi yolu için inecek şekilde genişlet"
-  const upperLandingOpenMinX = -1.45;
-  const upperLandingOpenMaxX = -0.55;
+  // Arka Kenar Korkuluğu (Z = -0.10m, Gemici Merdiveni İniş/Biniş Açıklığı X = [-2.40m, -0.50m] 1.90m Tam Açık)
+  const upperLandingOpenMinX = -2.40;
+  const upperLandingOpenMaxX = -0.50;
 
-  // Sol Parça: X = -3.7m ile -1.45m arası (L = 2.25m)
-  const upperRearLeftLen = upperLandingOpenMinX - (-catwalkLength / 2); // 2.25m
-  const upperRearLeftCenterX = -catwalkLength / 2 + upperRearLeftLen / 2; // -2.575m
+  // Sol Parça: X = -3.7m ile -2.40m arası (L = 1.30m)
+  const upperRearLeftLen = upperLandingOpenMinX - (-catwalkLength / 2); // 1.30m
+  const upperRearLeftCenterX = -catwalkLength / 2 + upperRearLeftLen / 2; // -3.05m
   const rTopLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, upperRearLeftLen), railMat);
   rTopLeft.rotation.z = Math.PI / 2;
   rTopLeft.position.set(upperRearLeftCenterX, upperRailTopY, -0.10);
@@ -6492,9 +6496,9 @@ function createAlan4Structure() {
   upperKickLeft.position.set(upperRearLeftCenterX, upperCwWalkY + 0.06, -0.09);
   upperCatwalkGroup.add(upperKickLeft);
 
-  // Sağ Parça: X = -0.55m ile +3.7m arası (L = 4.25m)
-  const upperRearRightLen = catwalkLength / 2 - upperLandingOpenMaxX; // 4.25m
-  const upperRearRightCenterX = upperLandingOpenMaxX + upperRearRightLen / 2; // 1.575m
+  // Sağ Parça: X = -0.50m ile +3.7m arası (L = 4.20m)
+  const upperRearRightLen = catwalkLength / 2 - upperLandingOpenMaxX; // 4.20m
+  const upperRearRightCenterX = upperLandingOpenMaxX + upperRearRightLen / 2; // 1.60m
   const rTopRight = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, upperRearRightLen), railMat);
   rTopRight.rotation.z = Math.PI / 2;
   rTopRight.position.set(upperRearRightCenterX, upperRailTopY, -0.10);
@@ -6509,8 +6513,8 @@ function createAlan4Structure() {
   upperKickRight.position.set(upperRearRightCenterX, upperCwWalkY + 0.06, -0.09);
   upperCatwalkGroup.add(upperKickRight);
 
-  // Dikmeler (Açıklık kenarları X = -1.45 ve X = -0.55 dahil)
-  [-3.6, -2.4, upperLandingOpenMinX, upperLandingOpenMaxX, 0.6, 1.8, 3.0, 3.6].forEach(px => {
+  // Dikmeler (Açıklık kenarları X = -2.40 ve X = -0.50 dahil)
+  [-3.6, upperLandingOpenMinX, upperLandingOpenMaxX, 0.6, 1.8, 3.0, 3.6].forEach(px => {
     const pMesh = new THREE.Mesh(postGeo, railMat);
     pMesh.position.set(px, upperCwWalkY + 0.55, -0.10);
     upperCatwalkGroup.add(pMesh);
@@ -6526,14 +6530,14 @@ function createAlan4Structure() {
   });
 
   // 7.1.1. Üst Kedi Yolu Gemici Merdiveni Çıkıntı İniş Sahanlığı (Konsol Çıkıntılı Platform)
-  // Konum: X = [-1.60m, -0.50m], Z = [-0.10m, +0.70m], Kot: Y = 7.50m (60m taşıyıcı tarafına doğru +0.80m konsol çıkıntı)
+  // Konum: X = [-2.40m, -0.50m], Z = [-0.10m, +0.75m], Kot: Y = 7.50m (60m taşıyıcı tarafına doğru +0.85m konsol çıkıntı)
   const upperProjFloor = new THREE.Mesh(new THREE.BoxGeometry(projW, 0.05, projDepth), floorMat);
   upperProjFloor.position.set(projCenterX, upperCwWalkY - 0.025, projCenterZ);
   upperProjFloor.receiveShadow = true;
   upperCatwalkGroup.add(upperProjFloor);
 
-  // Üst Konsol Taşıyıcı Çelik Kirişler
-  [projMinX + 0.08, projMaxX - 0.08].forEach(bx => {
+  // Üst Konsol Taşıyıcı Çelik Kirişler (3 adet konsol kiriş)
+  [projMinX + 0.10, projCenterX, projMaxX - 0.10].forEach(bx => {
     const cBeam = new THREE.Mesh(projBeamGeo, darkSteelMat);
     cBeam.position.set(bx, upperCwWalkY - 0.115, projCenterZ - 0.20);
     upperCatwalkGroup.add(cBeam);
@@ -6548,7 +6552,7 @@ function createAlan4Structure() {
     upperCatwalkGroup.add(strutMesh);
   });
 
-  // Üst Çıkıntı Sahanlık Dış Çevre Emniyet Korkulukları (Z = +0.70m, X = -0.50m, X = -1.60m)
+  // Üst Çıkıntı Sahanlık Dış Çevre Emniyet Korkulukları (Z = +0.75m, X = -0.50m, X = -2.40m)
   const upperProjRearTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, projW), railMat);
   upperProjRearTopRail.rotation.z = Math.PI / 2;
   upperProjRearTopRail.position.set(projCenterX, upperRailTopY, projEndZ);
@@ -6578,7 +6582,7 @@ function createAlan4Structure() {
   upperProjSideKick.position.set(projMaxX - 0.01, upperCwWalkY + 0.06, projCenterZ);
   upperCatwalkGroup.add(upperProjSideKick);
 
-  // Sol Arka Köşe Korkuluğu (X = -1.60m)
+  // Sol Kenar Korkuluğu (X = -2.40m)
   const upperProjLeftTopRail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, projDepth), railMat);
   upperProjLeftTopRail.rotation.x = Math.PI / 2;
   upperProjLeftTopRail.position.set(projMinX, upperRailTopY, projCenterZ);
@@ -6596,8 +6600,10 @@ function createAlan4Structure() {
   // Üst Sahanlık Dikmeleri
   [
     [projMinX, projEndZ],
+    [projCenterX, projEndZ],
     [projMaxX, projEndZ],
-    [projMaxX, projStartZ]
+    [projMaxX, projStartZ],
+    [projMinX, projStartZ]
   ].forEach(([px, pz]) => {
     const post = new THREE.Mesh(postGeo, railMat);
     post.position.set(px, upperCwWalkY + 0.55, pz);
@@ -6635,6 +6641,24 @@ function createAlan4Structure() {
   const stileRear = new THREE.Mesh(stileGeo, railMat);
   stileRear.position.set(ladderX, stileTopY / 2, ladderZ2);
   ladderGroup.add(stileRear);
+  // Alt Taban Montaj Flanşları ve Ankraj Civataları (Platform zeminine rijit sabitleme: Y = 0.0m)
+  const baseFlangeGeo = new THREE.BoxGeometry(0.12, 0.016, 0.12);
+  const boltGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.03, 8);
+  [ladderZ1, ladderZ2].forEach(sz => {
+    const flange = new THREE.Mesh(baseFlangeGeo, darkSteelMat);
+    flange.position.set(ladderX, 0.008, sz);
+    flange.receiveShadow = true;
+    ladderGroup.add(flange);
+
+    [-0.04, 0.04].forEach(bx => {
+      [-0.04, 0.04].forEach(bz => {
+        const bolt = new THREE.Mesh(boltGeo, beamMat);
+        bolt.position.set(ladderX + bx, 0.02, sz + bz);
+        ladderGroup.add(bolt);
+      });
+    });
+  });
+
 
   // Üst Kedi Yolu İniş Geçiş Kolları (Walk-through Handrail Extensions at Y = 8.60m, +X yönüne kavisli tutamaç)
   [ladderZ1, ladderZ2].forEach(sz => {
@@ -6819,6 +6843,15 @@ function createAlan4Structure() {
     vRail.position.set(vLadderX, vLadderBottomY + vLadderHeight / 2, vz);
     alan2CableSystemGroup.add(vRail);
   });
+  // Dikey Kablo Merdiveni Taban Ankraj Konsolları (Alt sahanlık zeminine sabitleme)
+  const vBaseFlangeGeo = new THREE.BoxGeometry(0.08, 0.02, 0.10);
+  [vLadderZ1, vLadderZ2].forEach(vz => {
+    const bShoe = new THREE.Mesh(vBaseFlangeGeo, darkSteelMat);
+    bShoe.position.set(vLadderX, 0.01, vz);
+    bShoe.receiveShadow = true;
+    alan2CableSystemGroup.add(bShoe);
+  });
+
 
   // Basamaklar / Çıtalar (Perfore Kablo Bağlama Basamakları - Her 30cm'de bir)
   const rungSpacing = 0.30;
@@ -12403,6 +12436,202 @@ function spawnAlan2Kediyolu42UKompleksBlok() {
   addPlatformToActiveArea(blockGroup);
 }
 
+// =========================================================================
+// ALAN 2: ALTERNATİF-2 RRU DAĞILIMI (TABLALI 4 BORU • 7 RRU KÜMESİ)
+// Mevcut alt kedi yoluna altta bir tabla ve üzerine 4 adet flanşlı boru
+// ve 7 RRU'nun dizildiği alternatif blok + Tepesinde Alternatif-2 tabelası
+// =========================================================================
+function createAlternatif2SignTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // Arka plan gradyanı (Şık lacivert/antrasit)
+  const bgGrad = ctx.createLinearGradient(0, 0, 1024, 256);
+  bgGrad.addColorStop(0, '#0f172a');
+  bgGrad.addColorStop(0.5, '#1e293b');
+  bgGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = bgGrad;
+  ctx.beginPath();
+  ctx.roundRect(12, 12, 1000, 232, 24);
+  ctx.fill();
+
+  // Sarı/Amber Neon Çerçeve
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.stroke();
+
+  // İnce iç çerçeve
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.beginPath();
+  ctx.roundRect(24, 24, 976, 208, 16);
+  ctx.stroke();
+
+  // Başlık Metni
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 74px "Segoe UI", Arial, sans-serif';
+  ctx.shadowColor = 'rgba(245, 158, 11, 0.75)';
+  ctx.shadowBlur = 18;
+  ctx.fillText('ALTERNATİF - 2', 512, 95);
+
+  // Alt Açıklama Metni
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('TABLALI 4 BORU • 7 RRU KÜMESİ', 512, 175);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function createAlternatif2Sprite() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 140;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+  ctx.beginPath();
+  ctx.roundRect(10, 10, 492, 120, 24);
+  ctx.fill();
+
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#f59e0b';
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 44px "Segoe UI", Arial, sans-serif';
+  ctx.fillText('Alternatif-2 (7 RRU)', 256, 70);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+  const sprite = new THREE.Sprite(spriteMat);
+  sprite.scale.set(1.10, 0.30, 1);
+  return sprite;
+}
+
+function buildAlan2Alternatif2RRUBlok(targetArea = state.currentArea) {
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan2-alternatif2-rru-blok',
+    category: 'Alternatif',
+    name: 'Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu)',
+    width: 0.85,
+    depth: 0.55,
+    height: 1.95,
+    weight: 215, // 190kg RRU donanımı + 25kg çelik tabla ve borular
+    interactive: true,
+    locked: false,
+    lockedX: false,
+    lockedY: false,
+    lockedZ: false,
+    allowPassThrough: true,
+    isFreestanding: true
+  };
+
+  const tablaThickness = 0.025; // 25mm sıcak daldırma galvaniz tabla
+
+  // 1. ALTTTAKİ METAL TABLA (85cm x 55cm x 2.5cm)
+  const tablaMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.70, roughness: 0.30 });
+  const kickplateMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.75, roughness: 0.25 });
+  const boltHeadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.90, roughness: 0.10 });
+
+  const tablaGeo = new THREE.BoxGeometry(0.85, tablaThickness, 0.55);
+  const tablaMesh = new THREE.Mesh(tablaGeo, tablaMat);
+  tablaMesh.position.set(0, tablaThickness / 2, -0.13);
+  tablaMesh.castShadow = true;
+  tablaMesh.receiveShadow = true;
+  blockGroup.add(tablaMesh);
+
+  // Tablanın etrafında koruyucu tekme levhası bordürü (kickplate)
+  const kpFront = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.035, 0.012), kickplateMat);
+  kpFront.position.set(0, 0.025, 0.144);
+  blockGroup.add(kpFront);
+
+  const kpBack = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.035, 0.012), kickplateMat);
+  kpBack.position.set(0, 0.025, -0.404);
+  blockGroup.add(kpBack);
+
+  const kpLeft = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.035, 0.55), kickplateMat);
+  kpLeft.position.set(-0.419, 0.025, -0.13);
+  blockGroup.add(kpLeft);
+
+  const kpRight = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.035, 0.55), kickplateMat);
+  kpRight.position.set(0.419, 0.025, -0.13);
+  blockGroup.add(kpRight);
+
+  // 4 Köşe M16 Sabitleme Ankraj Cıvatası
+  const cornerBoltGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.025, 6);
+  [-0.38, 0.38].forEach(bx => {
+    [-0.36, 0.10].forEach(bz => {
+      const bolt = new THREE.Mesh(cornerBoltGeo, boltHeadMat);
+      bolt.position.set(bx, 0.032, bz);
+      blockGroup.add(bolt);
+    });
+  });
+
+  // 2. KULLANICI İSTEĞİ: "Alan-4 de bulunan Özel Alan 2 RRU GRUBU (Beton zemin flanşlı 7 rru (alan3) adındaki bloğu alıp altına bir metal tabla eklersen yeterli"
+  const ozelKarma = buildAlan2OzelKarmaBlok('alan3');
+  ozelKarma.userData.interactive = false;
+  ozelKarma.position.set(0, tablaThickness, 0);
+  blockGroup.add(ozelKarma);
+
+  // 3. TEPESİNDE "ALTERNATİF - 2" BİLGİLENDİRME TABELASI VE YAZISI
+  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.80, roughness: 0.20 });
+  const signPlateMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.40, roughness: 0.40 });
+
+  // Tabela taşıyıcı dikme çubukları (Arka boruların üstünden yükselir: Z = -0.26)
+  [-0.16, 0.16].forEach(rx => {
+    const rodGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.32, 16);
+    const rod = new THREE.Mesh(rodGeo, pipeMat);
+    rod.position.set(rx, tablaThickness + 1.50 + 0.16, -0.26);
+    blockGroup.add(rod);
+  });
+
+  // 3D Tabela Gövdesi
+  const signBackGeo = new THREE.BoxGeometry(0.72, 0.18, 0.02);
+  const signBack = new THREE.Mesh(signBackGeo, signPlateMat);
+  signBack.position.set(0, tablaThickness + 1.50 + 0.32, -0.26);
+  blockGroup.add(signBack);
+
+  // Çift taraflı tekstürlü tabela yüzeyi
+  const signTex = createAlternatif2SignTexture();
+  const signMat = new THREE.MeshBasicMaterial({ map: signTex });
+
+  const signFaceFront = new THREE.Mesh(new THREE.PlaneGeometry(0.71, 0.17), signMat);
+  signFaceFront.position.set(0, tablaThickness + 1.50 + 0.32, -0.26 + 0.011);
+  blockGroup.add(signFaceFront);
+
+  const signFaceBack = new THREE.Mesh(new THREE.PlaneGeometry(0.71, 0.17), signMat);
+  signFaceBack.rotation.y = Math.PI;
+  signFaceBack.position.set(0, tablaThickness + 1.50 + 0.32, -0.26 - 0.011);
+  blockGroup.add(signFaceBack);
+
+  // Kameraya her açıdan bakan 3D Sprite Etiketi (Tabelanın hemen üstünde)
+  const sprite = createAlternatif2Sprite();
+  sprite.position.set(0, tablaThickness + 1.50 + 0.52, -0.26);
+  blockGroup.add(sprite);
+
+  return blockGroup;
+}
+
+function spawnAlan2Alternatif2RRUBlok() {
+  const blockGroup = buildAlan2Alternatif2RRUBlok(state.currentArea);
+  blockGroup.userData.id = state.nextId++;
+  setupPlatformTransform(blockGroup, 0, -0.70, false);
+  blockGroup.position.set(0, 20.0, -0.70);
+  addPlatformToActiveArea(blockGroup);
+}
+
+
 function spawnAlan4CiftRRUKompleksBlok() {
   const blockGroup = buildAlan4CiftRRUKompleksBlok(state.currentArea);
   blockGroup.userData.id = state.nextId++;
@@ -13865,6 +14094,13 @@ function updateAreaButtonVisibility() {
     if (nameSpan) nameSpan.textContent = 'RRU Saha Blok 120cm (Alan 1)';
     btnSaha120.style.display = isAlan1 ? 'flex' : 'none';
   }
+
+const addAlan2Alternatif2RRUBtn = document.getElementById('btn-add-alan2-alternatif2-rru');
+if (addAlan2Alternatif2RRUBtn) {
+  addAlan2Alternatif2RRUBtn.addEventListener('click', () => {
+    spawnAlan2Alternatif2RRUBlok();
+  });
+}
 
   const btn20UPoi = document.getElementById('btn-add-20u-poi-blok');
   if (btn20UPoi) {
@@ -15818,6 +16054,13 @@ const AREA_CAMERA_PRESETS = {
   // Alan 2 (Scoreboard Kesiti + Kediyolu)
   alan4: [
     {
+      id: 'focus-alternatif2',
+      label: '🏷️ Alternatif-2',
+      title: 'Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) Odak Görünümü',
+      border: '#0284c7',
+      view: [0.0, 24.5, -4.5, 0.0, 20.8, -0.5]
+    },
+    {
       id: 'focus-rectifier',
       label: '⚡ Rectifier',
       title: 'Rectifier & Güç Kabinleri Odağı',
@@ -16304,6 +16547,8 @@ function deserializeItemToArea(item, targetArea) {
     }
     const op = item.operator || (blockType.includes('turkcell') ? 'turkcell' : (blockType.includes('vodafone') ? 'vodafone' : 'tt'));
     group = buildScoreboardSingleRRU(op, item.position ? item.position.x : 0);
+  } else if (blockType === 'alan2-alternatif2-rru-blok' || itemName.includes('Alternatif-2')) {
+    group = buildAlan2Alternatif2RRUBlok(targetArea);
   } else if (blockType === 'alan2-kediyolu-42u-kompleks') {
     group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
   } else if (blockType === 'alan2-karsilikli-11boru-rru-blok') {
@@ -18020,7 +18265,7 @@ const PRESET_DRAFTS = {
   },
   "taslak-v2": {
     "version": "2.0",
-    "savedAt": "2026-10-03T22:07:48.353Z",
+    "savedAt": "2026-10-05T08:24:46.766Z",
     "currentArea": "alan4",
     "areas": {
       "alan1": [
@@ -18967,6 +19212,58 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
+          "name": "Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) - Sol POI Yanı",
+          "blockType": "alan2-alternatif2-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Alternatif",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -1.731732010972016,
+            "y": 20,
+            "z": -0.8994569831600372
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) - Sağ POI Yanı",
+          "blockType": "alan2-alternatif2-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Alternatif",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 1.6787984389135993,
+            "y": 20,
+            "z": -0.8336789287648787
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
           "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4 - Sol)",
           "blockType": "rectifier-mts9304a",
           "catalogId": "rectifier-mts9304a",
@@ -19341,9 +19638,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 1.0,
+            "x": 1,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -19369,7 +19666,7 @@ const PRESET_DRAFTS = {
           "position": {
             "x": 1.8,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -19395,7 +19692,7 @@ const PRESET_DRAFTS = {
           "position": {
             "x": 2.6,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
