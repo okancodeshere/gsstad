@@ -15852,12 +15852,133 @@ if (settingToggleAxes) {
   });
 }
 
-// Geliştirici Modu (Altyapı Menüleri & Kamera Koordinatları) Aç/Kapat Toggle
+// =========================================================================
+// GÜVENLİ GELİŞTİRİCİ MODU (KRİPTOGRAFİK TEK YÖNLÜ DOĞRULAMA - SHA-256)
+// Kullanıcı İsteği: "Geliştirici modunun açılabilmesi için basit bir şifre girmek istiyorum
+// eger koda bakarak bu şifreyi görmelerini engelleyebilirsen..."
+// Güvenlik Tasarımı: Şifre kaynak kodda ASLA açık metin olarak bulunmaz.
+// Tuzlanmış (salted) SHA-256 kriptografik özeti saklanır; geri döndürülemez.
+// =========================================================================
+const AUTH_DEV_DIGEST = '271349e66af718176dd95fc94d479e8fbcb10afd28b86e24c704a4dae65d2c02';
+const AUTH_DEV_SALT = 'stad_dev_salt_2026#';
+
+// Bağımsız ve hafif Saf JS SHA-256 Karma Fonksiyonu (Offline, her tarayıcı ve ortamda çalışır)
+function computeDevAuthHash(ascii) {
+  function rightRotate(value, amount) {
+    return (value >>> amount) | (value << (32 - amount));
+  }
+  const mathPow = Math.pow;
+  const maxWord = mathPow(2, 32);
+  let lengthProperty = 'length';
+  let i, j;
+  let result = '';
+  let words = [];
+  let asciiBitLength = ascii[lengthProperty] * 8;
+  let hash = [];
+  let k = [];
+  let primeCounter = 0;
+  let isComposite = {};
+  for (let candidate = 2; primeCounter < 64; candidate++) {
+    if (!isComposite[candidate]) {
+      for (i = 0; i < 313; i += candidate) {
+        isComposite[i] = candidate;
+      }
+      hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+      k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+    }
+  }
+  ascii += '\x80';
+  while ((ascii[lengthProperty] % 64) - 56) ascii += '\x00';
+  for (i = 0; i < ascii[lengthProperty]; i++) {
+    j = ascii.charCodeAt(i);
+    if (j >> 8) return '';
+    words[i >> 2] |= j << ((3 - (i % 4)) * 8);
+  }
+  words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
+  words[words[lengthProperty]] = asciiBitLength;
+  for (j = 0; j < words[lengthProperty];) {
+    let w = words.slice(j, (j += 16));
+    let oldHash = hash;
+    hash = hash.slice(0, 8);
+    for (i = 0; i < 64; i++) {
+      let w15 = w[i - 15], w2 = w[i - 2];
+      let s0 = rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3);
+      let s1 = rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10);
+      let ch = (hash[4] & hash[5]) ^ (~hash[4] & hash[6]);
+      let maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+      let temp1 = hash[7] + (rightRotate(hash[4], 6) ^ rightRotate(hash[4], 11) ^ rightRotate(hash[4], 25)) + ch + k[i] + (
+        w[i] = (i < 16) ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0
+      );
+      let temp2 = (rightRotate(hash[0], 2) ^ rightRotate(hash[0], 13) ^ rightRotate(hash[0], 22)) + maj;
+      hash = [(temp1 + temp2) | 0].concat(hash);
+      hash[4] = (hash[4] + temp1) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+  }
+  for (i = 0; i < 8; i++) {
+    for (j = 3; j + 1; j--) {
+      let b = (hash[i] >> (j * 8)) & 255;
+      result += ((b < 16) ? '0' : '') + b.toString(16);
+    }
+  }
+  return result;
+}
+
 let isCamCoordsModalOpen = false;
+let isDevModeActive = false;
+
 const settingToggleMenus = document.getElementById('setting-toggle-menus');
+const settingDevRow = document.getElementById('setting-dev-row');
+const devModeBadge = document.getElementById('dev-mode-badge');
 const btnGetCamCoords = document.getElementById('btn-get-cam-coords');
 
+const devAuthModal = document.getElementById('dev-auth-modal');
+const devAuthPassword = document.getElementById('dev-auth-password');
+const btnToggleDevPassword = document.getElementById('btn-toggle-dev-password');
+const devAuthError = document.getElementById('dev-auth-error');
+const btnSubmitDevAuth = document.getElementById('btn-submit-dev-auth');
+const btnCancelDevAuth = document.getElementById('btn-cancel-dev-auth');
+const btnCloseDevAuthX = document.getElementById('btn-close-dev-auth-x');
+const devToast = document.getElementById('dev-toast');
+
+function showDevToast(msg, isSuccess = true) {
+  if (!devToast) return;
+  devToast.innerHTML = (isSuccess ? '<span>✅</span>' : '<span>ℹ️</span>') + '<span>' + msg + '</span>';
+  devToast.style.borderLeftColor = isSuccess ? '#10b981' : '#3b82f6';
+  devToast.style.display = 'flex';
+  setTimeout(() => {
+    devToast.style.opacity = '1';
+    devToast.style.transform = 'translateY(0)';
+  }, 10);
+  setTimeout(() => {
+    devToast.style.opacity = '0';
+    devToast.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      devToast.style.display = 'none';
+    }, 300);
+  }, 3200);
+}
+
 function updateDevModeUI(enabled) {
+  isDevModeActive = enabled;
+  if (settingToggleMenus) settingToggleMenus.checked = enabled;
+
+  if (devModeBadge) {
+    if (enabled) {
+      devModeBadge.textContent = '🔓 AÇIK';
+      devModeBadge.style.background = '#dcfce7';
+      devModeBadge.style.color = '#15803d';
+      devModeBadge.style.borderColor = '#bbf7d0';
+    } else {
+      devModeBadge.textContent = '🔒 ŞİFRELİ';
+      devModeBadge.style.background = '#fef3c7';
+      devModeBadge.style.color = '#b45309';
+      devModeBadge.style.borderColor = '#fde68a';
+    }
+  }
+
   if (enabled) {
     document.body.classList.remove('hide-sidebars');
     if (btnGetCamCoords) btnGetCamCoords.style.display = 'inline-block';
@@ -15875,19 +15996,136 @@ function updateDevModeUI(enabled) {
   }
 }
 
-if (settingToggleMenus) {
-  settingToggleMenus.checked = false; // Default: kapalı
-  updateDevModeUI(false);
-  settingToggleMenus.addEventListener('change', (e) => {
-    updateDevModeUI(e.target.checked);
+function openDevAuthModal() {
+  if (!devAuthModal) return;
+  devAuthModal.style.display = 'flex';
+  if (devAuthPassword) {
+    devAuthPassword.value = '';
+    devAuthPassword.type = 'password';
+    devAuthPassword.style.borderColor = '#cbd5e1';
+    setTimeout(() => devAuthPassword.focus(), 120);
+  }
+  if (devAuthError) devAuthError.style.display = 'none';
+  if (btnToggleDevPassword) btnToggleDevPassword.textContent = '👁️';
+}
+
+function closeDevAuthModal() {
+  if (!devAuthModal) return;
+  devAuthModal.style.display = 'none';
+  if (devAuthPassword) devAuthPassword.value = '';
+  if (devAuthError) devAuthError.style.display = 'none';
+  if (settingToggleMenus && !isDevModeActive) {
+    settingToggleMenus.checked = false;
+  }
+}
+
+function handleDevAuthSubmit() {
+  if (!devAuthPassword) return;
+  const inputVal = devAuthPassword.value.trim();
+  const calculatedHash = computeDevAuthHash(AUTH_DEV_SALT + inputVal);
+
+  if (calculatedHash === AUTH_DEV_DIGEST) {
+    updateDevModeUI(true);
+    closeDevAuthModal();
+    showDevToast('Geliştirici Modu Başarıyla Açıldı!', true);
+    
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
       if (typeof updateRendererDimensions === 'function') {
         updateRendererDimensions();
       }
     }, 50);
+  } else {
+    if (devAuthError) {
+      devAuthError.style.display = 'flex';
+    }
+    if (devAuthPassword) {
+      devAuthPassword.style.borderColor = '#ef4444';
+      devAuthPassword.focus();
+      devAuthPassword.select();
+    }
+  }
+}
+
+// Dev Mode Row & Checkbox Toggle
+if (settingDevRow) {
+  settingDevRow.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!isDevModeActive) {
+      openDevAuthModal();
+    } else {
+      updateDevModeUI(false);
+      showDevToast('Geliştirici Modu Kapatıldı', false);
+      setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+        if (typeof updateRendererDimensions === 'function') {
+          updateRendererDimensions();
+        }
+      }, 50);
+    }
+  });
+} else if (settingToggleMenus) {
+  settingToggleMenus.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (!isDevModeActive) {
+      openDevAuthModal();
+    } else {
+      updateDevModeUI(false);
+    }
   });
 }
+
+// Auth Modal Actions
+if (btnSubmitDevAuth) btnSubmitDevAuth.addEventListener('click', handleDevAuthSubmit);
+if (btnCancelDevAuth) btnCancelDevAuth.addEventListener('click', closeDevAuthModal);
+if (btnCloseDevAuthX) btnCloseDevAuthX.addEventListener('click', closeDevAuthModal);
+
+if (devAuthPassword) {
+  devAuthPassword.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleDevAuthSubmit();
+    } else if (e.key === 'Escape') {
+      closeDevAuthModal();
+    }
+  });
+}
+
+if (btnToggleDevPassword && devAuthPassword) {
+  btnToggleDevPassword.addEventListener('click', () => {
+    if (devAuthPassword.type === 'password') {
+      devAuthPassword.type = 'text';
+      btnToggleDevPassword.textContent = '🙈';
+    } else {
+      devAuthPassword.type = 'password';
+      btnToggleDevPassword.textContent = '👁️';
+    }
+  });
+}
+
+if (devAuthModal) {
+  devAuthModal.addEventListener('click', (e) => {
+    if (e.target === devAuthModal) {
+      closeDevAuthModal();
+    }
+  });
+}
+
+// Global Hızlı Kısayol: Ctrl + Shift + D ile doğrudan şifre penceresini açma
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+    e.preventDefault();
+    if (!isDevModeActive) {
+      openDevAuthModal();
+    } else {
+      updateDevModeUI(false);
+      showDevToast('Geliştirici Modu Kapatıldı', false);
+    }
+  }
+});
+
+// Başlangıç Durumu: Kapalı
+updateDevModeUI(false);
 
 // ==========================================
 // 3D View Modes & Fullscreen Presentation Mode
