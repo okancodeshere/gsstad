@@ -124,6 +124,9 @@ function setCameraView(posX, posY, posZ, targetX, targetY, targetZ) {
   syncCameraEuler();
   updateCameraDirectionTarget();
 }
+window.setCameraView = setCameraView;
+window.camera = camera;
+window.controls = controls;
 
 camera.lookAt(controls.target);
 syncCameraEuler();
@@ -6673,6 +6676,18 @@ function createAlan4Structure() {
     ladderGroup.add(extMesh);
   });
 
+  // Üst Kedi Yolu İniş Girişi Yaylı Emniyet Kapısı (Self-Closing Safety Swing Gate - EN ISO 14122-4)
+  const gateBarGeo = new THREE.CylinderGeometry(0.015, 0.015, ladderW - 0.06);
+  gateBarGeo.rotateX(Math.PI / 2);
+  const gateBar = new THREE.Mesh(gateBarGeo, railMat);
+  gateBar.position.set(ladderX + 0.30, upperCwWalkY + 0.85, ladderCenterZ);
+  ladderGroup.add(gateBar);
+
+  const gateHingeGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.12);
+  const gateHinge = new THREE.Mesh(gateHingeGeo, darkSteelMat);
+  gateHinge.position.set(ladderX + 0.30, upperCwWalkY + 0.85, ladderZ2);
+  ladderGroup.add(gateHinge);
+
   // Kaymaz Tırtıklı Basamaklar (Her 28 cm'de bir, Z ekseninde 50cm genişlik, Z = [+0.10, +0.60])
   const rungStep = 0.28;
   const ladderRungGeo = new THREE.CylinderGeometry(0.012, 0.012, ladderW - 0.04, 12);
@@ -6697,7 +6712,7 @@ function createAlan4Structure() {
   // Kullanıcı İsteği: "merdibene bir de oval koruma koy"
   const hoopR = 0.35; // 70cm dış genişlik (Z ekseninde)
   const hoopDepth = 0.40; // Tırmanıcı sırt boşluğu derinliği (-X yönünde)
-  const hoopLevels = [2.20, 3.10, 4.00, 4.90, 5.80, 6.70, 7.60, 8.50];
+  const hoopLevels = [2.20, 3.10, 4.00, 4.90, 5.80, 6.70, 7.50]; // Y=7.50m üst kedi yolu kotunda açık kavisle biter
 
   function buildOvalHoopRotated(hy, isTopFlare = false) {
     const hPoints = [];
@@ -6736,7 +6751,7 @@ function createAlan4Structure() {
   });
 
   // Dikey Güvenlik Kafes Lamaları (5 adet dikey güvenlik çubuğu, çemberler boyunca uzanır)
-  const cageHeight = 8.50 - 2.20;
+  const cageHeight = 7.50 - 2.20; // 5.30m (Y=2.20m ile Y=7.50m arası kesintisiz kafes)
   const cageVertGeo = new THREE.CylinderGeometry(0.008, 0.008, cageHeight, 8);
   const cageAngles = [-Math.PI * 0.4, -Math.PI * 0.2, 0, Math.PI * 0.2, Math.PI * 0.4];
   cageAngles.forEach(ang => {
@@ -6750,11 +6765,13 @@ function createAlan4Structure() {
   alan4Group.add(ladderGroup);
 
   // =========================================================================
-  // 8.1. ALAN 2 ORTA KEDİ YOLU KABLO TAVASI, TAVA TAŞIYICILARI, 14 ADET 2x25MM² ENERJİ KABLOSU
-  // VE GEMİCİ MERDİVENİNİN YANINDAKİ DİKEY KABLO MERDİVENİ İLE ALT KEDİ YOLUNA İNİŞ HATTI
-  // Kullanıcı İsteği: "alan-2 de ortadaki kedi yoluna tava tavataşıyıcısı ve 14 adet 2x25mm kablo imalatı göster 
-  // gemici merdiveninin yanından dikey kablo merdiveni yap ve bunu alt kedi yoluna akdar indir"
-  // =========================================================================
+  // 8.1. MERKEZ TAŞIYICI KOLON (X = 0.0M) DİKEY KABLO MERDİVENİ VE 14 ADET 2x25MM² DC ENERJİ KABLOSU
+  // Kullanıcı İsteği: "kablo merdivenini taşıyıcı kolona çek ki gemici merdiveninin inişini engellemesin."
+  // Düzeltme: 
+  // 1. Dikey kablo merdiveni gemici merdiveninin yanından (X=-1.75m) ALINIP, X = 0.0m merkez taşıyıcı kolona monte edildi.
+  // 2. Üst kedi yolunda yürüyüş alanını ve merdiven nişini kesen yatay köprü tavası tamamen kaldırıldı.
+  // 3. 14 adet DC enerji kablosu çatı taşıyıcı tavasından (X=0, Y=7.80m) doğrudan iniş kavisi ile kolondaki kablo merdivenine girer
+  //    ve alt kedi yolu tavasına (Y=0.05m) kadar kesintisiz iner.
   const alan2CableSystemGroup = new THREE.Group();
   alan2CableSystemGroup.name = 'alan2CatwalkCableSystem';
 
@@ -6775,147 +6792,86 @@ function createAlan4Structure() {
     metalness: 0.6
   });
 
-  // =========================================================================
-  // A) ORTADAKİ ÇATI TAŞIYICIDAN (X = 0) GEMİCİ MERDİVENİ YANINA (X = -1.75) BAĞLANTI TAVASI
-  // Kullanıcı İsteği: "aslında ortadaki çatı taşıyıcıyı kastediyordum... gemici merdiveninin yanından dikey kablo merdiveni yap ve bunu alt kedi yoluna kadar indir"
-  // Ortadaki çatı taşıyıcı (X = 0, Z = -0.10, Y = 7.80m) ile gemici merdiveni yanındaki
-  // dikey kablo merdiveni (X = -1.75m, Z = +0.25, Y = 7.65m) arasına kedi yolu arka konsolları
-  // üzerinden (yürüyüş alanının tamamen DIŞINDA) uzanan 500mm ağır hizmet geçiş köprü tavası
-  // =========================================================================
-  const bridgeStartX = 0.0;
-  const bridgeEndX = -1.75;
-  const bridgeLen = Math.abs(bridgeEndX - bridgeStartX); // 1.75m
-  const bridgeCenterX = (bridgeStartX + bridgeEndX) / 2; // -0.875m
-  const bridgeZ = 0.08; // Arka korkuluk arkası (yürüme alanının Z=[-1.30, -0.10] tamamen dışında)
-  const bridgeY = 7.80; // Çatı taşıyıcı tavası taban kotu (Y = 7.80m) ile tam sıfıra sıfır hizalı
-  const trayWidth = 0.50; // 500mm tava genişliği
-  const trayHeight = 0.15; // 150mm tava yan etek yüksekliği
-  const trayThickness = 0.003;
-
-  // Köprü Tava Taban Sacı (Y = 7.80m kotunda çatı tavasıyla kesintisiz birleşir)
-  const bTrayBottom = new THREE.Mesh(new THREE.BoxGeometry(bridgeLen, trayThickness, trayWidth), galvTrayMat);
-  bTrayBottom.position.set(bridgeCenterX, bridgeY, bridgeZ);
-  bTrayBottom.receiveShadow = true;
-  alan2CableSystemGroup.add(bTrayBottom);
-
-  // Köprü Tava Yan Duvarları (Ön ve Arka Yanaklar)
-  [-trayWidth / 2, trayWidth / 2].forEach(dz => {
-    const sideWall = new THREE.Mesh(new THREE.BoxGeometry(bridgeLen, trayHeight, trayThickness), galvTrayMat);
-    sideWall.position.set(bridgeCenterX, bridgeY + trayHeight / 2, bridgeZ + dz);
-    alan2CableSystemGroup.add(sideWall);
-
-    const lip = new THREE.Mesh(new THREE.BoxGeometry(bridgeLen, trayThickness, 0.015), galvTrayMat);
-    lip.position.set(bridgeCenterX, bridgeY + trayHeight, bridgeZ + dz + (dz > 0 ? -0.0075 : 0.0075));
-    alan2CableSystemGroup.add(lip);
-  });
-
-  // Köprü Tava Taşıyıcı Konsolları (Kedi yolu arka dikmelerine ve sahanlık profillerine bağlı)
-  [-1.75, -1.15, -0.55, 0.0].forEach(cx => {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, trayWidth + 0.10), darkSteelMat);
-    arm.position.set(cx, bridgeY - 0.025, bridgeZ);
-    alan2CableSystemGroup.add(arm);
-
-    const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.04), darkSteelMat);
-    shoe.position.set(cx, bridgeY - 0.07, bridgeZ - trayWidth / 2 - 0.02);
-    alan2CableSystemGroup.add(shoe);
-  });
-
-  // =========================================================================
-  // B) GEMİCİ MERDİVENİNİN YANINDAKİ DİKEY KABLO MERDİVENİ (Vertical Cable Ladder)
-  // - Gemici merdiveni X = -1.45m'de bulunuyor.
-  // - Dikey kablo merdiveni hemen yanına X = -1.75m aksına monte edilir.
-  // - Z ekseninde: Z = [+0.05m, +0.50m] (Genişlik: 450mm, Merkez Z = +0.275m)
-  // - Düşey eksende: Üst köprü tavası (Y = 7.80m) kotundan ALT KEDİ YOLU (Y = 0.05m) kotuna kadar KESİNTİSİZ 7.75m İNER
-  // =========================================================================
-  const vLadderX = -1.75;
+  // A) MERKEZ TAŞIYICI KOLON ÜZERİNDE DİKEY KABLO MERDİVENİ (Vertical Cable Ladder at X = 0.0m)
+  // - Konum: X = 0.0m (Merkez taşıyıcı kolon ekseni)
+  // - Z ekseninde: Z = +0.10m (Ø360mm kolonun arka yüzüne rijit montaj, yürüme alanının Z=[-1.30, -0.10] tamamen DIŞINDA)
+  // - Genişlik: 450mm (X: [-0.225m, +0.225m])
+  // - Düşey eksende: Çatı tavası çıkış kotu Y = 7.80m'den ALT KEDİ YOLU (Y = 0.05m) kotuna kadar KESİNTİSİZ 7.75m İNER
+  const vLadderX = 0.0;
   const vLadderWidth = 0.45;
-  const vLadderZ1 = 0.05;
-  const vLadderZ2 = 0.50;
-  const vLadderCenterZ = (vLadderZ1 + vLadderZ2) / 2; // +0.275m
+  const vLadderHalfW = vLadderWidth / 2; // 0.225m
+  const vLadderZ = 0.10; // Kolon arka yüzeyi
   const vLadderBottomY = 0.05; // Alt kedi yolu zemin seviyesi
-  const vLadderTopY = bridgeY; // 7.80m
+  const vLadderTopY = 7.80; // Üst çatı tavası seviyesi
   const vLadderHeight = vLadderTopY - vLadderBottomY; // 7.75m
 
   // Dikey Taşıyıcı Yan Profiller (Ağır Hizmet C-Ray Profili: 70x40mm)
-  const vRailGeo = new THREE.BoxGeometry(0.035, vLadderHeight, 0.07);
-  [vLadderZ1, vLadderZ2].forEach(vz => {
+  const vRailGeo = new THREE.BoxGeometry(0.04, vLadderHeight, 0.07);
+  [-vLadderHalfW, vLadderHalfW].forEach(vx => {
     const vRail = new THREE.Mesh(vRailGeo, galvTrayMat);
-    vRail.position.set(vLadderX, vLadderBottomY + vLadderHeight / 2, vz);
+    vRail.position.set(vLadderX + vx, vLadderBottomY + vLadderHeight / 2, vLadderZ);
+    vRail.castShadow = true;
     alan2CableSystemGroup.add(vRail);
-  });
-  // Dikey Kablo Merdiveni Taban Ankraj Konsolları (Alt sahanlık zeminine sabitleme)
-  const vBaseFlangeGeo = new THREE.BoxGeometry(0.08, 0.02, 0.10);
-  [vLadderZ1, vLadderZ2].forEach(vz => {
+
+    // Taban ankraj pabucu (Alt kedi yolu şasesine rijit bağlantı: Y = 0.05m)
+    const vBaseFlangeGeo = new THREE.BoxGeometry(0.08, 0.02, 0.10);
     const bShoe = new THREE.Mesh(vBaseFlangeGeo, darkSteelMat);
-    bShoe.position.set(vLadderX, 0.01, vz);
+    bShoe.position.set(vLadderX + vx, 0.01, vLadderZ);
     bShoe.receiveShadow = true;
     alan2CableSystemGroup.add(bShoe);
   });
 
-
-  // Basamaklar / Çıtalar (Perfore Kablo Bağlama Basamakları - Her 30cm'de bir)
+  // Perfore Kablo Bağlama Basamakları (Her 30cm'de bir)
   const rungSpacing = 0.30;
-  const rungGeo = new THREE.BoxGeometry(0.025, 0.02, vLadderWidth - 0.04);
+  const rungGeo = new THREE.BoxGeometry(vLadderWidth - 0.04, 0.02, 0.025);
   const numRungs = Math.floor(vLadderHeight / rungSpacing);
   for (let ri = 1; ri <= numRungs; ri++) {
     const ry = vLadderBottomY + ri * rungSpacing;
     if (ry < vLadderTopY) {
       const rung = new THREE.Mesh(rungGeo, darkSteelMat);
-      rung.position.set(vLadderX, ry, vLadderCenterZ);
+      rung.position.set(vLadderX, ry, vLadderZ);
       alan2CableSystemGroup.add(rung);
     }
   }
 
-  // Dikey Merdiven Sabitleme Konsolları (Her 1.5m'de bir çelik gövdeye rijit ankraj)
-  const standoffX = new THREE.BoxGeometry(0.18, 0.04, 0.04);
+  // Taşıyıcı Kolona Rijit Kelepçeleme Konsolları (Her 1.5 metrede bir Ø360mm kolona sabitleme)
+  const standoffClampGeo = new THREE.BoxGeometry(vLadderWidth + 0.12, 0.05, 0.08);
   for (let sy = 0.8; sy <= vLadderTopY - 0.5; sy += 1.5) {
-    [vLadderZ1, vLadderZ2].forEach(vz => {
-      const so = new THREE.Mesh(standoffX, darkSteelMat);
-      so.position.set(vLadderX + 0.09, sy, vz);
-      alan2CableSystemGroup.add(so);
-    });
+    const so = new THREE.Mesh(standoffClampGeo, darkSteelMat);
+    so.position.set(vLadderX, sy, vLadderZ - 0.06);
+    alan2CableSystemGroup.add(so);
   }
 
-  // Üst İniş Kavis Sacı (Waterfall Cable Drop Bracket)
+  // Tepe İniş Dirseği / Kavis Sacı (Waterfall Cable Drop Bracket at Y = 7.80m)
   const wfGeo = new THREE.CylinderGeometry(0.12, 0.12, vLadderWidth, 16, 1, false, 0, Math.PI / 2);
-  wfGeo.rotateZ(Math.PI / 2);
   const wfMesh = new THREE.Mesh(wfGeo, galvTrayMat);
-  wfMesh.position.set(vLadderX + 0.12, vLadderTopY - 0.02, vLadderCenterZ);
+  wfMesh.position.set(vLadderX, vLadderTopY - 0.02, vLadderZ - 0.10);
   alan2CableSystemGroup.add(wfMesh);
 
-  // =========================================================================
-  // C) 14 ADET 2x25 mm² DC ENERJİ KABLOSU İMALATI (TAVA TABANINA SIFIR OTURAN DÜZEN)
+  // B) 14 ADET 2x25 mm² DC ENERJİ KABLOSU İMALATI (MERKEZ KOLONDAN DİKEY İNİŞ)
   // - Ortadaki çatı taşıyıcı tavasından (X = 0, Y = 7.80m, Z = -0.06m) çıkar
-  // - Köprü tavası tabanında (Y = 7.813m ve 7.835m) tava sacına sıfır oturarak ilerler
-  // - X = -1.75m'de 90° iniş kavisi ile dikey kablo merdivenine girer
-  // - Dikey merdiven boyunca kesintisiz iner ve alt kedi yoluna bağlanır
-  // =========================================================================
+  // - Doğrudan waterfall kavis ile X = 0 aksındaki dikey kablo merdivenine girer
+  // - Kolon boyunca 7.75m kesintisiz iner ve alt kedi yoluna bağlanır
   const cableRadius = 0.0105; // 21mm dış çap
   const numCables = 14;
 
   for (let ci = 0; ci < numCables; ci++) {
     const colIdx = ci % 7;
     const tierIdx = Math.floor(ci / 7);
-    const trussCableZ = -0.06 + (colIdx - 3) * 0.045;
-    // Tava taban sacı Y=7.80 + 0.003m + kablo yarıçapı
-    const cY = bridgeY + 0.003 + cableRadius + (tierIdx === 0 ? 0.0 : 0.022);
-
-    const bridgeCableZ = bridgeZ - 0.14 + colIdx * 0.046;
-    const vCableZ = vLadderZ1 + 0.04 + colIdx * 0.058;
-    const vCableX = vLadderX - 0.015 - tierIdx * 0.024;
+    const cableX = vLadderX - 0.16 + colIdx * 0.052;
+    const cableZ = vLadderZ + (tierIdx === 0 ? 0.015 : 0.038);
+    const cY = vLadderTopY + cableRadius + (tierIdx === 0 ? 0.0 : 0.022);
 
     const curvePoints = [
-      new THREE.Vector3(0.0, cY, trussCableZ),
-      new THREE.Vector3(-0.40, cY, bridgeCableZ),
-      new THREE.Vector3(-1.20, cY, bridgeCableZ),
-      new THREE.Vector3(vLadderX + 0.15, cY, vCableZ),
-      new THREE.Vector3(vCableX, cY - 0.18, vCableZ),
-      new THREE.Vector3(vCableX, 5.5, vCableZ),
-      new THREE.Vector3(vCableX, 3.5, vCableZ),
-      new THREE.Vector3(vCableX, 1.5, vCableZ),
-      new THREE.Vector3(vCableX, 0.45, vCableZ),
-      new THREE.Vector3(vCableX + 0.15, 0.12, vCableZ),
-      new THREE.Vector3(vCableX + 0.60, 0.05 + cableRadius, vCableZ)
+      new THREE.Vector3(cableX, cY, -0.06),
+      new THREE.Vector3(cableX, cY, vLadderZ - 0.08),
+      new THREE.Vector3(cableX, cY - 0.15, cableZ),
+      new THREE.Vector3(cableX, 5.5, cableZ),
+      new THREE.Vector3(cableX, 3.5, cableZ),
+      new THREE.Vector3(cableX, 1.5, cableZ),
+      new THREE.Vector3(cableX, 0.45, cableZ),
+      new THREE.Vector3(cableX, 0.12, cableZ - 0.10),
+      new THREE.Vector3(cableX, 0.05 + cableRadius, cableZ - 0.35)
     ];
 
     const cableCurve = new THREE.CatmullRomCurve3(curvePoints, false, 'catmullrom', 0.1);
@@ -6926,9 +6882,9 @@ function createAlan4Structure() {
 
     // Dikey Merdiven Üzerindeki Kablo Tutucu Klemensler (Her 1.2 metrede bir)
     [1.2, 2.4, 3.6, 4.8, 6.0, 7.2].forEach(ky => {
-      const cleatGeo = new THREE.BoxGeometry(0.025, 0.035, 0.035);
+      const cleatGeo = new THREE.BoxGeometry(0.035, 0.035, 0.025);
       const cleat = new THREE.Mesh(cleatGeo, cleatMat);
-      cleat.position.set(vCableX, ky, vCableZ);
+      cleat.position.set(cableX, ky, cableZ);
       alan2CableSystemGroup.add(cleat);
     });
   }
@@ -7271,7 +7227,8 @@ function createAlan4Structure() {
     alan4Group.add(carrier);
 
     // Yan taşıyıcılar (X = ±16.5m) için alt silindirlerden (Y = -0.95m) makas başına (Y = 7.35m) düşey çelik taşıyıcı kule dikmesi
-    if (rx !== 0) {
+    // Düşey taşıyıcı kolon: X = 0 dahil tüm akslarda oluşturulur
+    {
       const sideStanchionGroup = new THREE.Group();
       sideStanchionGroup.name = `scoreboardSideCarrierStanchion_${rx < 0 ? 'left' : 'right'}`;
 
@@ -12584,40 +12541,10 @@ function buildAlan2Alternatif2RRUBlok(targetArea = state.currentArea) {
   ozelKarma.position.set(0, tablaThickness, 0);
   blockGroup.add(ozelKarma);
 
-  // 3. TEPESİNDE "ALTERNATİF - 2" BİLGİLENDİRME TABELASI VE YAZISI
-  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.80, roughness: 0.20 });
-  const signPlateMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.40, roughness: 0.40 });
-
-  // Tabela taşıyıcı dikme çubukları (Arka boruların üstünden yükselir: Z = -0.26)
-  [-0.16, 0.16].forEach(rx => {
-    const rodGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.32, 16);
-    const rod = new THREE.Mesh(rodGeo, pipeMat);
-    rod.position.set(rx, tablaThickness + 1.50 + 0.16, -0.26);
-    blockGroup.add(rod);
-  });
-
-  // 3D Tabela Gövdesi
-  const signBackGeo = new THREE.BoxGeometry(0.72, 0.18, 0.02);
-  const signBack = new THREE.Mesh(signBackGeo, signPlateMat);
-  signBack.position.set(0, tablaThickness + 1.50 + 0.32, -0.26);
-  blockGroup.add(signBack);
-
-  // Çift taraflı tekstürlü tabela yüzeyi
-  const signTex = createAlternatif2SignTexture();
-  const signMat = new THREE.MeshBasicMaterial({ map: signTex });
-
-  const signFaceFront = new THREE.Mesh(new THREE.PlaneGeometry(0.71, 0.17), signMat);
-  signFaceFront.position.set(0, tablaThickness + 1.50 + 0.32, -0.26 + 0.011);
-  blockGroup.add(signFaceFront);
-
-  const signFaceBack = new THREE.Mesh(new THREE.PlaneGeometry(0.71, 0.17), signMat);
-  signFaceBack.rotation.y = Math.PI;
-  signFaceBack.position.set(0, tablaThickness + 1.50 + 0.32, -0.26 - 0.011);
-  blockGroup.add(signFaceBack);
-
-  // Kameraya her açıdan bakan 3D Sprite Etiketi (Tabelanın hemen üstünde)
+  // 3. TEPESİNDE "ALTERNATİF - 2" BİLGİLENDİRME ETİKETİ (BAKIŞ AÇISINA GÖRE HAREKET EDEN 3D SPRITE)
+  // Kullanıcı İsteği: "2 tane label var. Bakış açısına göre hareket eden kalsın sabit olanı kaldır."
   const sprite = createAlternatif2Sprite();
-  sprite.position.set(0, tablaThickness + 1.50 + 0.52, -0.26);
+  sprite.position.set(0, tablaThickness + 1.50 + 0.22, -0.13);
   blockGroup.add(sprite);
 
   return blockGroup;
