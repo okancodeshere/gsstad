@@ -68,7 +68,14 @@ YAPILAN DETAYLANDIRMALAR:
    - Detay A (20cm Ofset Konsol ve Kelepce 1:5), Detay B (RRU Kisa Kenar Kilitleme ve Emniyet Pimi 1:5), Detay C (Topraklama ve Jumper Inisi 1:5).
    - Teknik sartname, guvenlik standartlari ve detayli BOM tablosu.
 
+7. Alan 2 Skorboard Arkasi RRU ve POI Yerlesim Kesitleri (Pafta 10):
+   - Alternatif 1: Skorboard Arka Celik Kafesine Montaj Duzeni (2 grupta 7'ser toplam 14 RRU, 20cm tava, kopru tavasi, kedi yolunda 30U/42U POI Rack kabini ve 600mm net gecis).
+   - Alternatif 2: Mevcut Alt Kedi Yolu Ici Tablali 4 Boru 7 RRU Blogu (850x550x25mm galvaniz tabla, 4 flansli boru, 7 RRU kumesi, Alternatif-2 etiketi, bitisik POI Rack kabini, 650mm net yuruyus ve servis koridoru).
+   - Karsilastirmali Muhendislik ve Uygulama Analiz Tablosu (Statik yuk, kedi yolu koridoru, jumper kaybi, montaj/bakim kolayligi).
+   - Detay D-1 (Tabla & Flans Ankraji 1:10), Detay D-2 (POI Rack Jumper Giris Semasi 1:10), BOM ve Proje Anteti.
+
 KLASORLER VE OLCEK:
 -------------------
 - Milimetre/ klasorundeki dosyalar 1:1 mm olcegindedir (Kedi yolu 30000x2000 mm, RRU 400x140x480 mm).
 - Metre/ klasorundeki dosyalar 1:1 metre olcegindedir (Kedi yolu 30x2 m, RRU 0.40x0.14x0.48 m).
+

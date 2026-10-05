@@ -16,6 +16,9 @@ const {
 const {
   generateCatwalkRruSectionDXF
 } = require('./generate_catwalk_rru_section_dxf.cjs');
+const {
+  generateAlan2AlternativesDXF
+} = require('./generate_alan2_scoreboard_alternatives_dxf.cjs');
 
 // Output Directories
 const BASE_DIR = path.join(__dirname, 'DXF_Ciktilari');
@@ -1456,7 +1459,8 @@ const tasks = [
   { name: '07_GAMMANU_SPOT_BEAM_ANTEN_TUM_LOKASYONLAR_TEKLI_2LI_3LU_KESITLERI_2D_Plan_ve_Kesit', fn: generateGammanuSections2D },
   { name: '07_GAMMANU_SPOT_BEAM_ANTEN_TUM_LOKASYONLAR_TEKLI_2LI_3LU_KESITLERI_3D_Model', fn: generateGammanuSections3D },
   { name: '08_500MM_KABLO_TAVASI_TUM_ALANLAR_KABLO_DOLULUK_KESITLERI', fn: generateCableTraySections2D },
-  { name: '09_ALAN_1_ve_3_KEDI_YOLU_14_RRU_MONTAJ_VE_GECIS_ENKESITI', fn: generateCatwalkRruSectionDXF }
+  { name: '09_ALAN_1_ve_3_KEDI_YOLU_14_RRU_MONTAJ_VE_GECIS_ENKESITI', fn: generateCatwalkRruSectionDXF },
+  { name: '10_ALAN_2_SKORBOARD_ARKASI_KEDI_YOLU_RRU_VE_POI_ALTERNATIF_KESITLERI', fn: generateAlan2AlternativesDXF }
 ];
 
 console.log('Generating all DXF files with detailed equipment representations...');
