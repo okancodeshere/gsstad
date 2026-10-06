@@ -494,6 +494,7 @@ function getTelecomCableBundleConfigs() {
 // Generate Alan 2 Representation (Tribün Üstü Taşıyıcı Beton Alan)
 const alan2SlidingDoors = [];
 const alan4SlidingDoors = [];
+const alan3SlidingDoors = [];
 
 function createAlan2Structure() {
   const alan2Group = new THREE.Group();
@@ -1041,133 +1042,217 @@ function createAlan2Structure() {
   alan2Group.add(horizPipeGroup);
 
   // -------------------------------------------------------------
-  // Dikey Kablo Merdiveni (Vertical Cable Ladder)
-  // Konum: X = -3.0 m (0 referanslı direk ile X=-6m direğinin tam ortası)
-  // Z konumu: Z = -0.75 m (Kayar kapı düzleminden [Z=-0.05] 70 cm betonun içine doğru)
-  // Genişlik: 50 cm (0.50 m, X ekseninde: X = [-3.25, -2.75])
-  // Yükseklik: Zeminden 4 metreye ulaşır (Y = 0.0 m'den Y = 4.0 m'ye)
+  // Dikey Kablo Merdiveni ve Yatay Geçiş Tavası (Yeni Güzergah)
+  // Kullanıcı İsteği:
+  // - Beton kaideden uzay taşıyıcıya çıkan tava, X=0 dikey silindir direğinden
+  //   yukarı çıkıp, Y=4.0m yatay silindir kiriş üzerinden X=-3.0m'deki uzay taşıyıcıya bağlanır.
+  // 1. Dikey Kısım: X = 0.0m kolonunun ön yüzeyi boyunca Y = 0.10m'den Y = 3.90m'ye tırmanış
+  // 2. 90° Köşe Dirseği: X = 0.0m, Y = 4.0m'de dikeyden yataya dönüş
+  // 3. Yatay Kısım: Y = 4.14m kotunda, Z = -1.35m aksındaki yatay silindir boru üzerinden X=0'dan X=-2.75m'ye geçiş
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Dikey Kablo Merdiveni ve Yatay Geçiş Tavası (Arka Cephe - POI Yanı Kolon Güzergahı)
+  // Kullanıcı İsteği:
+  // - Kedi yolundan bakıldığında beton kaidenin ARKA CEPHEsinde (arka tarafında) olsun.
+  // - Yataydaki alan da arka tarafta kalsın (yatay borunun arkasından geçsin).
+  // - Bir yandaki direkten, yani POI'lere yakın olan direkten (X = -6.0m direği) çıksın.
+  // -------------------------------------------------------------
+  // -------------------------------------------------------------
+  // Dikey Kablo Merdiveni ve Yatay Geçiş Tavası (Kablolar Tamamen İçine Sığdırılmış)
+  // Kullanıcı İsteği: "kabloları kablo tavasına ve kablo merdivenine sığdır"
+  // - Dikey merdiven: 120mm derin yanaklar, kablo demetleri basamakların üstünde ve yanakların tam içinde
+  // - Yatay tava: 120mm yüksek yanaklı, 50cm genişliğinde delikli tava yatağı içinde
+  // - 90° köşe dirsekleri: Dönüş boyunca kabloları saran kılavuz kanat ve yatak sacları
   // -------------------------------------------------------------
   const ladderGroup = new THREE.Group();
   ladderGroup.name = 'dikeyKabloMerdiveniAlan2';
 
-  const ladderW = 0.50; // 50 cm genişlik
-  const ladderH = 4.00; // 4 metre yükseklik
-  const ladderD = 0.07; // 7 cm profil derinliği
-  const ladderX = -3.00; // X=-6 ile X=0 tam ortası
-  const ladderZ = colZ; // Yatay silindir kiriş hizası (Z = -1.35 m)
+  const ladderW = 0.50; // 50 cm net dış genişlik
+  const ladderD = 0.12; // 120 mm derin profil (kablo katmanlarını tamamen içine alır)
+  const railW = 0.035;  // 35 mm yanak et kalınlığı
 
-  ladderGroup.position.set(ladderX, 0, ladderZ);
-
-  // Sıcak daldırma galvaniz çelik malzeme
+  // Galvaniz çelik malzeme
   const ladderMat = new THREE.MeshStandardMaterial({
-    color: 0xa4b0be, // Galvaniz çelik rengi
+    color: 0xa4b0be,
     metalness: 0.85,
     roughness: 0.3
   });
-
   const ladderDarkMat = new THREE.MeshStandardMaterial({
-    color: 0x475569, // Koyu çelik aksam / kelepçeler
+    color: 0x475569,
     metalness: 0.8,
     roughness: 0.35
   });
 
-  const railW = 0.04; // 40mm yan profil et kalınlığı
-  const railD = ladderD; // 70mm yan profil derinliği
+  // A) DİKEY MERDİVEN (X = 0.0m Kolonunun Arka Cephesinde)
+  const vertH = 3.80; // 3.8 metre dikey boy
+  const vertColX = 0.00;
+  // Kolon arka yüzeyi: colZ - colRadius = -1.35 - 0.20 = -1.55m
+  // Merdiven yanakları: Z = -1.55m'den Z = -1.67m'ye kadar uzanır (Z_center = -1.61m)
+  const vertCenterZ = colZ - colRadius - ladderD / 2; // -1.61m
+  const vertRungZ = colZ - colRadius - 0.015; // -1.565m (basamakların arka yüzeyi)
 
-  // 1. Sol ve Sağ Dikey Taşıyıcı Kolları (Vertical Side Rails / Stringers)
-  const vertRailGeo = new THREE.BoxGeometry(railW, ladderH, railD);
-  
-  const leftRail = new THREE.Mesh(vertRailGeo, ladderMat);
-  leftRail.position.set(-ladderW / 2 + railW / 2, ladderH / 2, 0);
-  leftRail.castShadow = true;
-  leftRail.receiveShadow = true;
-  ladderGroup.add(leftRail);
+  const vertRailGeo = new THREE.BoxGeometry(railW, vertH, ladderD);
 
-  const rightRail = new THREE.Mesh(vertRailGeo, ladderMat);
-  rightRail.position.set(ladderW / 2 - railW / 2, ladderH / 2, 0);
-  rightRail.castShadow = true;
-  rightRail.receiveShadow = true;
-  ladderGroup.add(rightRail);
+  const leftVertRail = new THREE.Mesh(vertRailGeo, ladderMat);
+  leftVertRail.position.set(vertColX - ladderW / 2 + railW / 2, 0.10 + vertH / 2, vertCenterZ);
+  leftVertRail.castShadow = true;
+  ladderGroup.add(leftVertRail);
 
-  // Yan profillerin üzerine montaj kanalları / yarıkları
-  const slotCount = Math.floor(ladderH / 0.15); // her 15 cm'de bir montaj yarığı
+  const rightVertRail = new THREE.Mesh(vertRailGeo, ladderMat);
+  rightVertRail.position.set(vertColX + ladderW / 2 - railW / 2, 0.10 + vertH / 2, vertCenterZ);
+  rightVertRail.castShadow = true;
+  ladderGroup.add(rightVertRail);
+
+  // Dikey yan profil montaj yarıkları (her 20 cm'de bir)
   const slotGeo = new THREE.BoxGeometry(railW + 0.002, 0.06, 0.015);
-  for (let s = 1; s <= slotCount; s++) {
-    const slotY = s * 0.15;
-    const slotL = new THREE.Mesh(slotGeo, ladderDarkMat);
-    slotL.position.set(-ladderW / 2 + railW / 2, slotY, 0);
-    ladderGroup.add(slotL);
-
-    const slotR = new THREE.Mesh(slotGeo, ladderDarkMat);
-    slotR.position.set(ladderW / 2 - railW / 2, slotY, 0);
-    ladderGroup.add(slotR);
+  for (let sy = 0.25; sy < vertH; sy += 0.20) {
+    const sL = new THREE.Mesh(slotGeo, ladderDarkMat);
+    sL.position.set(vertColX - ladderW / 2 + railW / 2, 0.10 + sy, vertCenterZ);
+    ladderGroup.add(sL);
+    const sR = new THREE.Mesh(slotGeo, ladderDarkMat);
+    sR.position.set(vertColX + ladderW / 2 - railW / 2, 0.10 + sy, vertCenterZ);
+    ladderGroup.add(sR);
   }
 
-  // 2. Yatay Kablo Bağlantı Basamakları (Horizontal Rungs)
-  const rungSpacing = 0.25; // 25 cm adım mesafesi
-  const rungW = ladderW - 2 * railW; // ~42 cm net basamak iç açıklığı
-  const rungH = 0.025; // 25 mm yükseklik
-  const rungD = 0.035; // 35 mm basamak derinliği
+  // Dikey basamaklar (her 25 cm'de bir, kabloların arkasında destek yatağı)
+  const rungW = ladderW - 2 * railW;
+  const rungH = 0.025;
+  const rungD = 0.030;
   const rungGeo = new THREE.BoxGeometry(rungW, rungH, rungD);
+  const numVertRungs = Math.floor(vertH / 0.25);
 
-  const numRungs = Math.floor((ladderH - 0.20) / rungSpacing);
-  for (let r = 1; r <= numRungs; r++) {
-    const rungY = 0.10 + r * rungSpacing;
+  for (let r = 1; r <= numVertRungs; r++) {
+    const rY = 0.10 + r * 0.25;
     const rung = new THREE.Mesh(rungGeo, ladderMat);
-    rung.position.set(0, rungY, 0);
+    rung.position.set(vertColX, rY, vertRungZ);
     rung.castShadow = true;
-    rung.receiveShadow = true;
     ladderGroup.add(rung);
 
-    // Basamak kablo bağlama yuvası
-    const rungSlotGeo = new THREE.BoxGeometry(rungW * 0.65, 0.008, rungD + 0.002);
-    const rungSlot = new THREE.Mesh(rungSlotGeo, ladderDarkMat);
-    rungSlot.position.set(0, rungY, 0);
-    ladderGroup.add(rungSlot);
+    // Kablo sabitleme kuşakları (Cleat kelepçeler - basamakların ön yüzünde)
+    if (r % 2 === 1) {
+      const clampCleat = new THREE.Mesh(new THREE.BoxGeometry(rungW + 0.02, 0.02, 0.012), ladderDarkMat);
+      clampCleat.position.set(vertColX, rY, vertCenterZ - ladderD / 2 + 0.006);
+      ladderGroup.add(clampCleat);
+    }
   }
 
-  // 3. Yatay Silindir Kirişe Üst Bağlantı Kelepçeleri (Pipe Clamps / Saddle Brackets at Y = 4.0m)
-  // Merdivenin üst uçları Y = 4.0m kotundaki Ø22cm yatay silindir kirişe kelepçelenir (destek ayakları kaldırıldı)
-  const pipeClampGeo = new THREE.CylinderGeometry(horizPipeRadius + 0.012, horizPipeRadius + 0.012, 0.05, 24);
-  pipeClampGeo.rotateZ(Math.PI / 2);
-  const clampFlangeGeo = new THREE.BoxGeometry(railW + 0.016, 0.07, railD + 0.016);
+  // Kolona sabitleme çember kelepçeleri (Ø40cm direği saran kelepçeler)
+  const colClampArcGeo = new THREE.CylinderGeometry(colRadius + 0.015, colRadius + 0.015, 0.04, 24, 1, true, Math.PI / 2, Math.PI);
+  const clampBracketGeo = new THREE.BoxGeometry(0.08, 0.04, 0.06);
+  [0.80, 1.80, 2.80, 3.65].forEach(cy => {
+    const colClamp = new THREE.Mesh(colClampArcGeo, ladderDarkMat);
+    colClamp.position.set(vertColX, cy, colZ);
+    ladderGroup.add(colClamp);
 
-  [-ladderW / 2 + railW / 2, ladderW / 2 - railW / 2].forEach(cx => {
-    // Yatay boruyu saran çelik kuşak / kelepçe
-    const clampMesh = new THREE.Mesh(pipeClampGeo, ladderDarkMat);
-    clampMesh.position.set(cx, 4.0, 0);
-    ladderGroup.add(clampMesh);
-
-    // Kiriş ile dikey ray arasındaki montaj pabucu
-    const flangeMesh = new THREE.Mesh(clampFlangeGeo, ladderMat);
-    flangeMesh.position.set(cx, 3.93, 0);
-    flangeMesh.castShadow = true;
-    ladderGroup.add(flangeMesh);
+    [vertColX - ladderW / 2 - 0.02, vertColX + ladderW / 2 + 0.02].forEach(bx => {
+      const brk = new THREE.Mesh(clampBracketGeo, ladderMat);
+      brk.position.set(bx, cy, (colZ + vertCenterZ) / 2);
+      ladderGroup.add(brk);
+    });
   });
 
-  // 4. Kablo Merdiveni Üzerinde Dikey Kablo Demetleri (40 adet 7/8" Feeder + 16 adet 2x25 mm² Enerji)
+  // B) YATAY KABLO TAVASI (Y = 4.00m taban kotunda, 120mm yanaklı tava yatağı)
+  const horizTrayLen = 2.65; // Metre boy
+  const horizBedY = 4.00;    // Tava taban sacı kotu
+  const horizWallH = 0.12;   // 120 mm yanak yüksekliği (üst kenar Y = 4.12m)
+  const horizCenterZ = vertCenterZ; // -1.61m (dikey merdivenle aynı Z aksında)
+  const horizCenterX = -horizTrayLen / 2 - 0.18; // X = -1.505m
+
+  // 1. Tava Taban Sacı (Delikli Galvaniz Sac)
+  const trayBedGeo = new THREE.BoxGeometry(horizTrayLen, 0.006, ladderW);
+  const trayBedMesh = new THREE.Mesh(trayBedGeo, ladderMat);
+  trayBedMesh.position.set(horizCenterX, horizBedY + 0.003, horizCenterZ);
+  trayBedMesh.receiveShadow = true;
+  ladderGroup.add(trayBedMesh);
+
+  // 2. Ön ve Arka Yanak Korkuluk Sacları (Kabloları yanlardan tamamen hapseder)
+  const wallGeo = new THREE.BoxGeometry(horizTrayLen, horizWallH, 0.008);
+  const frontWall = new THREE.Mesh(wallGeo, ladderMat);
+  frontWall.position.set(horizCenterX, horizBedY + horizWallH / 2, horizCenterZ + ladderW / 2 - 0.004);
+  frontWall.castShadow = true;
+  ladderGroup.add(frontWall);
+
+  const backWall = new THREE.Mesh(wallGeo, ladderMat);
+  backWall.position.set(horizCenterX, horizBedY + horizWallH / 2, horizCenterZ - ladderW / 2 + 0.004);
+  backWall.castShadow = true;
+  ladderGroup.add(backWall);
+
+  // 3. Taban Takviye Traversleri (Her 30 cm'de bir tava altı taşıyıcı C-profil)
+  const trayCrossGeo = new THREE.BoxGeometry(0.035, 0.025, ladderW + 0.02);
+  for (let hx = -horizTrayLen / 2 + 0.15; hx <= horizTrayLen / 2 - 0.10; hx += 0.30) {
+    const crossMesh = new THREE.Mesh(trayCrossGeo, ladderDarkMat);
+    crossMesh.position.set(horizCenterX + hx, horizBedY - 0.0125, horizCenterZ);
+    ladderGroup.add(crossMesh);
+  }
+
+  // 4. Yatay Boru Arkası Ağır Hizmet Konsol Taşıyıcı Kollar
+  const hPipeClampGeo = new THREE.CylinderGeometry(horizPipeRadius + 0.012, horizPipeRadius + 0.012, 0.05, 20);
+  hPipeClampGeo.rotateZ(Math.PI / 2);
+  const cantileverArmGeo = new THREE.BoxGeometry(0.06, 0.04, Math.abs(horizCenterZ - colZ) + 0.04);
+
+  [-0.60, -1.35, -2.10].forEach(sx => {
+    const pClamp = new THREE.Mesh(hPipeClampGeo, ladderDarkMat);
+    pClamp.position.set(sx, 4.0, colZ);
+    ladderGroup.add(pClamp);
+
+    const armMesh = new THREE.Mesh(cantileverArmGeo, ladderMat);
+    armMesh.position.set(sx, 4.0, (colZ + horizCenterZ) / 2);
+    ladderGroup.add(armMesh);
+  });
+
+  // C) 90° KÖŞE DİRSEKLERİ (Kabloları Dışarı Taşırmayan Yatak ve Yanak Sacları)
+  // C.1. Kolon Başı 90° Dirsek (X = 0.0m, Y = 4.0m)
+  const elbowBedGeo = new THREE.BoxGeometry(0.36, 0.006, ladderW);
+  const elbowBed = new THREE.Mesh(elbowBedGeo, ladderMat);
+  elbowBed.position.set(-0.18, horizBedY + 0.003, horizCenterZ);
+  ladderGroup.add(elbowBed);
+
+  const elbowOuterWall = new THREE.Mesh(new THREE.BoxGeometry(0.36, horizWallH, 0.008), ladderMat);
+  elbowOuterWall.position.set(-0.18, horizBedY + horizWallH / 2, horizCenterZ - ladderW / 2 + 0.004);
+  ladderGroup.add(elbowOuterWall);
+
+  const elbowInnerWall = new THREE.Mesh(new THREE.BoxGeometry(0.36, horizWallH, 0.008), ladderMat);
+  elbowInnerWall.position.set(-0.18, horizBedY + horizWallH / 2, horizCenterZ + ladderW / 2 - 0.004);
+  ladderGroup.add(elbowInnerWall);
+
+  // C.2. Uzay Taşıyıcı Giriş Dirseği (X = -2.85m -> -3.00m)
+  const trussElbowBed = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.006, ladderW), ladderMat);
+  trussElbowBed.position.set(-2.92, horizBedY + 0.003, (horizCenterZ + colZ) / 2);
+  ladderGroup.add(trussElbowBed);
+
+  const trussElbowWall = new THREE.Mesh(new THREE.BoxGeometry(0.32, horizWallH, 0.008), ladderMat);
+  trussElbowWall.position.set(-2.92, horizBedY + horizWallH / 2, horizCenterZ - ladderW / 2 + 0.004);
+  ladderGroup.add(trussElbowWall);
+
+  // D) GÜZERGAH BOYUNCA KABLO TAVASI VE MERDİVENİNE TAM OTURAN KABLO DEMETLERİ
   const ladderCables = getTelecomCableBundleConfigs();
 
   ladderCables.forEach(cfg => {
-    // Basamak ön yüzeyinden (Z = 0.0175) dışarıya doğru katman katman (Tier 1-4) dizilim
-    const zPos = 0.0175 + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
+    // 1. Genişlik Sıkıştırması: cfg.x (-0.21..+0.21) değerini yanaklardan 4'er cm içeride kalacak şekilde daralt
+    const u = cfg.x * 0.80; // u aralığı: [-0.168m, +0.168m] -> 50cm'lik tavanın tam ortasında 16cm güvenli boşluk
 
-    const cableGeo = new THREE.CylinderGeometry(cfg.r, cfg.r, ladderH, 12);
-    const cable = new THREE.Mesh(cableGeo, cfg.mat);
-    cable.position.set(cfg.x, ladderH / 2, zPos);
-    cable.castShadow = true;
-    ladderGroup.add(cable);
+    // 2. Katman Yükseklikleri: 4 katmanı tavanın taban sacı (Y=4.00m) ile yanak üst kenarı (Y=4.12m) arasına yerleştir
+    const tierOffset = 0.015 + (cfg.tier - 1) * 0.022; // 0.015m, 0.037m, 0.059m, 0.081m (Max 8.1cm < 12cm yanak)
+
+    // P0: Dikey merdiven tabanı (X=0 kolonu arkasında, basamağa tam dayalı)
+    const p0 = new THREE.Vector3(vertColX + u, 0.10, vertRungZ - tierOffset);
+    // P1: Dikey merdiven tepesi (yanaklar içinde yukarı tırmanış)
+    const p1 = new THREE.Vector3(vertColX + u, 3.75, vertRungZ - tierOffset);
+    // P2: 90° dönüş dirseği (yanakların içinden geçer)
+    const p2 = new THREE.Vector3(vertColX - 0.12 + u * 0.35, horizBedY + tierOffset + 0.01, vertCenterZ + u * 0.85);
+    // P3: Yatay tava girişi (tavanın taban sacının üstünde, yanakların tam içinde)
+    const p3 = new THREE.Vector3(-0.45, horizBedY + tierOffset, horizCenterZ + u);
+    // P4: Yatay tava sonu (X=-2.65m'ye kadar tavanın içinde kusursuz hat)
+    const p4 = new THREE.Vector3(-2.65, horizBedY + tierOffset, horizCenterZ + u);
+    // P5: Uzay taşıyıcı giriş tavasına aktarım düğümü
+    const p5 = new THREE.Vector3(-3.00 + u, horizBedY + tierOffset + 0.04, colZ + 0.08);
+
+    const cableCurve = new THREE.CatmullRomCurve3([p0, p1, p2, p3, p4, p5], false, 'centripetal');
+    const cableGeo = new THREE.TubeGeometry(cableCurve, 32, cfg.r, 8, false);
+    const cableMesh = new THREE.Mesh(cableGeo, cfg.mat);
+    cableMesh.castShadow = true;
+    ladderGroup.add(cableMesh);
   });
-
-  // Basamaklara bağlanan çok katmanlı ağır hizmet kablo kelepçeleri (Heavy-duty Cable Cleats)
-  const clampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
-  const clampGeo = new THREE.BoxGeometry(0.44, 0.02, 0.13);
-  for (let c = 1; c <= numRungs; c += 2) {
-    const clampY = 0.10 + c * rungSpacing;
-    const clamp = new THREE.Mesh(clampGeo, clampMat);
-    clamp.position.set(0.0, clampY, 0.075);
-    ladderGroup.add(clamp);
-  }
 
   alan2Group.add(ladderGroup);
 
@@ -2490,16 +2575,17 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
     jointGroup.add(guide);
   });
 
-  // Dikey merdivenden eğimli kaide tavasına yumuşak kablo akış geçiş kavisleri (64 kablo, 4 katman)
+  // Yatay boru tavasından eğimli kaide tavasına yumuşak kablo akış geçiş kavisleri (64 kablo, 4 katman)
   telecomCables.forEach(cfg => {
-    const startZ = 0.0175 + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
     const targetY = 0.10 + trayBottomYNormal + (2 * cfg.tier - 1) * cfg.r + (cfg.tier - 1) * 0.003;
     const targetZ = 0.12 * Math.cos(slopeAngleRad);
+    const startY = 0.14 + (2 * cfg.tier - 1) * cfg.r;
 
+    const u = cfg.x * 0.80;
     const bendCurve = new THREE.QuadraticBezierCurve3(
-      new THREE.Vector3(cfg.x, 0.0, startZ),
-      new THREE.Vector3(cfg.x, targetY * 0.5, startZ + 0.02),
-      new THREE.Vector3(cfg.x, targetY, targetZ)
+      new THREE.Vector3(u + 0.35, startY, -0.05),
+      new THREE.Vector3(u + 0.08, startY + (targetY - startY) * 0.5, 0.05),
+      new THREE.Vector3(u, targetY, targetZ)
     );
     const bendGeo = new THREE.TubeGeometry(bendCurve, 10, cfg.r, 8, false);
     const bendCable = new THREE.Mesh(bendGeo, cfg.mat);
@@ -2507,6 +2593,8 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   });
 
   trussGroup.add(jointGroup);
+
+
   alan2Group.add(trussGroup);
 
   // -------------------------------------------------------------
@@ -4166,8 +4254,16 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   const ant2Ports = getSpotBeamPortsLocal(8.667, 32.594);
 
   // Dikey merdiven üzeri kablo grubu (alan3Group koordinatlarında)
+  // Kullanıcı İsteği: "Alan-4 de de kablo merdivenini taşıyıcı sutunun arkasına al ."
+  // - Kablolar POI'den (X ≈ -3.72m) çıkıp arka alt tava ile X = 0.00m taşıyıcı sütun arkasına ulaşır
+  // - X = 0.00m kolonunun arka yüzeyindeki dikey kablo merdiveninden Y = 4.03m kotuna tırmanır
+  // - Y = 4.03m yatay kiriş köprü tavasından X = -3.00m uzay çatı makasına geçip çatı tavasına bağlanır
   const riserFeederGroup = new THREE.Group();
   riserFeederGroup.name = 'alan3RiserFeederCables';
+
+  const colZLoc = -1.35;
+  const colRadLoc = 0.20;
+  const vLadderRearZ = colZLoc - colRadLoc - 0.035; // -1.585m (sütun arkası kablo merdiveni aksı)
 
   // 8 Feeder Kablosu Döşeme Döngüsü (4 Adet POI 1 -> Anten 1, 4 Adet POI 2 -> Anten 2)
   for (let i = 0; i < 8; i++) {
@@ -4179,15 +4275,13 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
 
     // 50cm tava tabanında 8 feeder simetrik yan yana dizilim
     const trayX = -0.1575 + i * 0.045;
+    const ladderFeederX = -0.12 + i * 0.034;
 
     // A) POI MODÜLÜNDEN DİKEY MERDİVENE VE ÇATI GİRİŞİNE (Dünya Koordinatlarında)
     const poiBaseY = poiIndex === 0 ? 0.38 : 0.81;
-    const poiPortX = -3.724 + (-0.11 + portIdx * 0.075);
+    const poiPortX = -0.974 + (-0.11 + portIdx * 0.075);
     const poiPortY = poiBaseY + 0.12;
     const poiPortZ = -1.273 + 0.14;
-
-    const ladderX = -3.00 + trayX;
-    const ladderZ = -1.35;
 
     // POI Konnektörü ve Sızdırmazlık Pabucu
     const poiConn = new THREE.Mesh(connGeo, dinConnectorMat);
@@ -4201,29 +4295,44 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     riserFeederGroup.add(poiBoot);
 
     const riserPts = [
+      // 1. POI çıkışı
       new THREE.Vector3(poiPortX, poiPortY, poiPortZ + 0.06),
       new THREE.Vector3(poiPortX, poiPortY, poiPortZ + 0.12),
-      new THREE.Vector3(poiPortX + 0.15, poiBaseY + 0.35, -1.25),
-      new THREE.Vector3(ladderX, poiBaseY + 0.55, ladderZ + 0.03),
-      new THREE.Vector3(ladderX, 2.00, ladderZ + 0.03),
-      new THREE.Vector3(ladderX, 3.20, ladderZ + 0.03),
-      new THREE.Vector3(ladderX, 4.00, ladderZ + 0.02),
-      new THREE.Vector3(ladderX, 4.45, ladderZ - 0.02),
-      new THREE.Vector3(ladderX, 4.636, ladderZ - 0.07)
+      // 2. Alt arka tava güzergahına yumuşak geçiş
+      new THREE.Vector3(poiPortX + 0.12, 0.25 + i * 0.012, -1.45),
+      new THREE.Vector3(poiPortX + 0.28, 0.23 + i * 0.012, vLadderRearZ + ladderFeederX * 0.3),
+      // 3. Arka alt tava boyunca X = 0.0m sütun tabanına ilerleme
+      new THREE.Vector3(-1.80, 0.23 + i * 0.012, vLadderRearZ + ladderFeederX * 0.3),
+      new THREE.Vector3(-0.45, 0.23 + i * 0.012, vLadderRearZ + ladderFeederX * 0.3),
+      new THREE.Vector3(-0.15, 0.30 + i * 0.012, vLadderRearZ + 0.022),
+      // 4. X = 0.0m sütun arka merdiveni boyunca dikey tırmanış
+      new THREE.Vector3(ladderFeederX, 0.60, vLadderRearZ + 0.022),
+      new THREE.Vector3(ladderFeederX, 2.00, vLadderRearZ + 0.022),
+      new THREE.Vector3(ladderFeederX, 3.20, vLadderRearZ + 0.022),
+      new THREE.Vector3(ladderFeederX, 3.85, vLadderRearZ + 0.022),
+      // 5. Y = 4.03m kotunda yatay köprü tavasına 90° yumuşak dirsek dönüşü
+      new THREE.Vector3(ladderFeederX, 4.05, vLadderRearZ + 0.015),
+      new THREE.Vector3(-0.25, 4.05, vLadderRearZ),
+      // 6. Üst kiriş arkası tava boyunca X = -3.00m çatı makasına ilerleme
+      new THREE.Vector3(-1.50, 4.05, vLadderRearZ),
+      new THREE.Vector3(-2.65, 4.05, vLadderRearZ),
+      // 7. X = -3.00m uzay çatı makas tavasına yumuşak giriş kavisi
+      new THREE.Vector3(-2.95 + trayX, 4.07, -1.48),
+      new THREE.Vector3(-3.00 + trayX, 4.10 + feederRadius, -1.35)
     ];
 
-    const riserCurve = new THREE.CatmullRomCurve3(riserPts);
-    const riserGeo = new THREE.TubeGeometry(riserCurve, 24, feederRadius, 8, false);
+    const riserCurve = new THREE.CatmullRomCurve3(riserPts, false, 'catmullrom', 0.08);
+    const riserGeo = new THREE.TubeGeometry(riserCurve, 36, feederRadius, 8, false);
     const riserMesh = new THREE.Mesh(riserGeo, feederMat);
     riserMesh.castShadow = true;
     riserFeederGroup.add(riserMesh);
 
-    // Merdiven üzeri paslanmaz kablo tutucu klempler (Y = 2.0m ve Y = 3.5m)
+    // Merdiven üzeri paslanmaz kablo tutucu klempler (X = 0.0m sütun arkasında Y = 2.0m ve Y = 3.5m)
     if (i === 0) {
       [2.0, 3.5].forEach(clampY => {
-        const clampBarGeo = new THREE.BoxGeometry(0.42, 0.025, 0.03);
+        const clampBarGeo = new THREE.BoxGeometry(0.38, 0.025, 0.03);
         const cBar = new THREE.Mesh(clampBarGeo, clampBracketMat);
-        cBar.position.set(-3.00, clampY, ladderZ + 0.035);
+        cBar.position.set(0.00, clampY, vLadderRearZ + 0.035);
         riserFeederGroup.add(cBar);
       });
     }
@@ -4559,7 +4668,8 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
 function createAlan3Structure() {
   const alan3Group = new THREE.Group();
   alan3Group.name = 'alan3Structure';
-  alan3Group.visible = false; 
+  alan3Group.visible = false;
+  alan3SlidingDoors.length = 0; 
 
   const floorWidth = 2.0; 
   const floorLength = 25.0; // 25 mt toplam beton kaide boyu (Kullanıcı İsteği)
@@ -4602,8 +4712,8 @@ function createAlan3Structure() {
   // - "1,5 metrelik kapakları 110cmye düşürelim ayrıca 1 metrelik sabit alanlar 15 cm gibi bişey yapalım toplam alan alanımız 25 mt olsun"
   // Toplam net modül: 2.50 m (X = [-4.30, -1.80], Merkez: X = -3.05m)
   // -------------------------------------------------------------
-  const encMinX = -4.30;
-  const encMaxX = -1.80;
+  const encMinX = -2.75;
+  const encMaxX = -0.25;
   const encFrontZ = -0.05;
   const encBackZ = -1.95;
   const encGlassH = 1.70;
@@ -4761,8 +4871,8 @@ function createAlan3Structure() {
   const doorPerforatedMat = createPerforatedMat(doorPanelW, doorPanelH);
   const doorPanelGeo = new THREE.PlaneGeometry(doorPanelW, doorPanelH);
 
-  const door0ClosedX = -3.60; // 2'li POI önü
-  const door1ClosedX = -2.50; // 7'li RRU önü
+  const door0ClosedX = -2.05; // 7'li RRU önü
+  const door1ClosedX = -0.95; // 2'li POI önü
 
   const doorConfigs = [
     { doorIndex: 0, closedX: door0ClosedX, openX: door1ClosedX, trackZ: -0.03, isLeft: true },
@@ -4831,7 +4941,7 @@ function createAlan3Structure() {
     doorGroup.userData.isOpen = false;
 
     alan3Group.add(doorGroup);
-    alan2SlidingDoors.push(doorGroup);
+    alan3SlidingDoors.push(doorGroup);
   });
 
   // D) 170cm Yan ve Arka Cam Cepheler
@@ -5018,29 +5128,133 @@ function createAlan3Structure() {
   alan3Group.add(horizPipeGroup);
 
   // -------------------------------------------------------------
-  // 6. DİKEY KABLO MERDİVENİ (X = -3.00m, Z = -1.35m, Y = 0..4m)
+  // 6. DİKEY KABLO MERDİVENİ VE YATAY GEÇİŞ KÖPRÜ TAVASI
+  // Kullanıcı İsteği: "Alan-4 de de kablo merdivenini taşıyıcı sutunun arkasına al ."
+  // - Taşıyıcı Sütun: X = 0.00m aksındaki dikey silindir kolon (Ø400mm)
+  // - Arka Cephe Montajı: Z = colZ - colRadius - vLadderD / 2 = -1.585m (Yürüme alanının arkasında)
+  // - Yatay Köprü Tavası: Y = 4.03m kotunda, X = -3.00m uzay çatı makasından X = 0.00m sütun arkasına 3m hat
+  // - Alt Bağlantı Tavası: Y = 0.22m kotunda, X = -3.80m POI çıkışından X = 0.00m merdiven tabanına hat
   // -------------------------------------------------------------
   const ladderGroup = new THREE.Group();
   ladderGroup.name = 'dikeyKabloMerdiveniAlan3';
-  const ladderW = 0.50;
-  const ladderH = 4.00;
-  ladderGroup.position.set(-3.00, 0, colZ);
+
+  const vLadderW = 0.40; // 400mm genişlik
+  const vLadderH = 4.00; // 4 metre yükseklik
+  const vLadderD = 0.07; // 70mm derinlik
+  const vRailW = 0.035;
+
+  const poleColX = 0.00; // X=0 taşıyıcı sütun
+  const ladderCenterZ = colZ - colRadius - vLadderD / 2; // -1.585m (sütun arka yüzeyi)
+
+  ladderGroup.position.set(poleColX, 0, ladderCenterZ);
 
   const ladderMat = new THREE.MeshStandardMaterial({ color: 0xa4b0be, metalness: 0.85, roughness: 0.3 });
-  const vertRailGeo = new THREE.BoxGeometry(0.04, ladderH, 0.07);
+  const ladderDarkMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.35 });
+
+  // 1. Dikey Merdiven Rayları (Taşıyıcı Kolon Arka Yüzeyi)
+  const vertRailGeo = new THREE.BoxGeometry(vRailW, vLadderH, vLadderD);
   const lRail = new THREE.Mesh(vertRailGeo, ladderMat);
-  lRail.position.set(-ladderW / 2 + 0.02, ladderH / 2, 0);
+  lRail.position.set(-vLadderW / 2 + vRailW / 2, vLadderH / 2, 0);
+  lRail.castShadow = true;
   ladderGroup.add(lRail);
+
   const rRail = new THREE.Mesh(vertRailGeo, ladderMat);
-  rRail.position.set(ladderW / 2 - 0.02, ladderH / 2, 0);
+  rRail.position.set(vLadderW / 2 - vRailW / 2, vLadderH / 2, 0);
+  rRail.castShadow = true;
   ladderGroup.add(rRail);
 
-  const rungGeo = new THREE.BoxGeometry(ladderW - 0.08, 0.025, 0.035);
-  for (let r = 1; r <= 15; r++) {
-    const rung = new THREE.Mesh(rungGeo, ladderMat);
-    rung.position.set(0, 0.10 + r * 0.25, 0);
+  // Yan montaj delikleri / yarıkları (her 20 cm'de bir)
+  const vSlotGeo = new THREE.BoxGeometry(vRailW + 0.002, 0.05, 0.015);
+  for (let sy = 0.20; sy < vLadderH; sy += 0.20) {
+    const sL = new THREE.Mesh(vSlotGeo, ladderDarkMat);
+    sL.position.set(-vLadderW / 2 + vRailW / 2, sy, 0);
+    ladderGroup.add(sL);
+    const sR = new THREE.Mesh(vSlotGeo, ladderDarkMat);
+    sR.position.set(vLadderW / 2 - vRailW / 2, sy, 0);
+    ladderGroup.add(sR);
+  }
+
+  // Yatay Delikli C-profil basamaklar (her 25 cm'de bir)
+  const rungW = vLadderW - 2 * vRailW;
+  const rungGeo = new THREE.BoxGeometry(rungW, 0.025, 0.035);
+  for (let ry = 0.25; ry < vLadderH; ry += 0.25) {
+    const rung = new THREE.Mesh(rungGeo, ladderDarkMat);
+    rung.position.set(0, ry, 0);
     ladderGroup.add(rung);
   }
+
+  // 2. Taşıyıcı Sütuna Sabitleme Konsolları ve Kuşakları (Ø400mm Kolon Arkasına Montaj)
+  const poleLocalZ = (colRadius + vLadderD / 2); // Merdivenden öne (+Z) kolona doğru mesafe (+0.235m)
+  const standoffBracketGeo = new THREE.BoxGeometry(0.12, 0.04, poleLocalZ);
+  const ringCollarGeo = new THREE.CylinderGeometry(colRadius + 0.012, colRadius + 0.012, 0.06, 32);
+
+  [0.80, 2.00, 3.20, 3.90].forEach(cy => {
+    // Merdivenden öne sütuna uzanan çelik sabitleme ayağı
+    const bracket = new THREE.Mesh(standoffBracketGeo, ladderDarkMat);
+    bracket.position.set(0, cy, poleLocalZ / 2);
+    ladderGroup.add(bracket);
+
+    // Ø400mm Kolonu saran bilezik kuşağı
+    const collarMesh = new THREE.Mesh(ringCollarGeo, steelPlateMat);
+    collarMesh.position.set(0, cy, poleLocalZ);
+    ladderGroup.add(collarMesh);
+  });
+
+  // 3. Üst Kiriş Arkası Yatay Geçiş Tavası (X = -3.00m çatı makasından X = 0.00m sütun arkasına 3m hat)
+  const bridgeTrayY = vLadderH + 0.03; // Y = 4.03m
+  const bridgeSpanX = 3.00; // 3 metre hat
+  const bridgeTrayGeo = new THREE.BoxGeometry(bridgeSpanX - 0.20, 0.006, vLadderW);
+  const bridgeTray = new THREE.Mesh(bridgeTrayGeo, ladderMat);
+  bridgeTray.position.set(-bridgeSpanX / 2 - 0.10, bridgeTrayY, 0);
+  ladderGroup.add(bridgeTray);
+
+  // Tava yan yanakları
+  const bWallGeo = new THREE.BoxGeometry(bridgeSpanX - 0.20, 0.08, 0.005);
+  [-vLadderW / 2, vLadderW / 2].forEach(wz => {
+    const wall = new THREE.Mesh(bWallGeo, ladderDarkMat);
+    wall.position.set(-bridgeSpanX / 2 - 0.10, bridgeTrayY + 0.04, wz);
+    ladderGroup.add(wall);
+  });
+
+  // Sütun tepe viraj tavası (Kiriş arkasından merdiven dikmelerine 90° dönüş tavası)
+  const turnTrayGeo = new THREE.BoxGeometry(vLadderW, 0.006, poleLocalZ);
+  const turnTray = new THREE.Mesh(turnTrayGeo, ladderMat);
+  turnTray.position.set(0, bridgeTrayY, poleLocalZ / 2);
+  ladderGroup.add(turnTray);
+
+  const turnWallGeo = new THREE.BoxGeometry(0.005, 0.08, poleLocalZ);
+  const turnWall = new THREE.Mesh(turnWallGeo, ladderDarkMat);
+  turnWall.position.set(-vLadderW / 2, bridgeTrayY + 0.04, poleLocalZ / 2);
+  ladderGroup.add(turnWall);
+
+  // Yatay boru kirişe tutturma konsol kolları
+  const hPipeClampGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.05, 20);
+  hPipeClampGeo.rotateZ(Math.PI / 2);
+  const cantArmGeo = new THREE.BoxGeometry(0.06, 0.04, poleLocalZ);
+  [-0.90, -1.80, -2.70].forEach(sx => {
+    const pClamp = new THREE.Mesh(hPipeClampGeo, ladderDarkMat);
+    pClamp.position.set(sx, 4.0, poleLocalZ);
+    ladderGroup.add(pClamp);
+
+    const cArm = new THREE.Mesh(cantArmGeo, ladderMat);
+    cArm.position.set(sx, 4.0, poleLocalZ / 2);
+    ladderGroup.add(cArm);
+  });
+
+  // 4. Alt Taban Kablo Tavası (POI arkasından X = 0.0m merdiven tabanına hat)
+  const baseTrayLen = 2.80; // X = -2.80m'den X = 0.00m'ye (Kafes arkası)
+  const baseTrayY = 0.22;
+  const baseTrayGeo = new THREE.BoxGeometry(baseTrayLen, 0.006, vLadderW);
+  const baseTray = new THREE.Mesh(baseTrayGeo, ladderMat);
+  baseTray.position.set(-baseTrayLen / 2, baseTrayY, 0);
+  ladderGroup.add(baseTray);
+
+  [-vLadderW / 2, vLadderW / 2].forEach(wz => {
+    const bWall = new THREE.Mesh(new THREE.BoxGeometry(baseTrayLen, 0.06, 0.005), ladderDarkMat);
+    bWall.position.set(-baseTrayLen / 2, baseTrayY + 0.03, wz);
+    ladderGroup.add(bWall);
+  });
+
   alan3Group.add(ladderGroup);
 
   // -------------------------------------------------------------
@@ -6282,7 +6496,7 @@ function createAlan4Structure() {
   const offsetGirderLevels = [
     { y: -0.85, h: 0.16, d: 0.10, isCenter: false },
     { y: 1.00,  h: 0.18, d: 0.10, isCenter: false }, // Korkuluk hizasındaki yatay destek
-    { y: 1.70,  h: 0.16, d: 0.10, isCenter: false, isRRURail: true }, // Korkuluk hizası (Y=1.0) ile merkez kuşak (Y=3.0) arası %35-%65 ara yatay destek / RRU Montaj Ekseni
+    { y: 1.70,  h: 0.16, d: 0.10, isCenter: false, isRRURail: false }, // Korkuluk hizası (Y=1.0) ile merkez kuşak (Y=3.0) arası %35-%65 ara yatay destek
     { y: 3.00,  h: 0.28, d: 0.12, isCenter: true  }, // Fotoğraftaki merkez çiftli çok kalın ana kuşak
     { y: 5.00,  h: 0.18, d: 0.10, isCenter: false },
     { y: 6.85,  h: 0.16, d: 0.10, isCenter: false }
@@ -6364,9 +6578,7 @@ function createAlan4Structure() {
   }
 
   alan4Group.add(sbRearGroup);
-  // 6. SCOREBOARD RRU'LARDAN POI RACK'LERE 1/2" FEEDER KABLOLAMA SİSTEMİ
-  const feederCabling = buildScoreboardRRUToPoiFeederSystem();
-  alan4Group.add(feederCabling);
+  // (Skorboard RRU'lar kaldırılıp Alternatif 2 kedi yolu bloğu senaryosuna geçildiğinden skorbord üzeri RRU feeder hatları devre dışı bırakıldı)
 
   // 6.1. ALAN 2: 2 TAŞIYICI SİLİNDİR BORU ARASI 20'LİK TAVA VE POI'DEN ANTENLERE 14'ER ADET 1/2" FEEDER SİSTEMİ (SOL VE SAĞ KANAT)
   const leftPoiAntennaFeederCabling = buildScoreboardPoiToCylinderAntennaFeederSystem('left');
@@ -7220,7 +7432,7 @@ function createAlan4Structure() {
   }
 
   // 3 Adet 60 Metrelik Çatı Taşıyıcı: Merkez (0m), Sol (-16.5m), Sağ (+16.5m) (Merkezden merkeze 16.5 metre)
-  const roofCarrierXLocs = [-16.5, 0.0, 16.5];
+  const roofCarrierXLocs = [-18.0, 0.0, 18.0];
   roofCarrierXLocs.forEach(rx => {
     const name = rx === 0 ? 'scoreboard60mRoofCarrier' : (rx < 0 ? 'scoreboard60mRoofCarrierLeft' : 'scoreboard60mRoofCarrierRight');
     const carrier = buildScoreboardRoofTruss60m(rx, name);
@@ -7281,7 +7493,7 @@ function createAlan4Structure() {
     const cwRailTopY = cwWalkY + 1.00;
     const cwRailMidY = cwWalkY + 0.50;
 
-    const cwLength = 38.0; // 3 çatı taşıyıcısını da geçer (X: -19.0m ile +19.0m arası, makaslar: -16.5m, 0m, +16.5m)
+    const cwLength = 42.0; // 3 çatı taşıyıcısını da geçer (X: -21.0m ile +21.0m arası, makaslar: -18.0m, 0m, +18.0m)
     const cwWidth = 1.00;  // 100 cm net yürüme genişliği (Makasın 110 cm iç genişliğinden tam geçer)
 
     // A) Yürüme Taban Sacı (Genişletilmiş Metal Izgara)
@@ -7463,7 +7675,7 @@ function createAlan4Structure() {
   const colRad = colDia / 2;
   const colH = 4.00; // 4 metre boy
 
-  const colXLocs = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
+  const colXLocs = [-27, -21, -15, -9, -3, 3, 9, 15, 21, 27];
   const steelPlatMat = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.35, metalness: 0.75 });
   const colMatWhite = new THREE.MeshStandardMaterial({ color: 0xebedf0, roughness: 0.40, metalness: 0.35 });
   const boltHardwareMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.4, metalness: 0.8 });
@@ -7530,12 +7742,12 @@ function createAlan4Structure() {
     concreteGroup.add(collar);
 
     // Yatay borunun direğe giriş yaptığı her iki yana bağlantı flanş halkaları
-    if (cx > -24) {
+    if (cx > -27) {
       const ringL = new THREE.Mesh(ringFlangeGeo, steelPlatMat);
       ringL.position.set(cx - (colRad + 0.02), trussEndY, baseZ);
       concreteGroup.add(ringL);
     }
-    if (cx < 24) {
+    if (cx < 27) {
       const ringR = new THREE.Mesh(ringFlangeGeo, steelPlatMat);
       ringR.position.set(cx + (colRad + 0.02), trussEndY, baseZ);
       concreteGroup.add(ringR);
@@ -7559,23 +7771,16 @@ function createAlan4Structure() {
     concreteGroup.add(trussShoe);
   });
 
+    // =========================================================================
+  // 10.4. ÇATI TAŞIYICILARI İÇİN 4 METRELİK DİKEY KABLO MERDİVENLERİ
+  // Kullanıcı İsteği:
+  // - "kablo merdivenini diregin yanına degil arkasına al"
+  // - "ortadan kaldırdıgımız kafeste bir kablo merdiveni var ya onu da bi yandaki direkten indir"
+  // 3 Adet Dikey Kablo Merdiveni:
+  //   1. Sol Uzay Çatı (X = -18.0m) -> X = -15.0m Direği Arkası
+  //   2. Sağ Uzay Çatı (X = +18.0m) -> X = +15.0m Direği Arkası
+  //   3. Merkez Uzay Çatı (X = 0.0m) -> Bi Yandaki X = +3.0m Direği Arkası
   // =========================================================================
-  // 10.4. 300MM DİKEY KABLO MERDİVENİ (4 METRELİK TAŞIYICI DİREĞİN HEMEN YANINDA)
-  // Kullanıcı İsteği: "taşıyıcı 4 metrelik diregin hemen yanına yaklaşık 300mm bir kablo merdiveni koy"
-  // - Konum: X = +0.35m (X=0 merkez direğin hemen yanı), Z = baseZ
-  // - Genişlik: 300mm (0.30m), Profil derinliği: 70mm, Boy: 4.00 metre
-  // =========================================================================
-  const cableLadderGroup = new THREE.Group();
-  cableLadderGroup.name = 'scoreboardColumn300mmCableLadder';
-
-  const cLadderW = 0.30; // 300mm genişlik
-  const cLadderH = 4.00; // 4 metre yükseklik
-  const cLadderD = 0.07; // 70mm profil derinliği
-  const cLadderX = 0.35; // X=0 direğinin hemen yanı
-  const cLadderZ = baseZ;
-
-  cableLadderGroup.position.set(cLadderX, baseGroundY, cLadderZ);
-
   const cLadderGalvMat = new THREE.MeshStandardMaterial({
     color: 0xa4b0be,
     metalness: 0.85,
@@ -7588,76 +7793,31 @@ function createAlan4Structure() {
     roughness: 0.35
   });
 
-  const cRailW = 0.035; // 35mm yan flanş
-  const cVertRailGeo = new THREE.BoxGeometry(cRailW, cLadderH, cLadderD);
-
-  // Sol ve Sağ Taşıyıcı Kolları
-  const cLeftRail = new THREE.Mesh(cVertRailGeo, cLadderGalvMat);
-  cLeftRail.position.set(-cLadderW / 2 + cRailW / 2, cLadderH / 2, 0);
-  cLeftRail.castShadow = true;
-  cableLadderGroup.add(cLeftRail);
-
-  const cRightRail = new THREE.Mesh(cVertRailGeo, cLadderGalvMat);
-  cRightRail.position.set(cLadderW / 2 - cRailW / 2, cLadderH / 2, 0);
-  cRightRail.castShadow = true;
-  cableLadderGroup.add(cRightRail);
-
-  // Yan montaj yarıkları (her 20 cm'de bir)
-  const cSlotGeo = new THREE.BoxGeometry(cRailW + 0.002, 0.05, 0.015);
-  for (let sy = 0.20; sy < cLadderH; sy += 0.20) {
-    const sL = new THREE.Mesh(cSlotGeo, cLadderDarkMat);
-    sL.position.set(-cLadderW / 2 + cRailW / 2, sy, 0);
-    cableLadderGroup.add(sL);
-    const sR = new THREE.Mesh(cSlotGeo, cLadderDarkMat);
-    sR.position.set(cLadderW / 2 - cRailW / 2, sy, 0);
-    cableLadderGroup.add(sR);
-  }
-
-  // Yatay Kablo Bağlantı Basamakları (Delikli C-profil basamaklar, her 25 cm'de bir)
-  const cRungW = cLadderW - 2 * cRailW;
-  const cRungGeo = new THREE.BoxGeometry(cRungW, 0.025, 0.035);
-  for (let ry = 0.25; ry < cLadderH; ry += 0.25) {
-    const rung = new THREE.Mesh(cRungGeo, cLadderDarkMat);
-    rung.position.set(0, ry, 0);
-    cableLadderGroup.add(rung);
-  }
-
-  // Direğe Bağlantı Konsolları (Standoff Clamps - Ø400mm kolona sabitleme)
-  const colClampGeo = new THREE.BoxGeometry(0.20, 0.04, 0.06);
-  [0.60, 1.80, 3.00, 3.80].forEach(cy => {
-    const clampMesh = new THREE.Mesh(colClampGeo, cLadderDarkMat);
-    clampMesh.position.set(-cLadderW / 2 - 0.08, cy, 0);
-    cableLadderGroup.add(clampMesh);
-  });
-
-  // Merdiven Boyunca Yükselen 7/8" Dikey Feeder Kablo Demetleri (6 Adet Feeder)
   const fCableMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.85, metalness: 0.1 });
-  const fCableGeo = new THREE.CylinderGeometry(0.014, 0.014, cLadderH, 12);
-  for (let fi = 0; fi < 6; fi++) {
-    const fx = -cRungW / 2 + 0.03 + fi * 0.035;
-    const fMesh = new THREE.Mesh(fCableGeo, fCableMat);
-    fMesh.position.set(fx, cLadderH / 2, 0.022);
-    cableLadderGroup.add(fMesh);
-  }
 
-  concreteGroup.add(cableLadderGroup);
-
-  // 10.4.B. SOL VE SAĞ ÇATI TAŞIYICILARI İÇİN 4 METRELİK DİKEY KABLO MERDİVENLERİ
-  // Kullanıcı İsteği: "sag ve soldaki taşıyıcılardan beton kaideye birer tane kablo merdiveni ... koy"
-  function buildScoreboardCarrierVerticalLadder(ladderX, ladderName) {
+  function buildScoreboardCarrierVerticalLadder(poleX, trussX, ladderName) {
     const vLadderGroup = new THREE.Group();
     vLadderGroup.name = ladderName;
 
-    const vLadderW = 0.40; // 400mm genişlik (50cm tavaya uygun geniş merdiven)
-    const vLadderH = 4.00; // 4 metre yükseklik (Header kirişten beton taban kotuna)
+    const vLadderW = 0.40; // 400mm genişlik
+    const vLadderH = 4.00; // 4 metre yükseklik
     const vLadderD = 0.07; // 70mm derinlik
     const vRailW = 0.035;
 
-    vLadderGroup.position.set(ladderX, baseGroundY, baseZ);
+    // Kullanıcı Kuralı:
+    // - "kablo merdivenini diregin yanına degil arkasına al"
+    // - "ortadan kaldırdıgımız kafeste bir kablo merdiveni var ya onu da bi yandaki direkten indir"
+    const ladderX = poleX;
+    const ladderZ = baseZ + colRad + vLadderD / 2; // Arka cephe montajı
+    const bridgeDx = trussX - ladderX; // Truss'tan direğe olan X mesafesi (3.00m)
+    const bridgeLen = Math.abs(bridgeDx);
+    const isTrussToLeft = (bridgeDx < 0);
+
+    vLadderGroup.position.set(ladderX, baseGroundY, ladderZ);
 
     const vRailGeo = new THREE.BoxGeometry(vRailW, vLadderH, vLadderD);
 
-    // Sol ve Sağ Taşıyıcı Kolları
+    // 1. DİKEY MERDİVEN RAYLARI (Direk Arka Yüzeyinde)
     const vLeft = new THREE.Mesh(vRailGeo, cLadderGalvMat);
     vLeft.position.set(-vLadderW / 2 + vRailW / 2, vLadderH / 2, 0);
     vLeft.castShadow = true;
@@ -7668,7 +7828,7 @@ function createAlan4Structure() {
     vRight.castShadow = true;
     vLadderGroup.add(vRight);
 
-    // Yan montaj yarıkları (her 20 cm'de bir)
+    // Yan montaj delikleri / yarıkları (her 20 cm'de bir)
     const vSlotGeo = new THREE.BoxGeometry(vRailW + 0.002, 0.05, 0.015);
     for (let sy = 0.20; sy < vLadderH; sy += 0.20) {
       const sL = new THREE.Mesh(vSlotGeo, cLadderDarkMat);
@@ -7688,61 +7848,107 @@ function createAlan4Structure() {
       vLadderGroup.add(rung);
     }
 
-    // Header kirişe ve betona sabitleme standoff kelepçeleri
-    const clampGeo = new THREE.BoxGeometry(0.10, 0.04, 0.10);
-    [0.60, 1.80, 3.00, 3.85].forEach(cy => {
-      [-vLadderW / 2 + 0.02, vLadderW / 2 - 0.02].forEach(cx => {
-        const cl = new THREE.Mesh(clampGeo, cLadderDarkMat);
-        cl.position.set(cx, cy, -0.05);
-        vLadderGroup.add(cl);
-      });
+    // 2. DİREĞİN ARKA YÜZÜNE SABİTLEME KELEPÇELERİ (Standoff Clamps & Ring Collars)
+    // Yerel koordinatlarda direk merkezi: X = 0, Z = -(colRad + vLadderD/2) = -0.235m
+    const poleLocalZ = -(colRad + vLadderD / 2);
+    const bracketGeo = new THREE.BoxGeometry(0.12, 0.04, Math.abs(poleLocalZ));
+    const ringCollarGeo = new THREE.CylinderGeometry(colRad + 0.012, colRad + 0.012, 0.06, 32);
+    [0.80, 2.00, 3.20, 3.90].forEach(cy => {
+      // Merdivenden öne (direğin arka yüzeyine) uzanan çelik sabitleme ayağı
+      const bracket = new THREE.Mesh(bracketGeo, cLadderDarkMat);
+      bracket.position.set(0, cy, poleLocalZ / 2);
+      vLadderGroup.add(bracket);
+
+      // Ø400mm Direği tam saran T-bilezik kuşağı
+      const collarMesh = new THREE.Mesh(ringCollarGeo, steelPlatMat);
+      collarMesh.position.set(0, cy, poleLocalZ);
+      vLadderGroup.add(collarMesh);
     });
 
-    // Merdivenden yukarı uzanan 6 adet 7/8" Feeder Kablosu (Tavaya bağlanan hat)
-    for (let fi = 0; fi < 6; fi++) {
-      const fx = -vRungW / 2 + 0.035 + fi * 0.052;
-      const fMesh = new THREE.Mesh(fCableGeo, fCableMat);
-      fMesh.position.set(fx, vLadderH / 2, 0.022);
-      vLadderGroup.add(fMesh);
+    // 3. UZAY ÇATIDAN DİREK ARKA MERDİVENİNE YATAY TAVA GEÇİŞİ (Header Kiriş Üzeri)
+    if (bridgeLen > 0.10) {
+      const bridgeTrayY = vLadderH + 0.03;
+      const trayLen = bridgeLen - 0.20;
+      const bridgeTrayGeo = new THREE.BoxGeometry(trayLen, 0.005, vLadderW);
+      const bridgeTray = new THREE.Mesh(bridgeTrayGeo, cLadderGalvMat);
+      bridgeTray.position.set(bridgeDx / 2 + (isTrussToLeft ? 0.10 : -0.10), bridgeTrayY, poleLocalZ);
+      vLadderGroup.add(bridgeTray);
+
+      // Tava yan yanakları
+      const bWallGeo = new THREE.BoxGeometry(trayLen, 0.08, 0.005);
+      [-vLadderW / 2, vLadderW / 2].forEach(wz => {
+        const wall = new THREE.Mesh(bWallGeo, cLadderDarkMat);
+        wall.position.set(bridgeDx / 2 + (isTrussToLeft ? 0.10 : -0.10), bridgeTrayY + 0.04, poleLocalZ + wz);
+        vLadderGroup.add(wall);
+      });
+
+      // Direk tepe viraj tavası (Kiriş ekseninden direğin arkasına 90 derece L-dönüş köprüsü)
+      const turnTrayGeo = new THREE.BoxGeometry(vLadderW, 0.005, Math.abs(poleLocalZ));
+      const turnTray = new THREE.Mesh(turnTrayGeo, cLadderGalvMat);
+      turnTray.position.set(0, bridgeTrayY, poleLocalZ / 2);
+      vLadderGroup.add(turnTray);
+
+      // Viraj tavası dış yan yanağı
+      const turnWallGeo = new THREE.BoxGeometry(0.005, 0.08, Math.abs(poleLocalZ));
+      const turnWall = new THREE.Mesh(turnWallGeo, cLadderDarkMat);
+      turnWall.position.set(isTrussToLeft ? -vLadderW / 2 : vLadderW / 2, bridgeTrayY + 0.04, poleLocalZ / 2);
+      vLadderGroup.add(turnWall);
     }
 
-    // Tepe geçiş dirseği (Tava iniş flanşı)
-    const topElbowGeo = new THREE.CylinderGeometry(0.04, 0.04, vLadderW, 16);
-    topElbowGeo.rotateZ(Math.PI / 2);
-    const topElbow = new THREE.Mesh(topElbowGeo, steelPlatMat);
-    topElbow.position.set(0, vLadderH + 0.02, -0.035);
-    vLadderGroup.add(topElbow);
+    // 4. UZAY ÇATIDAN DİREK ARKASINA VE MERDİVENE İNEN 6 ADET 7/8" FEEDER KABLOSU
+    for (let fi = 0; fi < 6; fi++) {
+      const fOffset = -vRungW / 2 + 0.035 + fi * 0.052;
+      const bridgeTrayY = vLadderH + 0.03;
+      const startPoint = new THREE.Vector3(bridgeDx, bridgeTrayY + 0.02, poleLocalZ + fOffset);
+      const preTurn = new THREE.Vector3(isTrussToLeft ? -0.28 : 0.28, bridgeTrayY + 0.02, poleLocalZ + fOffset);
+      const midTurn = new THREE.Vector3(fOffset * 0.7, bridgeTrayY + 0.02, -0.05);
+      const postTurn = new THREE.Vector3(fOffset * 0.7, vLadderH - 0.15, 0.022);
+      const endPoint = new THREE.Vector3(fOffset * 0.7, 0.05, 0.022);
+
+      const cableCurve = new THREE.CurvePath();
+      // 1. Yatay kiriş tavası boyunca düz hat (3 metre)
+      cableCurve.add(new THREE.LineCurve3(startPoint, preTurn));
+      // 2. Direğin arkasına doğru 90 derece yatay dönüş
+      cableCurve.add(new THREE.QuadraticBezierCurve3(
+        preTurn,
+        new THREE.Vector3(isTrussToLeft ? -0.05 : 0.05, bridgeTrayY + 0.02, poleLocalZ + fOffset),
+        midTurn
+      ));
+      // 3. Merdiven rungs üzerine dikey iniş kavisi (90 derece düşey dirsek)
+      cableCurve.add(new THREE.QuadraticBezierCurve3(
+        midTurn,
+        new THREE.Vector3(fOffset * 0.7, bridgeTrayY + 0.02, 0.022),
+        postTurn
+      ));
+      // 4. Merdiven boyunca dikey iniş (4 metre)
+      cableCurve.add(new THREE.LineCurve3(postTurn, endPoint));
+
+      const cGeo = new THREE.TubeGeometry(cableCurve, 40, 0.014, 8, false);
+      const cMesh = new THREE.Mesh(cGeo, fCableMat);
+      cMesh.castShadow = true;
+      vLadderGroup.add(cMesh);
+    }
 
     return vLadderGroup;
   }
 
-  // Sol Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = -16.5m mesnet yanı: -16.85m)
-  const leftCarrierLadder = buildScoreboardCarrierVerticalLadder(-16.85, 'scoreboardLeftCarrierCableLadder');
+  // 1. Sol Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = -18.0m uzay çatıdan X = -15.0m direğinin ARKA yüzeyine)
+  const leftCarrierLadder = buildScoreboardCarrierVerticalLadder(-15.00, -18.00, 'scoreboardLeftCarrierCableLadder');
   concreteGroup.add(leftCarrierLadder);
 
-  // Sağ Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = +16.5m mesnet yanı: +16.85m)
-  const rightCarrierLadder = buildScoreboardCarrierVerticalLadder(16.85, 'scoreboardRightCarrierCableLadder');
+  // 2. Sağ Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = +18.0m uzay çatıdan X = +15.0m direğinin ARKA yüzeyine)
+  const rightCarrierLadder = buildScoreboardCarrierVerticalLadder(15.00, 18.00, 'scoreboardRightCarrierCableLadder');
   concreteGroup.add(rightCarrierLadder);
 
+  // 3. Merkez Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = 0.0m merkez uzay çatıdan bi yandaki X = +3.0m direğinin ARKA yüzeyine)
+  // Kullanıcı İsteği: "ortadan kaldırdıgımız kafeste bir kablo merdiveni var ya onu da bi yandaki direkten indir"
+  const centerCarrierLadder = buildScoreboardCarrierVerticalLadder(3.00, 0.00, 'scoreboardCenterCarrierCableLadder');
+  concreteGroup.add(centerCarrierLadder);
+
   // =========================================================================
-  // 10.5. KABLO MERDİVENİ VE TAŞIYICI DİREĞİ KAPSAYAN YÜKSEK CAMLI VE KAYAR KAPILI İZOLE ALAN
-  // Kullanıcı İsteği:
-  // - "3 dolabı kaldır"
-  // - "kapaklı ce yükse camlı izole alanı ise kablo merdiveni ve yanındaki diregi de kapsayacak şekilde konumlandır"
-  // - "kapakların açılır kapanır oldugundan emin ol. Kapaklar 150cm olsun yanlarında ise 20 cmlık sabit alan olsun"
-  // - "beton kaidenin uzak tarafındaki 100 100 cm olan camları da kaldır"
-  // Boyutlar:
-  // - 2 Adet 150 cm kayar kapı = 3.00 m açıklık (Merkez: X = 0.0m)
-  // - Yanlarda 20 cm sabit alanlar: Sol X = [-1.70, -1.50], Sağ X = [+1.50, +1.70]
-  // - Toplam izole alan genişliği: 3.40 m (X = [-1.70m, +1.70m])
-  // - İçinde kalan elemanlar: 4 metrelik silindir direk (X=0) ve 300mm kablo merdiveni (X=0.35m)
+  // 10.5. KAFES MALZEMELERİ VE DOKULARI (ORTA KAFES KALDIRILDI)
+  // Kullanıcı İsteği: "ortada olan kafesi komple kaldır"
   // =========================================================================
-  const fixedWidth = 0.40; // 40 cm sabit yan alanlar (Kullanıcı İsteği)
-  const doorWidth = 1.50;  // 150 cm kayar kapılar (Kullanıcı İsteği)
-  const encWidth = 2 * fixedWidth + 2 * doorWidth; // 3.80m toplam genişlik
-  const encMinX = -0.50;   // Sol sınır: Direğin (X=0) ve kaidesinin (-0.35m) 15cm solundan başlar (direk ve kablo merdiveni içeride)
-  const encMaxX = encMinX + encWidth; // +3.30m (Diğer tarafa -sağa- alındı, 3 dolap için 2.80m ferah montaj alanı)
-  const encCenterX = (encMinX + encMaxX) / 2; // +1.40m
   const encFrontZ = baseZ - 0.95;
   const encBackZ = baseZ + 0.95;
   const encGlassH = 1.70;
@@ -7770,234 +7976,26 @@ function createAlan4Structure() {
   const doorFrameMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.3 });
   const doorHandleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.15 });
 
-  // A) Üst ve Alt Kayar Kapı Rayları (3.50m Boyunda)
-  const trackSpan = encWidth + 0.10;
-  const topTrackGeo = new THREE.BoxGeometry(trackSpan, 0.06, 0.10);
-  const topTrack = new THREE.Mesh(topTrackGeo, doorTrackMat);
-  topTrack.position.set(encCenterX, baseGroundY + encGlassH + 0.03, encFrontZ);
-  topTrack.castShadow = true;
-  concreteGroup.add(topTrack);
-
-  const floorTrackGeo = new THREE.BoxGeometry(trackSpan, 0.015, 0.08);
-  const floorTrack = new THREE.Mesh(floorTrackGeo, doorTrackMat);
-  floorTrack.position.set(encCenterX, baseGroundY + 0.0075, encFrontZ);
-  floorTrack.receiveShadow = true;
-  concreteGroup.add(floorTrack);
-
-  // B) 20 cm Sabit Yan Paneller (Sol: [-1.70, -1.50], Sağ: [+1.50, +1.70])
-  const fixedPostGeo = new THREE.BoxGeometry(postWidth, encPostH, postDepth);
-  const fixedPanelW = Math.max(0.04, fixedWidth - postWidth);
-  const fixedPerforatedMat = createPerforatedMat(fixedPanelW, encGlassH);
-  const fixedPanelGeo = new THREE.PlaneGeometry(fixedPanelW, encGlassH);
-  const fixedRailGeo = new THREE.BoxGeometry(fixedPanelW, 0.04, 0.03);
-
-  // Sol Sabit Panel: X = [-1.70, -1.50]
-  const fixedLeftPost1 = new THREE.Mesh(fixedPostGeo, postMat);
-  fixedLeftPost1.position.set(encMinX, baseGroundY + encPostH / 2, encFrontZ);
-  concreteGroup.add(fixedLeftPost1);
-
-  const fixedLeftPost2 = new THREE.Mesh(fixedPostGeo, postMat);
-  fixedLeftPost2.position.set(encMinX + fixedWidth, baseGroundY + encPostH / 2, encFrontZ);
-  concreteGroup.add(fixedLeftPost2);
-
-  const fixedLeftCenterX = encMinX + fixedWidth / 2; // -1.60m
-  const fixedLeftPanel = new THREE.Mesh(fixedPanelGeo, fixedPerforatedMat);
-  fixedLeftPanel.position.set(fixedLeftCenterX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ);
-  concreteGroup.add(fixedLeftPanel);
-
-  [encGlassH + 0.02 - 0.02, encGlassH / 2 + 0.02, 0.02 + 0.02].forEach(dy => {
-    const rail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
-    rail.position.set(fixedLeftCenterX, baseGroundY + dy, encFrontZ);
-    concreteGroup.add(rail);
-  });
-
-  // Sağ Sabit Panel: X = [+1.50, +1.70]
-  const fixedRightPost1 = new THREE.Mesh(fixedPostGeo, postMat);
-  fixedRightPost1.position.set(encMaxX - fixedWidth, baseGroundY + encPostH / 2, encFrontZ);
-  concreteGroup.add(fixedRightPost1);
-
-  const fixedRightPost2 = new THREE.Mesh(fixedPostGeo, postMat);
-  fixedRightPost2.position.set(encMaxX, baseGroundY + encPostH / 2, encFrontZ);
-  concreteGroup.add(fixedRightPost2);
-
-  const fixedRightCenterX = encMaxX - fixedWidth / 2; // +1.60m
-  const fixedRightPanel = new THREE.Mesh(fixedPanelGeo, fixedPerforatedMat);
-  fixedRightPanel.position.set(fixedRightCenterX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ);
-  concreteGroup.add(fixedRightPanel);
-
-  [encGlassH + 0.02 - 0.02, encGlassH / 2 + 0.02, 0.02 + 0.02].forEach(dy => {
-    const rail = new THREE.Mesh(fixedRailGeo, doorFrameMat);
-    rail.position.set(fixedRightCenterX, baseGroundY + dy, encFrontZ);
-    concreteGroup.add(rail);
-  });
-
-  // C) 2 Adet 150 cm Açılır Kapanır Kademeli Kayar Kapı (Net açıklık: 3.00m)
-  // Kullanıcı İsteği: "kapakların açılır kapanır oldugundan emin ol. Kapaklar 150cm olsun"
-  const doorHeight = encGlassH - 0.06;
-  const doorPanelW = doorWidth - 0.06;
-  const doorPanelH = doorHeight - 0.06;
-  const doorPerforatedMat = createPerforatedMat(doorPanelW, doorPanelH);
-  const doorPanelGeo = new THREE.PlaneGeometry(doorPanelW, doorPanelH);
-
-  // Kapalıyken Sol Kapı: [-0.10, +1.40] (merkez X = +0.65m)
-  // Kapalıyken Sağ Kapı: [+1.40, +2.90] (merkez X = +2.15m)
-  // Açıldığında: Sol kapı -0.20m'ye, Sağ kapı +3.00m'ye kayarak tam açık 1.70m net geçiş sağlar
-  const door0ClosedX = encCenterX - doorWidth / 2; // +0.65m
-  const door0OpenX = encMinX + 0.30;              // -0.20m (Sola kayma)
-  const door1ClosedX = encCenterX + doorWidth / 2; // +2.15m
-  const door1OpenX = encMaxX - 0.30;              // +3.00m (Sağa kayma)
-
-  const doorConfigs = [
-    { doorIndex: 0, closedX: door0ClosedX, openX: door0OpenX, trackZ: encFrontZ + 0.025, isLeft: true },
-    { doorIndex: 1, closedX: door1ClosedX, openX: door1OpenX, trackZ: encFrontZ - 0.025, isLeft: false }
-  ];
-
-  doorConfigs.forEach(cfg => {
-    const doorGroup = new THREE.Group();
-    doorGroup.position.set(cfg.closedX, baseGroundY, cfg.trackZ);
-
-    const doorPanel = new THREE.Mesh(doorPanelGeo, doorPerforatedMat);
-    doorPanel.position.set(0, 0.03 + doorHeight / 2, 0);
-    doorGroup.add(doorPanel);
-
-    const horizFrameGeo = new THREE.BoxGeometry(doorWidth, 0.04, 0.025);
-    const topFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
-    topFrame.position.set(0, 0.03 + doorHeight - 0.02, 0);
-    doorGroup.add(topFrame);
-
-    const botFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
-    botFrame.position.set(0, 0.03 + 0.02, 0);
-    doorGroup.add(botFrame);
-
-    const midFrame = new THREE.Mesh(horizFrameGeo, doorFrameMat);
-    midFrame.position.set(0, 0.03 + doorHeight / 2, 0);
-    doorGroup.add(midFrame);
-
-    const vertFrameGeo = new THREE.BoxGeometry(0.04, doorHeight, 0.025);
-    const leftFrame = new THREE.Mesh(vertFrameGeo, doorFrameMat);
-    leftFrame.position.set(-doorWidth / 2 + 0.02, 0.03 + doorHeight / 2, 0);
-    doorGroup.add(leftFrame);
-
-    const rightFrame = new THREE.Mesh(vertFrameGeo, doorFrameMat);
-    rightFrame.position.set(doorWidth / 2 - 0.02, 0.03 + doorHeight / 2, 0);
-    doorGroup.add(rightFrame);
-
-    const hangerGeo = new THREE.BoxGeometry(0.08, 0.05, 0.035);
-    const hanger1 = new THREE.Mesh(hangerGeo, doorTrackMat);
-    hanger1.position.set(-doorWidth / 3, 0.03 + doorHeight + 0.015, 0);
-    doorGroup.add(hanger1);
-
-    const hanger2 = new THREE.Mesh(hangerGeo, doorTrackMat);
-    hanger2.position.set(doorWidth / 3, 0.03 + doorHeight + 0.015, 0);
-    doorGroup.add(hanger2);
-
-    // Kulp: Orta birleşim çizgisine yakın (Sol kapıda sağ kenarda, Sağ kapıda sol kenarda)
-    const handleGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.60, 16);
-    const handle = new THREE.Mesh(handleGeo, doorHandleMat);
-    const handleX = cfg.isLeft ? (doorWidth / 2 - 0.10) : (-doorWidth / 2 + 0.10);
-    handle.position.set(handleX, 0.90, 0.025);
-    doorGroup.add(handle);
-
-    const handleMountGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.035, 12);
-    handleMountGeo.rotateX(Math.PI / 2);
-    const hMount1 = new THREE.Mesh(handleMountGeo, doorHandleMat);
-    hMount1.position.set(handleX, 0.90 + 0.25, 0.012);
-    doorGroup.add(hMount1);
-    const hMount2 = new THREE.Mesh(handleMountGeo, doorHandleMat);
-    hMount2.position.set(handleX, 0.90 - 0.25, 0.012);
-    doorGroup.add(hMount2);
-
-    // Tam boyutlu görünmez tıklama kutusu (her açıdan ve delikli doku üstünden kusursuz tıklama algılama)
-    const clickHitBoxGeo = new THREE.BoxGeometry(doorWidth, doorHeight, 0.08);
-    const clickHitBoxMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
-    const clickHitBox = new THREE.Mesh(clickHitBoxGeo, clickHitBoxMat);
-    clickHitBox.position.set(0, 0.03 + doorHeight / 2, 0);
-    doorGroup.add(clickHitBox);
-
-    doorGroup.userData.isSlidingDoor = true;
-    doorGroup.userData.doorIndex = cfg.doorIndex;
-    doorGroup.userData.closedX = cfg.closedX;
-    doorGroup.userData.openX = cfg.openX;
-    doorGroup.userData.targetX = cfg.closedX;
-    doorGroup.userData.isOpen = false;
-
-    concreteGroup.add(doorGroup);
-    alan4SlidingDoors.push(doorGroup);
-  });
-
-  // D) 170cm Yüksek Camlı Yan ve Arka Cepheler (İzole Alan Sınırları)
-  const sideDepth = Math.abs(encBackZ - encFrontZ); // 1.90m
-  const sideMidZ = (encFrontZ + encBackZ) / 2;
-  const sidePostGeo = new THREE.BoxGeometry(postDepth, encPostH, postWidth);
-
-  // Sol Yan Yüksek Cam (X = -1.70m)
-  const leftMidPost = new THREE.Mesh(sidePostGeo, postMat);
-  leftMidPost.position.set(encMinX, baseGroundY + encPostH / 2, sideMidZ);
-  concreteGroup.add(leftMidPost);
-
-  const leftBackPost = new THREE.Mesh(sidePostGeo, postMat);
-  leftBackPost.position.set(encMinX, baseGroundY + encPostH / 2, encBackZ);
-  concreteGroup.add(leftBackPost);
-
-  const sidePanelDepth = (sideDepth / 2) - postWidth;
-  const leftGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  leftGlass1.position.set(encMinX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ + sideDepth / 4);
-  concreteGroup.add(leftGlass1);
-
-  const leftGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  leftGlass2.position.set(encMinX, baseGroundY + encGlassH / 2 + 0.02, encBackZ - sideDepth / 4);
-  concreteGroup.add(leftGlass2);
-
-  // Sağ Yan Yüksek Cam (X = +1.70m)
-  const rightMidPost = new THREE.Mesh(sidePostGeo, postMat);
-  rightMidPost.position.set(encMaxX, baseGroundY + encPostH / 2, sideMidZ);
-  concreteGroup.add(rightMidPost);
-
-  const rightBackPost = new THREE.Mesh(sidePostGeo, postMat);
-  rightBackPost.position.set(encMaxX, baseGroundY + encPostH / 2, encBackZ);
-  concreteGroup.add(rightBackPost);
-
-  const rightGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  rightGlass1.position.set(encMaxX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ + sideDepth / 4);
-  concreteGroup.add(rightGlass1);
-
-  const rightGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  rightGlass2.position.set(encMaxX, baseGroundY + encGlassH / 2 + 0.02, encBackZ - sideDepth / 4);
-  concreteGroup.add(rightGlass2);
-
-  // Arka Yüksek Cam Cephe (Z = baseZ + 0.95m, X = [-1.70m, +1.70m], L = 3.40m)
-  const backCenterPost = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
-  backCenterPost.position.set(encCenterX, baseGroundY + encPostH / 2, encBackZ);
-  concreteGroup.add(backCenterPost);
-
-  const backPanelW = (encWidth / 2) - postWidth;
-  const backGlass1 = new THREE.Mesh(new THREE.BoxGeometry(backPanelW, encGlassH, glassThickness), glassMat);
-  backGlass1.position.set(encMinX + encWidth / 4, baseGroundY + encGlassH / 2 + 0.02, encBackZ);
-  concreteGroup.add(backGlass1);
-
-  const backGlass2 = new THREE.Mesh(new THREE.BoxGeometry(backPanelW, encGlassH, glassThickness), glassMat);
-  backGlass2.position.set(encMaxX - encWidth / 4, baseGroundY + encGlassH / 2 + 0.02, encBackZ);
-  concreteGroup.add(backGlass2);
-
   // =========================================================================
-  // 10.5.B. SOL VE SAĞ KEDİ YOLLARI / ÇATI TAŞIYICILARI İÇİN YÜKSEK CAMLI VE
-  //         KAYAR KAPILI İZOLE ALANLAR & TAM EKİPMAN SETİ (3 DOLAP + RRU SETİ + POI SETİ)
+  // 10.5.B. SOL VE SAĞ EKİPMAN İSTASYONLARI İÇİN İZOLE KAFESLER (11.20m GENİŞLİK)
   // Kullanıcı İsteği:
-  // "sağ ve soldaki kedi yollarının beton kaideye denk gelen yerlerinde Alan-1 meton kaidede kullandıgımız
-  //  doplaplardan 3 tane rru setinin tamamını ve poı setinini tamamını yerleştir. Bunları kablo merdiveni
-  //  ve dikey taşıyıcı ile kesişmeyecek şekilde konumlandır ve etrafını yüksek cam ve kapanır kapılarla
-  //  çevrele alan-1 den kopya çekebilirsin :)"
+  // - "mümkün olan kolonları kafes dışına al."
+  //   -> Kolon -21m, Kolon -9m, Kolon +9m, Kolon +21m kafes dışına alındı!
+  //   -> Yalnızca ekipmanların ve çatı kablo inişinin ortasında kalan Kolon +/-15m kafes içinde.
+  // - "Ön cephe yine kayar kapı arkalar ve yanlar cam oalcak şekilde. Kapıların kayma hareketlerini unutma"
+  // - Sol Alan: X = -20.60m ile -9.40m arası (L = 11.20m, 8 Kapaklı 2'şerli Teleskopik Kayar Kapı)
+  // - Sağ Alan: X = +9.40m ile +20.60m arası (L = 11.20m, 8 Kapaklı 2'şerli Teleskopik Kayar Kapı)
   // =========================================================================
   function buildSideStationEnclosureWithEquipment(minX, maxX, sideName, isLeftSide) {
-    const sEncWidth = maxX - minX; // 9.40m (Kullanıcı İsteği: sola ve sağa doğru 1'er metre daha açıldı)
-    const sEncCenterX = (minX + maxX) / 2; // Sol: -16.80m, Sağ: +16.80m
-    const numDoors = 6; // Kullanıcı İsteği: "toplam 6 kapak olsun ve 2 2 gruplandır kaymaları için"
-    const sDoorW = 1.50; // 150 cm kayar kapılar (6 x 1.50 = 9.00m toplam kapı hattı)
+    const sEncWidth = maxX - minX; // 11.20m
+    const sEncCenterX = (minX + maxX) / 2; // Sol: -15.00m, Sağ: +15.00m
+    const fixedEndW = 0.20; // 20 cm sabit yan bitiş panelleri (2 x 0.20m)
+    const numDoors = 8; // 8 adet kademeli kayar kapı (4 çift)
+    const sDoorW = (sEncWidth - 2 * fixedEndW) / numDoors; // 1.35m net kapı genişliği
     const sDoorH = encGlassH - 0.06; // 1.64m
-    const fixedEndW = 0.20; // 20 cm sabit yan bitiş panelleri (2 x 0.20 + 9.00 = 9.40m)
     const doorStartX = minX + fixedEndW; // Kapı dizilim başlangıç X
 
-    // 1. Üst ve Alt Kayar Kapı Kılavuz Rayları (9.50m boyunda)
+    // 1. Üst ve Alt Kayar Kapı Kılavuz Rayları (11.30m boyunda)
     const sTrackSpan = sEncWidth + 0.10;
     const sTopTrackGeo = new THREE.BoxGeometry(sTrackSpan, 0.06, 0.10);
     const sTopTrack = new THREE.Mesh(sTopTrackGeo, doorTrackMat);
@@ -8039,9 +8037,8 @@ function createAlan4Structure() {
       });
     });
 
-    // 3. 6 Adet 150 cm'lik Kademeli Kayar Kapı (Teleskopik / Çift Raylı 2'şerli Baypas Eşleşmesi - Alan 1 Standartı)
-    // Kullanıcı İsteği: "toplam 6 kapak olsun ve 2 2 gruplandır kaymaları için"
-    // İkili Gruplar: (0-1), (2-3), (4-5)
+    // 3. 8 Adet 135 cm'lik Kademeli Kayar Kapı (Teleskopik / Çift Raylı 2'şerli Baypas Eşleşmesi - 4 Çift)
+    // İkili Gruplar: (0-1), (2-3), (4-5), (6-7)
     const sDoorPanelW = sDoorW - 0.06;
     const sDoorPanelH = sDoorH - 0.06;
     const sDoorPerforatedMat = createPerforatedMat(sDoorPanelW, sDoorPanelH);
@@ -8151,9 +8148,9 @@ function createAlan4Structure() {
       concreteGroup.add(g2);
     });
 
-    // 5. Arka Yüksek Cam Cephe (Z = encBackZ, 9.40m Açıklık, 6 Cam Panel)
-    const backPanelCount = 6;
-    const backSpacing = sEncWidth / backPanelCount; // ~1.567m
+    // 5. Arka Yüksek Cam Cephe (Z = encBackZ, 11.20m Açıklık, 8 Cam Panel)
+    const backPanelCount = numDoors; // 8 adet cam panel
+    const backSpacing = sEncWidth / backPanelCount; // 1.40m
     for (let bi = 1; bi < backPanelCount; bi++) {
       const bPostX = minX + bi * backSpacing;
       const bPost = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
@@ -8168,27 +8165,24 @@ function createAlan4Structure() {
       bGlass.position.set(bMidX, baseGroundY + encGlassH / 2 + 0.02, encBackZ);
       concreteGroup.add(bGlass);
     }
-
-    // 6. Ekipmanlar (3 Dolap, 3 POI Rack, 11 Borulu RRU Blok) kullanıcı tarafından serbestçe seçilip taşınabilmesi için
-    // statik beton grubuna değil, bağımsız interaktif model olarak sahneye (state.alan4Platforms) yüklenir.
   }
 
-  // Sol İzole Alanı ve Ekipmanlarını Oluştur (X = -21.50m ile -12.10m arası, 6 Kapaklı 2'şerli Kayar Kapı, 3 POI Rack)
-  buildSideStationEnclosureWithEquipment(-21.50, -12.10, 'left', true);
+  // Sol İzole Alanı (X = -20.60m ile -9.40m arası, Kolon -21m ve Kolon -9m DIŞARIDA)
+  buildSideStationEnclosureWithEquipment(-20.60, -9.40, 'left', true);
 
-  // Sağ İzole Alanı ve Ekipmanlarını Oluştur (X = +12.10m ile +21.50m arası, 6 Kapaklı 2'şerli Kayar Kapı, 3 POI Rack)
-  buildSideStationEnclosureWithEquipment(12.10, 21.50, 'right', false);
+  // Sağ İzole Alanı (X = +9.40m ile +20.60m arası, Kolon +9m ve Kolon +21m DIŞARIDA)
+  buildSideStationEnclosureWithEquipment(9.40, 20.60, 'right', false);
 
   // =========================================================================
   // 10.6. STANDART ÖN VE YAN CAM KORUMA KORKULUKLARI (54M BETON KAİDE BOYUNCA)
-  // Üç izole alan (Sol: [-21.50, -12.10], Merkez: [-0.50, +3.30], Sağ: [+12.10, +21.50])
-  // haricindeki 4 açık aralıkta 1.10m standart cam korkuluklar yer alır.
+  // Ortadaki kafes tamamen kaldırıldı; merkezde 18.80m kesintisiz açık yürüme yolu ve
+  // standart 1.10m cam korkuluk yer alır.
+  // Kolon -27, -21, -9, -3, 0, +3, +9, +21, +27 olmak üzere 8 kolon kafes dışındadır.
   // =========================================================================
   const frontRailingSpans = [
-    { startX: -floorLength / 2, endX: -21.50 }, // [-27.00, -21.50] (L = 5.50m)
-    { startX: -12.10, endX: encMinX },          // [-12.10, -0.50]  (L = 11.60m)
-    { startX: encMaxX, endX: 12.10 },           // [+3.30, +12.10]  (L = 8.80m)
-    { startX: 21.50, endX: floorLength / 2 }    // [+21.50, +27.00] (L = 5.50m)
+    { startX: -floorLength / 2, endX: -20.60 }, // [-27.00, -20.60] (L = 6.40m, Kolon -27 ve Kolon -21 açıkta)
+    { startX: -9.40, endX: 9.40 },              // [-9.40, +9.40]   (L = 18.80m, Kolon -9, -3, 0, +3, +9 açık merkez yürüme yolu)
+    { startX: 20.60, endX: floorLength / 2 }    // [+20.60, +27.00] (L = 6.40m, Kolon +21 ve Kolon +27 açıkta)
   ];
 
   frontRailingSpans.forEach(span => {
@@ -12394,93 +12388,18 @@ function spawnAlan2Kediyolu42UKompleksBlok() {
 }
 
 // =========================================================================
-// ALAN 2: ALTERNATİF-2 RRU DAĞILIMI (TABLALI 4 BORU • 7 RRU KÜMESİ)
-// Mevcut alt kedi yoluna altta bir tabla ve üzerine 4 adet flanşlı boru
-// ve 7 RRU'nun dizildiği alternatif blok + Tepesinde Alternatif-2 tabelası
 // =========================================================================
-function createAlternatif2SignTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 1024;
-  canvas.height = 256;
-  const ctx = canvas.getContext('2d');
-
-  // Arka plan gradyanı (Şık lacivert/antrasit)
-  const bgGrad = ctx.createLinearGradient(0, 0, 1024, 256);
-  bgGrad.addColorStop(0, '#0f172a');
-  bgGrad.addColorStop(0.5, '#1e293b');
-  bgGrad.addColorStop(1, '#0f172a');
-  ctx.fillStyle = bgGrad;
-  ctx.beginPath();
-  ctx.roundRect(12, 12, 1000, 232, 24);
-  ctx.fill();
-
-  // Sarı/Amber Neon Çerçeve
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = '#f59e0b';
-  ctx.stroke();
-
-  // İnce iç çerçeve
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-  ctx.beginPath();
-  ctx.roundRect(24, 24, 976, 208, 16);
-  ctx.stroke();
-
-  // Başlık Metni
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 74px "Segoe UI", Arial, sans-serif';
-  ctx.shadowColor = 'rgba(245, 158, 11, 0.75)';
-  ctx.shadowBlur = 18;
-  ctx.fillText('ALTERNATİF - 2', 512, 95);
-
-  // Alt Açıklama Metni
-  ctx.shadowBlur = 0;
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 36px "Segoe UI", Arial, sans-serif';
-  ctx.fillText('TABLALI 4 BORU • 7 RRU KÜMESİ', 512, 175);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.anisotropy = 4;
-  return texture;
-}
-
-function createAlternatif2Sprite() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 140;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
-  ctx.beginPath();
-  ctx.roundRect(10, 10, 492, 120, 24);
-  ctx.fill();
-
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = '#f59e0b';
-  ctx.stroke();
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 44px "Segoe UI", Arial, sans-serif';
-  ctx.fillText('Alternatif-2 (7 RRU)', 256, 70);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
-  const sprite = new THREE.Sprite(spriteMat);
-  sprite.scale.set(1.10, 0.30, 1);
-  return sprite;
-}
-
+// ALAN 2: TABLALI 4 BORU • 7 RRU KÜMESİ
+// Mevcut alt kedi yoluna altta bir tabla ve üzerine 4 adet flanşlı boru
+// ve 7 RRU'nun dizildiği blok
+// =========================================================================
 function buildAlan2Alternatif2RRUBlok(targetArea = state.currentArea) {
   const blockGroup = new THREE.Group();
   blockGroup.userData = {
     type: 'rru',
     blockType: 'alan2-alternatif2-rru-blok',
-    category: 'Alternatif',
-    name: 'Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu)',
+    category: 'RRU',
+    name: 'Tablalı 4 Boru 7 RRU Bloğu',
     width: 0.85,
     depth: 0.55,
     height: 1.95,
@@ -12540,12 +12459,6 @@ function buildAlan2Alternatif2RRUBlok(targetArea = state.currentArea) {
   ozelKarma.userData.interactive = false;
   ozelKarma.position.set(0, tablaThickness, 0);
   blockGroup.add(ozelKarma);
-
-  // 3. TEPESİNDE "ALTERNATİF - 2" BİLGİLENDİRME ETİKETİ (BAKIŞ AÇISINA GÖRE HAREKET EDEN 3D SPRITE)
-  // Kullanıcı İsteği: "2 tane label var. Bakış açısına göre hareket eden kalsın sabit olanı kaldır."
-  const sprite = createAlternatif2Sprite();
-  sprite.position.set(0, tablaThickness + 1.50 + 0.22, -0.13);
-  blockGroup.add(sprite);
 
   return blockGroup;
 }
@@ -13572,10 +13485,10 @@ function spawnMatsingTrussMidOffsetAssembly() {
   } else if (state.currentArea === 'alan4') {
     const existing = state.alan4Platforms.filter(p => p.userData && p.userData.blockType === 'matsing-mid-offset-assembly');
     const slots = [
-      { x: -16.50, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 37m)' },
-      { x: -16.50, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 40m)' },
-      { x: 16.50, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 37m)' },
-      { x: 16.50, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 40m)' }
+      { x: -18.00, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 37m)' },
+      { x: -18.00, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sol 40m)' },
+      { x: 18.00, y: 25.35, z: 22.81, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 37m)' },
+      { x: 18.00, y: 25.61, z: 19.82, name: 'Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Alan 4 - Sağ 40m)' }
     ];
     let chosenSlot = slots.find(s => !existing.some(e => Math.abs(e.position.x - s.x) < 0.5 && Math.abs(e.position.z - s.z) < 0.5));
     if (!chosenSlot) chosenSlot = slots[0];
@@ -13669,7 +13582,7 @@ renderer.domElement.addEventListener('pointermove', (event) => {
     mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     raycaster.setFromCamera(mouse, camera);
 
-    const activeDoors = (state.currentArea === 'alan4') ? alan4SlidingDoors : alan2SlidingDoors;
+    const activeDoors = (state.currentArea === 'alan4') ? alan4SlidingDoors : ((state.currentArea === 'alan3') ? alan3SlidingDoors : alan2SlidingDoors);
     if (activeDoors && activeDoors.length > 0) {
       const doorHits = raycaster.intersectObjects(activeDoors, true);
       if (doorHits.length > 0) {
@@ -13829,7 +13742,7 @@ window.addEventListener('pointerup', () => {
   // Temiz tek tıklama (sürükleme eşiği 4px aşılmadıysa): Seçim veya kapı aç/kapa
   if (!isDragMode && pointerButton === 0) {
     let handledDoor = false;
-    const activeDoors = (state.currentArea === 'alan4') ? alan4SlidingDoors : alan2SlidingDoors;
+    const activeDoors = (state.currentArea === 'alan4') ? alan4SlidingDoors : ((state.currentArea === 'alan3') ? alan3SlidingDoors : alan2SlidingDoors);
     if (activeDoors && activeDoors.length > 0) {
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((pointerDownPos.x - rect.left) / rect.width) * 2 - 1;
@@ -14086,15 +13999,18 @@ if (addAlan2Alternatif2RRUBtn) {
   if (btnAlan4KediyoluTabla) btnAlan4KediyoluTabla.style.display = 'none';
   if (btnAlan4Kediyolu42U) btnAlan4Kediyolu42U.style.display = isAlan4 ? 'flex' : 'none';
 
-  // Skorboard Kirişi Tekli RRU Operatör Butonları (Alan 4 / Skorboard seçili iken görünür)
+  // Skorboard Kirişi Tekli RRU Operatör Butonları devre dışı bırakıldı (Alternatif 2 senaryosu aktif)
   const btnSbTcell = document.getElementById('btn-add-sb-rru-turkcell');
   const btnSbVdf = document.getElementById('btn-add-sb-rru-vodafone');
   const btnSbTT = document.getElementById('btn-add-sb-rru-tt');
-  if (btnSbTcell) btnSbTcell.style.display = isAlan4 ? 'flex' : 'none';
-  if (btnSbVdf) btnSbVdf.style.display = isAlan4 ? 'flex' : 'none';
-  if (btnSbTT) btnSbTT.style.display = isAlan4 ? 'flex' : 'none';
+  if (btnSbTcell) btnSbTcell.style.display = 'none';
+  if (btnSbVdf) btnSbVdf.style.display = 'none';
+  if (btnSbTT) btnSbTT.style.display = 'none';
   const btnSbMatsingElem = document.getElementById('btn-add-sb-matsing-cylinder');
   if (btnSbMatsingElem) btnSbMatsingElem.style.display = isAlan4 ? 'flex' : 'none';
+
+  // Alan 2 (Alan 4) Kedi Yolu Tablalı 4 Boru 7 RRU Bloğu
+  if (addAlan2Alternatif2RRUBtn) addAlan2Alternatif2RRUBtn.style.display = isAlan4 ? 'flex' : 'none';
 }
 
 function setPlatformGroupVisibility(platforms, isVisible) {
@@ -16219,9 +16135,9 @@ const AREA_CAMERA_PRESETS = {
   // Alan 2 (Scoreboard Kesiti + Kediyolu)
   alan4: [
     {
-      id: 'focus-alternatif2',
-      label: '🏷️ Alternatif-2',
-      title: 'Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) Odak Görünümü',
+      id: 'focus-kedi-yolu-rru',
+      label: '📻 Kedi Yolu RRU',
+      title: 'Kedi Yolu Tablalı 4 Boru 7 RRU Bloğu Odak Görünümü',
       border: '#0284c7',
       view: [0.0, 24.5, -4.5, 0.0, 20.8, -0.5]
     },
@@ -16241,15 +16157,15 @@ const AREA_CAMERA_PRESETS = {
     },
     {
       id: 'focus-antennas',
-      label: '📡 Antenler',
-      title: '50m Silindir Taşıyıcı & Antenler Odağı',
+      label: '📡 Sol Anten',
+      title: '50m Silindir Taşıyıcı & Sol Anten Odağı',
       border: '#eab308',
       view: [-24.14, 18.16, 5.01, -15.72, 17.14, -0.28]
     },
     {
       id: 'focus-antennas-2',
-      label: '📡 Antenler-2',
-      title: '50m Silindir Taşıyıcı & Antenler-2 Odağı',
+      label: '📡 Sağ Anten',
+      title: '50m Silindir Taşıyıcı & Sağ Anten Odağı',
       border: '#f59e0b',
       view: [-22.16, 24.07, 25.20, -13.34, 22.85, 20.63]
     },
@@ -16712,7 +16628,7 @@ function deserializeItemToArea(item, targetArea) {
     }
     const op = item.operator || (blockType.includes('turkcell') ? 'turkcell' : (blockType.includes('vodafone') ? 'vodafone' : 'tt'));
     group = buildScoreboardSingleRRU(op, item.position ? item.position.x : 0);
-  } else if (blockType === 'alan2-alternatif2-rru-blok' || itemName.includes('Alternatif-2')) {
+  } else if (blockType === 'alan2-alternatif2-rru-blok' || itemName.includes('Alternatif-2') || itemName.includes('Tablalı 4 Boru 7 RRU')) {
     group = buildAlan2Alternatif2RRUBlok(targetArea);
   } else if (blockType === 'alan2-kediyolu-42u-kompleks') {
     group = buildAlan2Kediyolu42UKompleksBlok(targetArea);
@@ -17464,19 +17380,19 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
+          "name": "Tablalı 4 Boru 7 RRU Bloğu - Sol POI Yanı",
+          "blockType": "alan2-alternatif2-rru-blok",
+          "catalogId": null,
           "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
+          "category": "RRU",
+          "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -2.703637443576455,
-            "y": 21.7,
-            "z": -2.2
+            "x": -1.731732010972016,
+            "y": 20,
+            "z": -0.8994569831600372
           },
           "rotation": {
             "x": 0,
@@ -17485,24 +17401,24 @@ const PRESET_DRAFTS = {
           },
           "locked": false,
           "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
+          "lockedY": false,
+          "lockedZ": false,
           "allowPassThrough": true
         },
         {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
+          "name": "Tablalı 4 Boru 7 RRU Bloğu - Sağ POI Yanı",
+          "blockType": "alan2-alternatif2-rru-blok",
+          "catalogId": null,
           "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
+          "category": "RRU",
+          "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -1.7953099309417897,
-            "y": 21.7,
-            "z": -2.2
+            "x": 1.6787984389135993,
+            "y": 20,
+            "z": -0.8336789287648787
           },
           "rotation": {
             "x": 0,
@@ -17511,320 +17427,8 @@ const PRESET_DRAFTS = {
           },
           "locked": false,
           "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.2185347466891363,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.464618246320079,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -1.577867792495959,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.0118187976274076,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -1.36,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 1.8535870100363512,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.0715340877360644,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.29,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.51,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.95,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 3.17,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.729765253185134,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
+          "lockedY": false,
+          "lockedZ": false,
           "allowPassThrough": true
         },
         {
@@ -18332,7 +17936,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -16.5,
+            "x": -18.0,
             "y": 25.35,
             "z": 22.81
           },
@@ -18358,7 +17962,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -16.5,
+            "x": -18.0,
             "y": 25.61,
             "z": 19.82
           },
@@ -18384,7 +17988,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 16.5,
+            "x": 18.0,
             "y": 25.35,
             "z": 22.81
           },
@@ -18410,7 +18014,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 16.5,
+            "x": 18.0,
             "y": 25.61,
             "z": 19.82
           },
@@ -18430,8 +18034,8 @@ const PRESET_DRAFTS = {
   },
   "taslak-v2": {
     "version": "2.0",
-    "savedAt": "2026-10-05T08:24:46.766Z",
-    "currentArea": "alan4",
+    "savedAt": "2026-10-06T19:06:09.697Z",
+    "currentArea": "alan3",
     "areas": {
       "alan1": [
         {
@@ -18473,7 +18077,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -4.361001259960455,
+            "x": -1.7577080923050312,
             "y": 0,
             "z": -1.1805947860171155
           },
@@ -18485,7 +18089,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -18499,7 +18103,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -3.615809390325525,
+            "x": -1.0303985392914121,
             "y": 0,
             "z": -1.1914694272152344
           },
@@ -18511,7 +18115,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -18525,7 +18129,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -5.103055270452055,
+            "x": -2.5612885599737107,
             "y": 0,
             "z": -1.216680015245864
           },
@@ -18537,7 +18141,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -18551,9 +18155,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -1.520515241914614,
+            "x": -4.225534686783959,
             "y": 0,
-            "z": -1.164294472925311
+            "z": -1.1860641464108814
           },
           "rotation": {
             "x": 0,
@@ -18563,7 +18167,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -18865,7 +18469,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -3.7241268085306904,
+            "x": -0.9744455482182993,
             "y": 0,
             "z": -1.2734661913443657
           },
@@ -18876,8 +18480,8 @@ const PRESET_DRAFTS = {
           },
           "locked": false,
           "lockedX": false,
-          "lockedY": false,
-          "lockedZ": false,
+          "lockedY": true,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -18891,7 +18495,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -2.3755680487727076,
+            "x": -2.0250031223058187,
             "y": 0,
             "z": -1.1827264864581115
           },
@@ -18902,8 +18506,8 @@ const PRESET_DRAFTS = {
           },
           "locked": false,
           "lockedX": false,
-          "lockedY": false,
-          "lockedZ": false,
+          "lockedY": true,
+          "lockedZ": true,
           "allowPassThrough": true
         }
       ],
@@ -18948,370 +18552,6 @@ const PRESET_DRAFTS = {
             "x": 20,
             "y": 19.05,
             "z": 0.55
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.703637443576455,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -1.7953099309417897,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.2185347466891363,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.464618246320079,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -1.577867792495959,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -2.0118187976274076,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": -1.36,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 1.8535870100363512,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Turkcell LTE RRU4485 - 4G (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-turkcell",
-          "catalogId": "turkcell-4485",
-          "type": "rru",
-          "category": "Turkcell",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.0715340877360644,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.29,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Türk Telekom NR RRU 5818W (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-tt",
-          "catalogId": "tt-5818w",
-          "type": "rru",
-          "category": "Türk Telekom",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.51,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.95,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 3.17,
-            "y": 21.7,
-            "z": -2.2
-          },
-          "rotation": {
-            "x": 0,
-            "y": 0,
-            "z": 0
-          },
-          "locked": false,
-          "lockedX": false,
-          "lockedY": true,
-          "lockedZ": true,
-          "allowPassThrough": true
-        },
-        {
-          "name": "Vodafone RRU5526t (Kısa Kenar Montaj)",
-          "blockType": "scoreboard-rru-vodafone",
-          "catalogId": "vodafone-5526t",
-          "type": "rru",
-          "category": "Vodafone",
-          "isFreestanding": false,
-          "isOffsetArmModule": false,
-          "isOffsetCarrier": false,
-          "isInclinedPipe": false,
-          "position": {
-            "x": 2.729765253185134,
-            "y": 21.7,
-            "z": -2.2
           },
           "rotation": {
             "x": 0,
@@ -19377,11 +18617,11 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) - Sol POI Yanı",
+          "name": "Tablalı 4 Boru 7 RRU Bloğu - Sol POI Yanı",
           "blockType": "alan2-alternatif2-rru-blok",
           "catalogId": null,
           "type": "rru",
-          "category": "Alternatif",
+          "category": "RRU",
           "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
@@ -19403,11 +18643,11 @@ const PRESET_DRAFTS = {
           "allowPassThrough": true
         },
         {
-          "name": "Alternatif-2 (Tablalı 4 Boru 7 RRU Bloğu) - Sağ POI Yanı",
+          "name": "Tablalı 4 Boru 7 RRU Bloğu - Sağ POI Yanı",
           "blockType": "alan2-alternatif2-rru-blok",
           "catalogId": null,
           "type": "rru",
-          "category": "Alternatif",
+          "category": "RRU",
           "isFreestanding": true,
           "isOffsetArmModule": false,
           "isOffsetCarrier": false,
@@ -19439,7 +18679,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -18.904367698817854,
+            "x": -14.119464998174733,
             "y": 18.121,
             "z": 59.923778081882354
           },
@@ -19451,7 +18691,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19465,7 +18705,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -19.891477635101115,
+            "x": -13.27332624896956,
             "y": 18.121,
             "z": 59.92760781677324
           },
@@ -19477,7 +18717,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19491,7 +18731,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -20.852499127629343,
+            "x": -12.435316293723163,
             "y": 18.121,
             "z": 59.946156104057025
           },
@@ -19503,7 +18743,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19529,7 +18769,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19543,7 +18783,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -15.15,
+            "x": -16.70460129207983,
             "y": 18.121,
             "z": 59.87
           },
@@ -19555,7 +18795,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19569,7 +18809,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -14.4,
+            "x": -17.449288669525544,
             "y": 18.121,
             "z": 59.87
           },
@@ -19581,7 +18821,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19595,7 +18835,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -13.1,
+            "x": -18.960056807452453,
             "y": 18.121,
             "z": 59.67
           },
@@ -19607,7 +18847,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19621,9 +18861,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 13.1,
+            "x": 19.276626771284825,
             "y": 18.121,
-            "z": 59.67
+            "z": 59.793573400040856
           },
           "rotation": {
             "x": 0,
@@ -19647,7 +18887,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 14.4,
+            "x": 15.961103617634103,
             "y": 18.121,
             "z": 59.87
           },
@@ -19659,7 +18899,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19673,7 +18913,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 15.15,
+            "x": 16.86904811054761,
             "y": 18.121,
             "z": 59.87
           },
@@ -19685,7 +18925,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19699,7 +18939,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 15.9,
+            "x": 17.732562796276078,
             "y": 18.121,
             "z": 59.87
           },
@@ -19711,7 +18951,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19725,9 +18965,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 18.939452135483496,
+            "x": 13.290148614486716,
             "y": 18.121,
-            "z": 59.98847605333506
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -19737,7 +18977,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19751,9 +18991,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 19.895991244901825,
+            "x": 12.376634166483527,
             "y": 18.121,
-            "z": 59.941324133445974
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -19763,7 +19003,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19777,9 +19017,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 20.906794171321522,
+            "x": 14.165435274376803,
             "y": 18.121,
-            "z": 59.949520721251254
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -19789,7 +19029,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19803,7 +19043,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 1,
+            "x": 9.89387316938797,
             "y": 18.121,
             "z": 59.9
           },
@@ -19815,7 +19055,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19829,7 +19069,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 1.8,
+            "x": 10.69936876136525,
             "y": 18.121,
             "z": 59.9
           },
@@ -19841,7 +19081,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19855,7 +19095,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 2.6,
+            "x": 11.552471490273222,
             "y": 18.121,
             "z": 59.9
           },
@@ -19867,7 +19107,7 @@ const PRESET_DRAFTS = {
           "locked": false,
           "lockedX": false,
           "lockedY": false,
-          "lockedZ": false,
+          "lockedZ": true,
           "allowPassThrough": true
         },
         {
@@ -19881,7 +19121,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -16.5,
+            "x": -18,
             "y": 25.35,
             "z": 22.81
           },
@@ -19907,7 +19147,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -16.5,
+            "x": -18,
             "y": 25.61,
             "z": 19.82
           },
@@ -19933,7 +19173,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 16.5,
+            "x": 18,
             "y": 25.35,
             "z": 22.81
           },
@@ -19959,7 +19199,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 16.5,
+            "x": 18,
             "y": 25.61,
             "z": 19.82
           },
@@ -19972,6 +19212,84 @@ const PRESET_DRAFTS = {
           "lockedX": false,
           "lockedY": false,
           "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 4)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -11.601613000165928,
+            "y": 18.121,
+            "z": 59.9
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -9.853927977354337,
+            "y": 18.121,
+            "z": 59.9
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 4)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": -10.752347263272256,
+            "y": 18.121,
+            "z": 59.9
+          },
+          "rotation": {
+            "x": 0,
+            "y": 3.141592653589793,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
           "allowPassThrough": true
         }
       ]
@@ -20259,7 +19577,7 @@ function animate() {
   }
 
   // Smooth sliding animation for Alan 2 and Alan 4 doors
-  const allDoors = [...alan2SlidingDoors, ...alan4SlidingDoors];
+  const allDoors = [...alan2SlidingDoors, ...alan3SlidingDoors, ...alan4SlidingDoors];
   if (allDoors && allDoors.length > 0) {
     for (let i = 0; i < allDoors.length; i++) {
       const door = allDoors[i];
