@@ -25,7 +25,7 @@ const state = {
   viewMode: 'persp', // 'persp' or 'ortho'
   nextId: 1,
   axisLockZ: true, // Lock Z position by default for sliding along X axis
-  currentArea: 'alan2'
+  currentArea: 'alan4'
 };
 
 // Dimensions conversion (1 unit in 3D = 1 meter)
@@ -14273,7 +14273,7 @@ if (selectAreaElem) {
       if (alan2Group) alan2Group.visible = false;
       if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = true;
-      setCameraView(2.90, 25.19, 4.65, -0.33, 19.53, -2.93);
+      setCameraView(-0.20, 29.03, -17.54, -0.32, 25.93, -8.03);
     } else if (selectedArea === 'alan3') {
       if (alan2Group) alan2Group.visible = false;
       if (alan3Group) alan3Group.visible = true;
@@ -16135,20 +16135,6 @@ const AREA_CAMERA_PRESETS = {
   // Alan 2 (Scoreboard Kesiti + Kediyolu)
   alan4: [
     {
-      id: 'focus-kedi-yolu-rru',
-      label: '📻 Kedi Yolu RRU',
-      title: 'Kedi Yolu Tablalı 4 Boru 7 RRU Bloğu Odak Görünümü',
-      border: '#0284c7',
-      view: [0.0, 24.5, -4.5, 0.0, 20.8, -0.5]
-    },
-    {
-      id: 'focus-rectifier',
-      label: '⚡ Rectifier',
-      title: 'Rectifier & Güç Kabinleri Odağı',
-      border: '#0284c7',
-      view: [1.63, 20.94, 53.66, 1.43, 18.90, 63.45]
-    },
-    {
       id: 'focus-beton',
       label: '🧱 Beton',
       title: 'Beton Kaide ve Taşıyıcı Sistemi Odağı',
@@ -16538,7 +16524,7 @@ if (presBtnResetCam) {
   presBtnResetCam.addEventListener('click', () => {
     const currentArea = state.currentArea || 'alan2';
     if (currentArea === 'alan4') {
-      setCameraView(2.90, 25.19, 4.65, -0.33, 19.53, -2.93);
+      setCameraView(-0.20, 29.03, -17.54, -0.32, 25.93, -8.03);
     } else if (currentArea === 'alan3') {
       setCameraView(-5.85, 8.33, 33.95, 2.24, 5.87, 28.61);
     } else {
@@ -18035,7 +18021,7 @@ const PRESET_DRAFTS = {
   "taslak-v2": {
     "version": "2.0",
     "savedAt": "2026-10-06T19:06:09.697Z",
-    "currentArea": "alan3",
+    "currentArea": "alan4",
     "areas": {
       "alan1": [
         {
@@ -19456,7 +19442,7 @@ if (state.currentArea === 'alan4') {
   if (alan2Group) alan2Group.visible = false;
   if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = true;
-  setCameraView(2.90, 25.19, 4.65, -0.33, 19.53, -2.93);
+  setCameraView(-0.20, 29.03, -17.54, -0.32, 25.93, -8.03);
 } else if (state.currentArea === 'alan2') {
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = true;
@@ -19478,6 +19464,7 @@ if (state.currentArea === 'alan4') {
 }
 
 renderAreaFocusButtons(state.currentArea);
+setCameraView(-0.20, 29.03, -17.54, -0.32, 25.93, -8.03);
 
 // =============================================================
 // SERBEST UÇUŞ (FREE FLIGHT) VE WASD GEZİNME SİSTEMİ
