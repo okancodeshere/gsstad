@@ -19145,7 +19145,7 @@ window.addEventListener('keydown', (event) => {
 // ==========================================
 const louverUI = document.createElement('div');
 louverUI.id = 'louverPopup';
-louverUI.style.display = 'block';
+louverUI.style.display = 'none';
 louverUI.style.position = 'absolute';
 louverUI.style.top = '80px';
 louverUI.style.right = '20px';
