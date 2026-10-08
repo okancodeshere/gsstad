@@ -17214,6 +17214,344 @@ const PRESET_DRAFTS = {
           "lockedY": false,
           "lockedZ": false,
           "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 25.638998740039547,
+            "y": 0,
+            "z": -1.1805947860171155
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 26.384190609674476,
+            "y": 0,
+            "z": -1.1914694272152344
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 24.896944729547947,
+            "y": 0,
+            "z": -1.216680015245864
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 28.479484758085388,
+            "y": 0,
+            "z": -1.164294472925311
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 34.194284776610374,
+            "y": 0,
+            "z": -1.4117056039669595
+          },
+          "rotation": {
+            "x": 0,
+            "y": 6.283185307179586,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 33.40284644326525,
+            "y": 0,
+            "z": -1.4206267185693213
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 32.60580870773442,
+            "y": 0,
+            "z": -1.4547246070415678
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 31.74179554944642,
+            "y": 0,
+            "z": -1.4595080285942583
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 30.839472259744543,
+            "y": 0,
+            "z": -1.4119842935578095
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 35.050704812315495,
+            "y": 0,
+            "z": -1.4139675859568794
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çapraz Kol & Dikey Çift Ofset Montajı",
+          "blockType": "matsing-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
+            "y": 6.976,
+            "z": 41.568
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 1)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
+            "y": 9.385,
+            "z": 37.934
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 2)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
+            "y": 9.022,
+            "z": 35.234
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
         }
       ],
       "alan3": [
@@ -17854,9 +18192,9 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 1.0,
+            "x": 1,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -17882,7 +18220,7 @@ const PRESET_DRAFTS = {
           "position": {
             "x": 1.8,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -17908,7 +18246,7 @@ const PRESET_DRAFTS = {
           "position": {
             "x": 2.6,
             "y": 18.121,
-            "z": 59.90
+            "z": 59.9
           },
           "rotation": {
             "x": 0,
@@ -17932,7 +18270,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -18.0,
+            "x": -18,
             "y": 25.35,
             "z": 22.81
           },
@@ -17958,7 +18296,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": -18.0,
+            "x": -18,
             "y": 25.61,
             "z": 19.82
           },
@@ -17984,7 +18322,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 18.0,
+            "x": 18,
             "y": 25.35,
             "z": 22.81
           },
@@ -18010,7 +18348,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 18.0,
+            "x": 18,
             "y": 25.61,
             "z": 19.82
           },
@@ -18386,6 +18724,344 @@ const PRESET_DRAFTS = {
           "isInclinedPipe": false,
           "position": {
             "x": -3,
+            "y": 9.022,
+            "z": 35.234
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 28.24229190769497,
+            "y": 0,
+            "z": -1.1805947860171155
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 28.96960146070859,
+            "y": 0,
+            "z": -1.1914694272152344
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "30U POI Rack (4 POI) - Doğrudan Beton Zemin (Alan 2)",
+          "blockType": "alan2-kediyolu-42u-kompleks",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Canovate",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27.43871144002629,
+            "y": 0,
+            "z": -1.216680015245864
+          },
+          "rotation": {
+            "x": 0,
+            "y": 18.84955592153876,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Alan 2 Özel Karşılıklı 11 Boru 21 RRU Blok",
+          "blockType": "alan2-karsilikli-11boru-rru-blok",
+          "catalogId": null,
+          "type": "rru",
+          "category": "Karma",
+          "isFreestanding": false,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 25.77446531321604,
+            "y": 0,
+            "z": -1.1860641464108814
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": true,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 34.194284776610374,
+            "y": 0,
+            "z": -1.4117056039669595
+          },
+          "rotation": {
+            "x": 0,
+            "y": 6.283185307179586,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 33.40284644326525,
+            "y": 0,
+            "z": -1.4206267185693213
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 32.60580870773442,
+            "y": 0,
+            "z": -1.4547246070415678
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 31.74179554944642,
+            "y": 0,
+            "z": -1.4595080285942583
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "20U Outdoor DC Güç Kaynağı (Eltek Flatpack2 24kW) (Alan 2)",
+          "blockType": "rectifier-20u-eltek",
+          "catalogId": "rectifier-20u-eltek",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 30.839472259744543,
+            "y": 0,
+            "z": -1.4119842935578095
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "MTS9304A-HX10AX 12U Outdoor Rectifier Kabini (Alan 2)",
+          "blockType": "rectifier-mts9304a",
+          "catalogId": "rectifier-mts9304a",
+          "type": "rru",
+          "category": "Rectifier",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 35.050704812315495,
+            "y": 0,
+            "z": -1.4139675859568794
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çapraz Kol & Dikey Çift Ofset Montajı",
+          "blockType": "matsing-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
+            "y": 6.976,
+            "z": 41.568
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 1)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
+            "y": 9.385,
+            "z": 37.934
+          },
+          "rotation": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "locked": false,
+          "lockedX": false,
+          "lockedY": false,
+          "lockedZ": false,
+          "allowPassThrough": true
+        },
+        {
+          "name": "Matsing 4-Beam Çatı Taşıyıcısı Asılı Ofset Montajı (Ara Bölge - 2)",
+          "blockType": "matsing-mid-offset-assembly",
+          "catalogId": "matsing-4-beam",
+          "type": "antenna",
+          "category": "Matsing",
+          "isFreestanding": true,
+          "isOffsetArmModule": false,
+          "isOffsetCarrier": false,
+          "isInclinedPipe": false,
+          "position": {
+            "x": 27,
             "y": 9.022,
             "z": 35.234
           },
