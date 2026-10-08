@@ -18500,9 +18500,9 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -3.247543458474242,
+          "x": -3.173,
           "y": 20,
-          "z": -0.919987257110642
+          "z": -0.511
         },
         "rotation": {
           "x": 0,
@@ -18526,9 +18526,9 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 3.15004498709286,
+          "x": 3.15,
           "y": 20,
-          "z": -0.9023812996691016
+          "z": -0.501
         },
         "rotation": {
           "x": 0,

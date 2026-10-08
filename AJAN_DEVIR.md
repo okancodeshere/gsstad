@@ -38,9 +38,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] Pol RRU'ları yatay pola, korkuluğun biraz üstünde yan yana paralel dizildi`
+- **Son commit:** `[Claude] taslak-v2: skorbord arkası POI rack konumları güncellendi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son altı commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU ve iki revizyonu) push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son yedi commit push edilmedi; kullanıcı onayı bekliyor.
+- **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +66,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 23:55 — Claude — taslak-v2: skorbord arkası POI rack konumları
+- **Kullanıcı isteği:** "skorboard arkasındaki poı grubunun konumunu fotograflardaki konumlara göre güncelle ve taslak versiyon 2 ye yaz". Kullanıcı, özellikler panelinin iki ekran görüntüsünü gönderdi.
+- **Okuma:** Panelde kırmızı etiket panel açıldığı andaki konumu (`obj.position`), giriş kutusu kullanıcının girdiği değeri gösterir. Hedef olarak giriş kutusundaki değerler alındı.
+- **Değişen dosyalar:**
+  - `main.js` → `PRESET_DRAFTS['taslak-v2']` alan4, iki `4poi-rack-blok` girdisi (~satır 18502, 18528):
+    - Sol (#214, rotation.y = 90°): (−3.2475, 20, −0.9200) → (−3.173, 20, −0.511)
+    - Sağ (#219, rotation.y = 270°): (3.1500, 20, −0.9024) → (3.150, 20, −0.501)
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda yeni konumlar doğrulandı: sol X −3.52…−2.82, Z −0.82…−0.20; sağ X 2.80…3.50, Z −0.81…−0.19. Pol RRU blokları, sütunlar ve korkuluklarla çakışma yok. Yalnızca eski konuma göre çizilmiş feeder dağıtım kanalı kutularıyla ~1 cm kenar teması var.
+- **Commit:** `[Claude] taslak-v2: skorbord arkası POI rack konumları güncellendi`
+- **Yarım kalan / dikkat:** Feeder sistemi eski POI konumuna bağlı (bkz. Güncel Durum → Açık konu).
 
 ### 2026-10-08 23:45 — Claude — Pol RRU'ları: yatay pol, aynı kotta yan yana paralel (önceki kayıt düzeltildi)
 - **Kullanıcı isteği:** "böyle demedim ben maymun muyum en üstteki rruya ulaşayım rrular kısa kenarlarından yan yana takılacak kedi yolunun korkulugunun biraz üstünde olacaklar ve yan yana kısa kenarlarından birbirine paralel duracaklar". 23:30 kaydındaki üst üste (düşey) dizilim YANLIŞ ANLAMAYDI ve geri alındı.
