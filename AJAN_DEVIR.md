@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] ALAN 2 7'li RRU grupları kedi yolundan sütunlara ofset kollu pollere taşındı`
+- **Son commit:** `[Claude] Sütun pol RRU'ları korkuluk üstüne alındı, kısa kenardan kitap dizilimi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son dört commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU) push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son beş commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU, pol RRU revizyonu) push edilmedi; kullanıcı onayı bekliyor.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +65,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 23:30 — Claude — Pol RRU'ları korkuluk üstüne, kısa kenardan kitap dizilimi
+- **Kullanıcı isteği:** "kedi yolunun korkuluklarının altında kalma ve rruları kısa kenarlarından pole tuttur. Böylece daha az alan kaplar. Ayrıca kedi yolunda çizimlerimizde olmayan aydınlatma vs cihazlar var o yüzden korkuluk seviyesinin üstünde kal". Soru üzerine "Kitap gibi, kedi yoluna dik" dizilimini seçti.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardStrutPoleRRUBlok(side)` (~satır 13096-13230). Blok tipi ve preset girdileri aynı, yalnızca iç yerleşim değişti:
+    - RRU'lar alt kedi yolu korkuluğu üst kotunun (Y = 1.10) üstünde: alt kenar Y = 1.20, kat aralığı 0.60 m (`levelY(i)`), hepsi tek sıra üst üste.
+    - Kitap dizilimi: RRU genişliği Z yönünde (korkuluğa dik), kısa kenardaki kelepçe pola dönük (`rotation.y = -extendZ * 90°`). Kedi yolu boyunca X kalınlığı ~14 cm.
+    - Ön pol: X = s*2.60, Z = −1.21 (ön korkuluk Z = −1.30'un 9 cm içi, korkuluk kotunun üstünde), Y = 1.10–3.55. 4 RRU skorborda doğru uzanıyor (Z = −1.29…−1.69; iskelet −1.70). Sıra: Turkcell 5301, Turkcell 5502, TT 5527, TT 5818W (alttan üste).
+    - Arka pol: X = s*2.60, Z = −0.02, Y = 1.10–2.98. 3 Vodafone 5526t dışa uzanıyor (Z = 0.06…0.49).
+    - Kollar Y = 1.14 / 2.34 / 3.50 (ön) ve 1.14 / 2.34 / 2.94 (arka), RRU aralıklarında. `buildPole()` imzası değişti: `(poleX, poleZ, strutBaseZ, strutBaseY, poleBotY, poleTopY, armYs, extendZ, rrus, poleLabel)`.
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda 14 RRU'nun konumları ölçüldü (yukarıdaki değerler). Sütun ekseni mesafesi dahil çakışma kontrolü temiz. Sol RRU'lar X ≤ −2.53, gemici merdiveni −2.40'tan başlıyor.
+- **Commit:** `[Claude] Sütun pol RRU'ları korkuluk üstüne alındı, kısa kenardan kitap dizilimi`
+- **Yarım kalan / dikkat:** Ön poldeki en üst RRU 3.48 m'de; kedi yolundan erişim için merdiven/platform gerekebilir. Feeder güzergahları güncellenmedi.
 
 ### 2026-10-08 23:15 — Claude — 7'li RRU grupları kedi yolundan sütunlara ofset kollu pollere taşındı
 - **Kullanıcı isteği:** "7 li rru gruplarımız var ancak reelde kediyolunda bu rruları koyacak bir alan bulunmuyor bu nedenle yeni ekledigimiz taşıyıcı sutunlara ofset ile bir montaj polu asacagız rruları ise bu pol üzerine takacagız". Sorular üzerine verdiği kararlar: sağda ve solda kedi yoluna en yakın, daha dik duran sütunların (±3 m dikey bacaklar) hem ön hem arka sırasına yük dağılımı için birer pol; kedi yolundan dışarı çıkmadan erişim; bir pola 4, diğerine 3 RRU.

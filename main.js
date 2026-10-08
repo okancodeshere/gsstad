@@ -13084,13 +13084,19 @@ function spawnAlan2Alternatif2RRUBlok() {
 // - "sagda ve solda da kedi yoluna en yakın nispeten daha dik bir açıyla duran sutunların hem ön hem de
 //   arkadakine yükü dagıtmak için pol koyabiliriz. Kedi yolundan ... dışarı çıkmadan erişim sağlanabilir"
 // - "iki boruyu da kullanarak birinde 3 birinde 4 tane"
+// Revizyon (Kullanıcı İsteği): "kedi yolunun korkuluklarının altında kalma ve rruları kısa kenarlarından pole
+// tuttur. Böylece daha az alan kaplar. Ayrıca kedi yolunda çizimlerimizde olmayan aydınlatma vs cihazlar var
+// o yüzden korkuluk seviyesinin üstünde kal" + "Kitap gibi, kedi yoluna dik" dizilim seçildi.
 // Yerleşim (bir taraf, s = -1 sol / +1 sağ; koordinatlar alan4 yerel):
-// - Ön pol: ön sıra dikey bacağı (X = s*3.00, Silindir 1 sırası) yanında, alt kedi yolu ön korkuluğu (Z = -1.30m)
-//   ile skorbord arka iskeleti (Z = -1.70m) arasındaki boşlukta Z = -1.50m. 4 RRU: 2 kat x 2 (polün iki yanında)
-// - Arka pol: arka sıra dikey bacağının önünde, arka korkuluğun (Z = -0.10m) hemen dışında Z = +0.10m.
-//   3 Vodafone RRU: alt katta 2, üst katta 1 (kedi yolu merkezine bakan yanda)
-// - RRU'lar ince yüzü (derinlik Z) korkuluğa paralel, kedi yolundan erişilir; katlar Y = 0.70m / 1.35m
-// - Her pol 3 ofset kolla (Y = 0.30 / 1.03 / 1.80m) Ø508 sütunu saran bilezik kelepçelere bağlanır
+// - Tüm RRU'lar korkuluk üst kotunun (Y = 1.10m) üstünde, alt kenar Y = 1.20m; katlar 0.60m arayla üst üste
+// - RRU'lar kitap gibi: geniş yüzü korkuluğa dik (genişlik Z yönünde), kısa kenarındaki kelepçe ile pola bağlı;
+//   kedi yolu boyunca yalnızca ~14cm kalınlık kaplar
+// - Ön pol: X = s*2.60, Z = -1.21m (ön korkuluk Z = -1.30m'nin 9cm içi, korkuluk kotunun üstünde).
+//   4 RRU (Turkcell + TT) skorborda doğru uzanır: Z = -1.29 ... -1.69m (skorbord arka iskeleti Z = -1.70m)
+// - Arka pol: X = s*2.60, Z = -0.02m (arka korkuluk Z = -0.10m hemen dışı). 3 Vodafone RRU dışa (+Z) uzanır.
+//   Sol tarafta gemici merdiveni X = -2.40m'den başlar; RRU'lar X ≤ -2.53m
+// - Pol X = s*2.60, ±3m dikey bacağın kedi yolu merkezine bakan yanında (bacak yüzeyi X = s*2.746m)
+// - Her pol 3 ofset kolla Ø508 sütunu saran bilezik kelepçelere bağlanır (kollar RRU aralıklarında)
 // Sütun ekseni scoreboardDiagonalColumns ile aynı: Z(y) = baseZ + (y - baseY) * tan(8°)
 // =========================================================================
 function buildScoreboardStrutPoleRRUBlok(side = 'left') {
@@ -13106,9 +13112,9 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
     category: 'RRU',
     name: `Sütun Ofset Pol 7 RRU Grubu - ${sideLabel}`,
     side: side,
-    width: 1.10,
-    depth: 1.80,
-    height: 1.95,
+    width: 0.60,
+    depth: 1.70,
+    height: 3.55,
     weight: 230, // 190kg RRU + 40kg pol, ofset kol ve kelepçeler
     interactive: true,
     locked: true,
@@ -13144,13 +13150,13 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
   const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
   const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
 
-  const poleBotY = 0.20;
-  const poleTopY = 1.95;
-  const armYs = [0.30, 1.03, 1.80];
+  const rruBotY = 1.20;  // Korkuluk üst kotu (1.10m) + 10cm
+  const rruPitch = 0.60; // Katlar arası mesafe (RRU yüksekliği 0.48m + 12cm boşluk)
+  const levelY = (i) => rruBotY + 0.24 + i * rruPitch;
 
   // Tek pol + ofset kollar + RRU'lar
-  // rrus: { item, label, y, dir } dir = -1 polün -X yanı, +1 polün +X yanı
-  const buildPole = (poleX, poleZ, strutBaseZ, strutBaseY, rrus, poleLabel) => {
+  // rrus: { item, label, y }, extendZ: RRU'ların polden uzandığı Z yönü (-1 skorborda, +1 dışa)
+  const buildPole = (poleX, poleZ, strutBaseZ, strutBaseY, poleBotY, poleTopY, armYs, extendZ, rrus, poleLabel) => {
     // Ø76mm galvaniz montaj polü ve uç kapakları
     addRod(L(poleX, poleBotY, poleZ), L(poleX, poleTopY, poleZ), 0.038, poleMat);
     [poleBotY, poleTopY].forEach(cy => {
@@ -13177,34 +13183,34 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
       blockGroup.add(pc);
     });
 
-    // RRU'lar: ince yüz korkuluğa paralel, kelepçe tarafı pola bakar
+    // RRU'lar kitap gibi: genişlik Z yönünde, kısa kenardaki kelepçe (model yerel -X yüzü) pola dönük
+    // Model yerel +X -> dünya extendZ yönü: Y ekseninde dönüş = -extendZ * 90°
     rrus.forEach(r => {
       const rru = buildCustomEquipmentModel(r.item);
       rru.userData.name = `${r.label} (${poleLabel} - ${sideLabel})`;
       rru.userData.interactive = true;
-      rru.rotation.set(0, r.dir < 0 ? Math.PI : 0, 0); // Kelepçe (-X yüzü) pola dönük
-      rru.position.copy(L(poleX + r.dir * (r.item.width / 2 + 0.08), r.y, poleZ));
+      rru.rotation.set(0, -extendZ * Math.PI / 2, 0);
+      rru.position.copy(L(poleX, r.y, poleZ + extendZ * (r.item.width / 2 + 0.08)));
       blockGroup.add(rru);
     });
   };
 
-  const lvl1 = 0.70;
-  const lvl2 = 1.35;
-  const inward = -s; // Kedi yolu merkezine doğru X yönü
+  const poleX = s * 2.60;
 
-  // Ön pol (ön sıra bacağı, Silindir 1): 4 RRU (Turkcell + TT), 2 kat x 2
-  buildPole(s * 2.15, -1.50, -1.42, -0.14, [
-    { item: tcell1, label: 'Turkcell RRU5301', y: lvl1, dir: -inward },
-    { item: tcell2, label: 'Turkcell RRU5502', y: lvl1, dir: inward },
-    { item: tt1, label: 'TT RRU5527', y: lvl2, dir: -inward },
-    { item: tt2, label: 'TT RRU5818W', y: lvl2, dir: inward }
+  // Ön pol (ön sıra bacağı, Silindir 1): 4 RRU (Turkcell + TT) üst üste, skorborda doğru uzanır
+  buildPole(poleX, -1.21, -1.42, -0.14, 1.10, 3.55, [1.14, 2.34, 3.50], -1, [
+    { item: tcell1, label: 'Turkcell RRU5301', y: levelY(0) },
+    { item: tcell2, label: 'Turkcell RRU5502', y: levelY(1) },
+    { item: tt1, label: 'TT RRU5527', y: levelY(2) },
+    { item: tt2, label: 'TT RRU5818W', y: levelY(3) }
   ], 'Ön Pol');
 
-  // Arka pol (arka sıra bacağı, Silindir 2): 3 Vodafone RRU, alt kat 2 + üst kat 1
-  buildPole(s * 3.00, 0.10, 0.55, -0.12, [
-    { item: vodaItem, label: 'Vodafone RRU5526t #1', y: lvl1, dir: -1 },
-    { item: vodaItem, label: 'Vodafone RRU5526t #2', y: lvl1, dir: 1 },
-    { item: vodaItem, label: 'Vodafone RRU5526t #3', y: lvl2, dir: inward }
+  // Arka pol (arka sıra bacağı, Silindir 2): 3 Vodafone RRU üst üste, dışa doğru uzanır
+  // Kollar RRU aralıklarında (Y = 1.14 / 2.34 / 2.94), RRU gövdelerinden geçmez
+  buildPole(poleX, -0.02, 0.55, -0.12, 1.10, 2.98, [1.14, 2.34, 2.94], 1, [
+    { item: vodaItem, label: 'Vodafone RRU5526t #1', y: levelY(0) },
+    { item: vodaItem, label: 'Vodafone RRU5526t #2', y: levelY(1) },
+    { item: vodaItem, label: 'Vodafone RRU5526t #3', y: levelY(2) }
   ], 'Arka Pol');
 
   return blockGroup;
