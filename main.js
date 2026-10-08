@@ -294,7 +294,7 @@ function createScoreboardTexture() {
     render(img);
     texture.needsUpdate = true;
   };
-  img.src = '/galatasaray_logo.svg';
+  img.src = './galatasaray_logo.svg';
 
   return texture;
 }
@@ -1532,7 +1532,7 @@ function buildSuperColumns(parentGroup) {
     bannerTex.colorSpace = THREE.SRGBColorSpace;
     
     const img = new Image();
-    img.src = '/gsstore.png';
+    img.src = './gsstore.png';
     img.onload = () => {
         const imgRatio = img.width / img.height;
         const logoTargetW = canvas.width * 0.8; // Tek logo, %80 genişlik
