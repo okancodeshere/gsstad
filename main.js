@@ -501,12 +501,13 @@ function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
   alan2Group.position.set(offsetX, 0, offsetZ);
 
   // Concrete floor
-  const floorWidth = 2.0; 
+  
+    const floorWidth = 2.0; 
   const floorLength = 30.0; 
   const floorThickness = 0.4; 
 
   const concreteMat = new THREE.MeshStandardMaterial({ 
-    color: 0x6e7072, 
+    color: 0x95a5a6, 
     roughness: 0.9,
     metalness: 0.1
   });
@@ -1265,43 +1266,202 @@ function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
 }
 
 function buildSuperColumns(parentGroup) {
-    const concreteMat = new THREE.MeshStandardMaterial({ 
+
+    // TAVA (CABLE TRAY) OLUSTURUCU FONKSIYON
+    function createSuperColTrays(isRight) {
+      const tGroup = new THREE.Group();
+      const trayMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.3, metalness: 0.8 });
+      
+      const dirX = isRight ? -1 : 1;
+      
+      // 1. On cephe yatay tava
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.2, 0.05), trayMat);
+      t1.position.set(dirX * 1.3, 9.6, 3.775);
+      t1.castShadow = true;
+      tGroup.add(t1);
+
+      // 2. Yan cepheye dogru yatay tava
+      // Z=3.775'den Z=1.093'e. Boy = 2.682, Merkez = 2.434
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 2.682), trayMat);
+      t2.position.set(dirX * 2.525, 9.6, 2.434);
+      t2.castShadow = true;
+      tGroup.add(t2);
+
+      // 3. Yan cepheden asagi inen dikey tava 
+      const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.05, 2.875, 0.2), trayMat);
+      t3.position.set(dirX * 2.525, 8.1625, 1.093);
+      t3.castShadow = true;
+      tGroup.add(t3);
+
+      return tGroup;
+    }
+
+    function createBridgeTray(length) {
+      const trayMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.3, metalness: 0.8 });
+      const bTray = new THREE.Mesh(new THREE.BoxGeometry(length, 0.05, 0.2), trayMat);
+      bTray.position.set(0, 0.225, 0.75);
+      bTray.castShadow = true;
+      return bTray;
+    }
+
+        const concreteMat = new THREE.MeshStandardMaterial({ 
       color: 0x95a5a6, 
       roughness: 0.8,
       metalness: 0.1
     });
 
-    const colWidth = 5.0;  // X ekseninde
-    const colDepth = 7.5;  // Z ekseninde (180 derece cephesi)
-    const colHeight = 5.0; // Yükseklik (Kullanıcı belirtecek, şimdilik 5m placeholder)
+    function addGlassRailing(bridgeMesh, length, localZ) {
+      const postWidth = 0.08, postDepth = 0.08;
+      const stdGlassH = 1.10;
+      const stdPostH = 1.15;
+      const glassThickness = 0.015;
+      
+      const postMat = new THREE.MeshStandardMaterial({ color: 0xe0e0e0, roughness: 0.3, metalness: 0.8 });
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0x88ccff, metalness: 0.1, roughness: 0.05,
+        transmission: 0.9, transparent: true, opacity: 0.45,
+        side: THREE.DoubleSide
+      });
 
+      const numPosts = Math.round(length / 1.5) + 1;
+      const spacing = length / (numPosts - 1);
+      
+      for (let i = 0; i < numPosts; i++) {
+        const xPos = -length / 2 + i * spacing;
+        const post = new THREE.Mesh(new THREE.BoxGeometry(postWidth, stdPostH, postDepth), postMat);
+        post.position.set(xPos, 0.2 + stdPostH / 2, localZ);
+        post.castShadow = true;
+        bridgeMesh.add(post);
+
+        if (i < numPosts - 1) {
+          const panelW = spacing - postWidth;
+          const glass = new THREE.Mesh(new THREE.BoxGeometry(panelW, stdGlassH, glassThickness), glassMat);
+          glass.position.set(xPos + spacing / 2, 0.2 + stdGlassH / 2 + 0.05, localZ);
+          bridgeMesh.add(glass);
+        }
+      }
+    }
+
+    const colWidth = 5.0;
+    const colDepth = 7.5;
+    const colTopY = 3.5;
+    const colHeight = 20.0; 
+    const colCenterY = colTopY - colHeight / 2;
     const colGeo = new THREE.BoxGeometry(colWidth, colHeight, colDepth);
 
-    // SAG SÜPER KOLON
-    // Referans: X = 36 (Son direk)
-    // En yakın mesafe = 28.3m
-    // Başlangıç X = 36 + 28.3 = 64.3m
-    // Merkez X = 64.3 + (5.0 / 2) = 66.8m
-    // Z Sapması = +2.5m (Kedi yolu tarafı)
+    function createBalcony() {
+      const bGroup = new THREE.Group();
+      
+      const balconyMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.7, metalness: 0.2 });
+      const bWidth = 2.5;
+      const bDepth = 1.2;
+      const bThickness = 0.15;
+      const balcony = new THREE.Mesh(new THREE.BoxGeometry(bWidth, bThickness, bDepth), balconyMat);
+      const localGroundY = Math.abs(colCenterY) + 1.0;
+      balcony.position.set(0, localGroundY - bThickness/2, colDepth/2 + bDepth/2);
+      balcony.castShadow = true;
+      bGroup.add(balcony);
+
+      const strutGeo = new THREE.BoxGeometry(0.1, 1.0, 0.1);
+      [-bWidth/2 + 0.2, bWidth/2 - 0.2].forEach(sx => {
+        const strut = new THREE.Mesh(strutGeo, balconyMat);
+        strut.position.set(sx, localGroundY - 0.5, colDepth/2 + bDepth/4);
+        strut.rotation.x = Math.PI / 4; 
+        strut.castShadow = true;
+        bGroup.add(strut);
+      });
+
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6, metalness: 0.5 });
+      const doorW = 1.2;
+      const doorH = 2.0;
+      const door = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.05), doorMat);
+      door.position.set(0, localGroundY + doorH/2, colDepth/2 + 0.025);
+      bGroup.add(door);
+
+      const handleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.3, metalness: 0.8 });
+      const handle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.3, 0.05), handleMat);
+      handle.position.set(doorW/2 - 0.15, localGroundY + doorH/2, colDepth/2 + 0.06);
+      bGroup.add(handle);
+
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4, metalness: 0.8 });
+      const railH = 1.1;
+      const postGeo = new THREE.BoxGeometry(0.05, railH, 0.05);
+      
+      const frontRailGeo = new THREE.BoxGeometry(bWidth, 0.05, 0.05);
+      const frontRail = new THREE.Mesh(frontRailGeo, railMat);
+      frontRail.position.set(0, localGroundY + railH, colDepth/2 + bDepth - 0.05);
+      bGroup.add(frontRail);
+      
+      [-bWidth/2 + 0.05, bWidth/2 - 0.05].forEach(rx => {
+        const post = new THREE.Mesh(postGeo, railMat);
+        post.position.set(rx, localGroundY + railH/2, colDepth/2 + bDepth - 0.05);
+        bGroup.add(post);
+        
+        const sideRailGeo = new THREE.BoxGeometry(0.05, 0.05, bDepth);
+        const sideRail = new THREE.Mesh(sideRailGeo, railMat);
+        sideRail.position.set(rx, localGroundY + railH, colDepth/2 + bDepth/2);
+        bGroup.add(sideRail);
+      });
+
+      return bGroup;
+    }
+
+    const floorWidth = 2.0; 
+    const floorThickness = 0.4; 
+
+    // --- SAG KISIM ---
     const rightCol = new THREE.Mesh(colGeo, concreteMat);
-    rightCol.position.set(66.8, colHeight / 2 - 0.2, 2.5); // Y'yi zeminle eşlemek için ayarladık (Zemin Y=0 civarı)
+    rightCol.position.set(66.8, colCenterY, 2.5);
     rightCol.castShadow = true;
     rightCol.receiveShadow = true;
+    rightCol.add(createBalcony());
+    rightCol.add(createSuperColTrays(true));
+
+    // Sag baglanti betonu
+    // Baslangic: X=39.0 (Ana betonun tam bittigi yer)
+    // Bitis: X=64.3
+    const rightDistX = 64.3 - 39.0; // 25.3m
+    const correctRightDistZ = 2.5 - (-1.0); // Z=2.5'ten Z=-1.0'e kadar -> 3.5m
+    const correctRightLen = Math.sqrt(rightDistX*rightDistX + correctRightDistZ*correctRightDistZ);
+    const correctRightAngle = Math.atan2(correctRightDistZ, rightDistX);
+    
+    rightCol.rotation.y = -correctRightAngle;
     parentGroup.add(rightCol);
 
-    // SOL SÜPER KOLON
-    // Referans: X = -12 (İlk direk)
-    // En yakın mesafe = 28.3m
-    // Başlangıç X = -12 - 28.3 = -40.3m
-    // Merkez X = -40.3 - (5.0 / 2) = -42.8m
-    // Z Sapması = +2.5m (Kedi yolu tarafı)
+    const rightBridgeGeo = new THREE.BoxGeometry(correctRightLen, floorThickness, floorWidth);
+    const rightBridge = new THREE.Mesh(rightBridgeGeo, concreteMat);
+    rightBridge.position.set(39.0 + rightDistX/2, -floorThickness/2, -1.0 + correctRightDistZ/2);
+    rightBridge.rotation.y = -correctRightAngle; 
+    parentGroup.add(rightBridge);
+    // SADECE kediyoluna yakin olan on tarafa cam ekle (localZ = 0.95)
+    addGlassRailing(rightBridge, correctRightLen, 0.95);
+    rightBridge.add(createBridgeTray(correctRightLen));
+
+    // --- SOL KISIM ---
     const leftCol = new THREE.Mesh(colGeo, concreteMat);
-    leftCol.position.set(-42.8, colHeight / 2 - 0.2, 2.5);
+    leftCol.position.set(-42.8, colCenterY, 2.5);
     leftCol.castShadow = true;
     leftCol.receiveShadow = true;
+    leftCol.add(createBalcony());
+    leftCol.add(createSuperColTrays(false));
+
+    // Sol baglanti betonu
+    // Baslangic: X=-15.0 (Ana betonun tam bittigi yer)
+    // Bitis: X=-40.3
+    const leftDistX = Math.abs(-40.3 - (-15.0)); // 25.3m
+    const leftBridgeGeo = new THREE.BoxGeometry(correctRightLen, floorThickness, floorWidth);
+    const leftBridge = new THREE.Mesh(leftBridgeGeo, concreteMat);
+    leftBridge.position.set(-15.0 - leftDistX/2, -floorThickness/2, -1.0 + correctRightDistZ/2);
+    leftBridge.rotation.y = correctRightAngle; 
+    
+    leftCol.rotation.y = correctRightAngle;
     parentGroup.add(leftCol);
+    parentGroup.add(leftBridge);
+    // SADECE kediyoluna yakin olan on tarafa cam ekle (localZ = 0.95)
+    addGlassRailing(leftBridge, correctRightLen, 0.95);
+    leftBridge.add(createBridgeTray(correctRightLen));
   }
-function createAlan2Structure() {
+  function createAlan2Structure() {
   const alan2Wrapper = new THREE.Group();
   alan2Wrapper.name = 'alan2Structure';
   alan2Wrapper.visible = false;
@@ -1309,6 +1469,125 @@ function createAlan2Structure() {
 
   buildAlan2Instance(alan2Wrapper, 0, 0);
   buildAlan2Instance(alan2Wrapper, 24.0, 0.001);
+  buildSuperColumns(alan2Wrapper);
+
+  
+  // ANA KAFES UZERINDEKI TAVALAR (Ortasi bos)
+  const mainTrayMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.3, metalness: 0.8 });
+  
+  // Sag Kafes Tavasi (X=39'dan X=15'e)
+  const rightMainTray = new THREE.Mesh(new THREE.BoxGeometry(24.0, 0.05, 0.2), mainTrayMat);
+  rightMainTray.position.set(27.0, 0.025, -0.257);
+  rightMainTray.castShadow = true;
+  alan2Wrapper.add(rightMainTray);
+
+  // Sol Kafes Tavasi (X=-15'ten X=9'a)
+  const leftMainTray = new THREE.Mesh(new THREE.BoxGeometry(24.0, 0.05, 0.2), mainTrayMat);
+  leftMainTray.position.set(-3.0, 0.025, -0.257);
+  leftMainTray.castShadow = true;
+  alan2Wrapper.add(leftMainTray);
+
+
+  
+  
+  // YENI MENFEZ (LOUVER) KAFES SISTEMI (Sadece Korumali Alanlar)
+  function addLouverEnclosure(wrapper) {
+    const group = new THREE.Group();
+
+    function getLouverMat(w, h) {
+        const tex = createPerforatedMetalTexture();
+        tex.repeat.set(Math.max(1, Math.round(w * 4)), Math.max(1, Math.round(h * 4)));
+        tex.needsUpdate = true;
+        return new THREE.MeshStandardMaterial({
+            map: tex, transparent: true, alphaTest: 0.25,
+            metalness: 0.85, roughness: 0.35, color: 0x94a3b8, side: THREE.DoubleSide
+        });
+    }
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6, metalness: 0.7 });
+
+    function createLouverPanel(x, y, z, w, h, isRotated) {
+        const panelGroup = new THREE.Group();
+        panelGroup.position.set(x, y, z);
+        if (isRotated) panelGroup.rotation.y = Math.PI / 2;
+
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), getLouverMat(w, h));
+        panelGroup.add(mesh);
+
+        const tGeo = new THREE.BoxGeometry(w, 0.04, 0.04);
+        const topF = new THREE.Mesh(tGeo, frameMat); topF.position.y = h/2; panelGroup.add(topF);
+        const botF = new THREE.Mesh(tGeo, frameMat); botF.position.y = -h/2; panelGroup.add(botF);
+        
+        const vGeo = new THREE.BoxGeometry(0.04, h, 0.04);
+        const leftF = new THREE.Mesh(vGeo, frameMat); leftF.position.x = -w/2; panelGroup.add(leftF);
+        const rightF = new THREE.Mesh(vGeo, frameMat); rightF.position.x = w/2; panelGroup.add(rightF);
+
+        return panelGroup;
+    }
+
+    const areas = [
+      { minX: -5.5, maxX: 5.5 },       // 1. Kafes
+      { minX: 18.5, maxX: 29.5 }       // 2. Kafes (24.0 - 5.5 to 24.0 + 5.5)
+    ];
+
+    areas.forEach(area => {
+      const width = area.maxX - area.minX;
+      const centerX = (area.maxX + area.minX) / 2;
+
+      // Front wall (Above doors: 1.7m to 4.0m)
+      group.add(createLouverPanel(centerX, 2.85, -0.15, width, 2.3, false));
+      // Back wall (0 to 4.0m)
+      group.add(createLouverPanel(centerX, 2.0, -1.85, width, 4.0, false));
+      // Left side wall
+      group.add(createLouverPanel(area.minX, 2.0, -1.0, 1.7, 4.0, true));
+      // Right side wall
+      group.add(createLouverPanel(area.maxX, 2.0, -1.0, 1.7, 4.0, true));
+    });
+
+    const bracketMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.9 });
+    const heights = [1.0, 2.5, 3.8];
+
+    // --- Pillar Supports ---
+    // The pillars are at: 0 and 24 (centers)
+    // and -6, 6, 18, 30 (edges)
+    [0, 24].forEach(px => {
+      heights.forEach(py => {
+        // Front & Back directly from center pillars
+        const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.25), bracketMat);
+        fb.rotation.x = Math.PI / 2; fb.position.set(px, py, -0.275); group.add(fb);
+        const bb = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.25), bracketMat);
+        bb.rotation.x = Math.PI / 2; bb.position.set(px, py, -1.725); group.add(bb);
+      });
+    });
+
+    // Side supports from outer pillars to the side walls of cages
+    // Pillar at -6 to Left wall at -5.5
+    heights.forEach(py => {
+      const sideBracket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), bracketMat);
+      sideBracket.rotation.z = Math.PI / 2; sideBracket.position.set(-5.75, py, -1.0); group.add(sideBracket);
+    });
+    // Pillar at +6 to Right wall at +5.5
+    heights.forEach(py => {
+      const sideBracket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), bracketMat);
+      sideBracket.rotation.z = Math.PI / 2; sideBracket.position.set(5.75, py, -1.0); group.add(sideBracket);
+    });
+    
+    // Pillar at +18 to Left wall at +18.5
+    heights.forEach(py => {
+      const sideBracket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), bracketMat);
+      sideBracket.rotation.z = Math.PI / 2; sideBracket.position.set(18.25, py, -1.0); group.add(sideBracket);
+    });
+    // Pillar at +30 to Right wall at +29.5
+    heights.forEach(py => {
+      const sideBracket = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5), bracketMat);
+      sideBracket.rotation.z = Math.PI / 2; sideBracket.position.set(29.75, py, -1.0); group.add(sideBracket);
+    });
+
+    wrapper.add(group);
+  }
+
+  addLouverEnclosure(alan2Wrapper);
+
+
 
   scene.add(alan2Wrapper);
 }
@@ -14330,7 +14609,7 @@ if (selectAreaElem) {
       if (alan2Group) alan2Group.visible = true;
       if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
-      setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
+      setCameraView(12.00, 40.00, 120.00, 12.00, 0.00, 0.00);
     }
 
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
@@ -16575,7 +16854,7 @@ if (presBtnResetCam) {
     } else if (currentArea === 'alan3') {
       setCameraView(-5.85, 8.33, 33.95, 2.24, 5.87, 28.61);
     } else {
-      setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
+      setCameraView(12.00, 40.00, 120.00, 12.00, 0.00, 0.00);
     }
   });
 }
@@ -20106,7 +20385,9 @@ if (resetBtn) {
     const areaLabel = state.currentArea === 'alan2' ? 'ALAN 1 ve ALAN 3 (Maraton Tribünü ve Kedi Yolu)' :
                       state.currentArea === 'alan3' ? 'ALAN 4 (Çapraz Köşe Tribün)' :
                       'ALAN 2 (Scoreboard Kesiti + Kediyolu)';
-      const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?\n\nBu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
+      const confirmed = confirm(`${areaLabel} üzerindeki tüm yerleşimi sıfırlamak istediğinizden emin misiniz?
+
+Bu işlem sadece aktif olan ${areaLabel} alanındaki nesneleri temizleyecek, diğer alanları etkilemeyecektir.`);
       if (confirmed) {
         if (state.currentArea === 'alan4') {
           state.alan4Platforms.forEach(p => scene.remove(p));
@@ -20171,7 +20452,7 @@ if (state.currentArea === 'alan4') {
   if (alan2Group) alan2Group.visible = true;
   if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = false;
-  setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
+  setCameraView(12.00, 40.00, 120.00, 12.00, 0.00, 0.00);
 } else if (state.currentArea === 'alan3') {
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = false;
