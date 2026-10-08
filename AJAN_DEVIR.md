@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] ALAN 2 skorbord arkasına fotoğraf bazlı çapraz taşıyıcı sütunlar eklendi`
+- **Son commit:** `[Claude] Skorbord çapraz sütunları üst kedi yolunda kesildi, ön silindire ikinci sıra eklendi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son iki commit (kafesler + çapraz sütunlar) push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son üç commit (kafesler, çapraz sütunlar, sütun revizyonu) push edilmedi; kullanıcı onayı bekliyor.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +65,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 23:00 — Claude — Skorbord çapraz sütunları: üst kesim + ön silindire ikinci sıra
+- **Kullanıcı isteği:** "bu direklerin üst kedi yolunu geçen kısmını sil" ve "skorboard ve kedi yolu 2 tane ana taşıyıcı yatay silindire yerleşmiş ya bu dikey borulardan arkasındaki silindire de koy". Soru üzerine kullanıcı "aynı setin tamamı" seçeneğini seçti.
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan4Structure()` "9.5. SKORBOARD ARKASI ÇAPRAZ KALIN TAŞIYICI SÜTUNLAR" (~satır 8167-8280), `scoreboardDiagonalColumns`:
+    - Set üretimi `buildSbStrutSet(pipeZ, baseZ, baseY, plateDepth, deckSleeve)` fonksiyonuna taşındı. Doğrultular aynı (tasarım üst kotu `sbStrutDesignTopY` = 12.5), tüm borular `sbStrutCutY` = 7.45'te (üst kedi yolu döşemesi Y = 7.50 altı) kesilip flanşla bitiyor. Uzun çapraz bilezikleri alttan 2.70 / 3.25 / 3.80 m mesafede (eskiden oransal).
+    - Arka sıra: Silindir 2, `buildSbStrutSet(0.55, 0.55, -0.12, 0.80)`; geometri önceki kayıtla aynı.
+    - Ön sıra (YENİ): Silindir 1, `buildSbStrutSet(-1.67, -1.42, -0.14, 0.55, true)`. Taban ekseni Z = −1.42'ye kaydırıldı, çünkü skorbord arka iskeleti Z ≤ −1.70; alt kedi yolu ön kenarı Z = −1.30, aradaki 0.36 m boşluğa Ø508 sığmıyor. Plaka derinliği 0.55 m.
+    - Ön sıranın ±3 m dikey bacakları alt kedi yolunun ön kenar kirişi ve korkuluğundan geçiyor; döşeme kotunda geçiş bileziği var (`deckSleeve`). Ön sıranın üst uçları üst kedi yolu döşemesinin hemen altında bitiyor (döşemeyi taşıyormuş gibi).
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda iki sıra ve kesim kontrol edildi. Örnekleme ile çakışma kontrolü yapıldı: yalnızca yukarıdaki bilinçli geçişler var; RRU/POI ekipmanı, gemici merdiveni ve kablo tavası ile çakışma yok.
+- **Commit:** `[Claude] Skorbord çapraz sütunları üst kedi yolunda kesildi, ön silindire ikinci sıra eklendi`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_sutun_kesim_ikinci_set_20261008_2231.js`. İstenirse alt kedi yolu korkuluğuna sütun hizasında boşluk açılabilir.
 
 ### 2026-10-08 22:50 — Claude — ALAN 2 skorbord arkasına çapraz kalın taşıyıcı sütunlar
 - **Kullanıcı isteği:** Skorbord arkasından uzaktan çekilmiş fotoğraftaki "önde olan çapraz kalın taşıyıcı sütunların" eklenmesi. Claude fotoğraftaki düzeni anlattı, kullanıcı "kodla" diyerek onayladı.

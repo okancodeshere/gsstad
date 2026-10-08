@@ -8176,14 +8176,17 @@ function createAlan4Structure() {
   // - Düzlem, üst kedi yolu (Z ≤ 0.80m) ve gemici merdiveninden kurtulmak için +Z'ye ~8° eğiktir
   // - Boru: Ø508mm beyaz çelik (60m taşıyıcı malzemesi)
   // =========================================================================
+  // Revizyon (Kullanıcı İsteği):
+  // - "bu direklerin üst kedi yolunu geçen kısmını sil" -> tüm borular üst kedi yolu döşemesi
+  //   altında (Y = 7.45m) kesilir, kesim ucunda flanş
+  // - "skorboard ve kedi yolu 2 tane ana taşıyıcı yatay silindire yerleşmiş ya ... arkasındaki
+  //   silindire de koy" -> aynı setin tamamı Silindir 1'e (Z = -1.67m) de eklendi (2 paralel sıra)
   const sbStrutGroup = new THREE.Group();
   sbStrutGroup.name = 'scoreboardDiagonalColumns';
   const sbStrutR = 0.254;
-  const sbStrutBaseY = -0.12; // Silindir 2 üst yüzü (Y = -0.20m) üzerindeki taban plakası
-  const sbStrutBaseZ = 0.55;
   const sbStrutLean = Math.tan(THREE.MathUtils.degToRad(8));
-  const sbStrutTopY = 12.5;
-  const sbP = (x, y) => new THREE.Vector3(x, y, sbStrutBaseZ + (y - sbStrutBaseY) * sbStrutLean);
+  const sbStrutDesignTopY = 12.5; // Fotoğraftaki doğrultuların tanımlandığı üst kot
+  const sbStrutCutY = 7.45;       // Üst kedi yolu döşemesi (Y = 7.50m) altı: üstü kesildi
   const sbUp = new THREE.Vector3(0, 1, 0);
 
   const addSbStrut = (p1, p2) => {
@@ -8201,46 +8204,64 @@ function createAlan4Structure() {
     r.quaternion.setFromUnitVectors(sbUp, dir.clone().normalize());
     sbStrutGroup.add(r);
   };
-  // Silindir 2'yi saran kelepçe bandı ve üstündeki taban plakası
-  const addSbBase = (x, width) => {
+  // Silindiri saran kelepçe bandı ve üstündeki taban plakası
+  const addSbBase = (x, width, pipeZ, plateZ, plateTopY, plateDepth) => {
     const band = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, width, 36), flangeSteelMat);
     band.rotation.z = Math.PI / 2;
-    band.position.set(x, -0.95, 0.55);
+    band.position.set(x, -0.95, pipeZ);
     sbStrutGroup.add(band);
-    const plate = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.06, 0.80), flangeSteelMat);
-    plate.position.set(x, sbStrutBaseY - 0.03, sbStrutBaseZ);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.06, plateDepth), flangeSteelMat);
+    plate.position.set(x, plateTopY - 0.03, plateZ);
     sbStrutGroup.add(plate);
   };
 
-  [-1, 1].forEach(s => {
-    const node = sbP(s * 3.00, 7.00);
+  // Tek sütun seti (simetrik s = ±1). baseZ / baseY: taban plakası üstündeki boru ekseni başlangıcı
+  const buildSbStrutSet = (pipeZ, baseZ, baseY, plateDepth, deckSleeve = false) => {
+    const P = (x, y) => new THREE.Vector3(x, y, baseZ + (y - baseY) * sbStrutLean);
+    // (x1, y1) -> (x2, y2) doğrultusunun kesim kotundaki X değeri
+    const xAtCut = (x1, y1, x2, y2) => x1 + (x2 - x1) * (sbStrutCutY - y1) / (y2 - y1);
 
-    // Sol/sağ uzun çapraz
-    const lBot = sbP(s * 5.55, sbStrutBaseY);
-    const lTop = sbP(s * 10.80, sbStrutTopY);
-    addSbStrut(lBot, lTop);
-    [0.20, 0.24, 0.28].forEach(t => addSbRing(lBot, lTop, t, 0.035, 0.16));
-    addSbRing(lBot, lTop, 1.0, 0.10, 0.05);
+    [-1, 1].forEach(s => {
+      const node = P(s * 3.00, 7.00);
 
-    // Dallanan düğüm: dikey bacak, dış çapraz bacak, üst kol
-    const vBot = sbP(s * 3.00, sbStrutBaseY);
-    const oBot = sbP(s * 5.25, sbStrutBaseY);
-    const armTop = sbP(s * 5.00, sbStrutTopY);
-    addSbStrut(vBot, node);
-    addSbStrut(oBot, node);
-    addSbStrut(node, armTop);
-    addSbRing(node, armTop, 1.0, 0.10, 0.05);
+      // Sol/sağ uzun çapraz (kesim kotuna kadar), alttan 2.7-3.8m arasında 3 bilezik
+      const lBot = P(s * 5.55, baseY);
+      const lTop = P(xAtCut(s * 5.55, baseY, s * 10.80, sbStrutDesignTopY), sbStrutCutY);
+      addSbStrut(lBot, lTop);
+      const lLen = lBot.distanceTo(lTop);
+      [2.70, 3.25, 3.80].forEach(d => addSbRing(lBot, lTop, d / lLen, 0.035, 0.16));
+      addSbRing(lBot, lTop, 1.0, 0.10, 0.05);
 
-    // Düğüm göbeği (döküm küre + bağlantı bileziği)
-    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 24), pipeWhiteMat);
-    hub.position.copy(node);
-    sbStrutGroup.add(hub);
-    addSbRing(vBot, node, 0.94, 0.06, 0.20);
+      // Dallanan düğüm: dikey bacak, dış çapraz bacak, kesim kotuna kadar üst kol
+      const vBot = P(s * 3.00, baseY);
+      const oBot = P(s * 5.25, baseY);
+      const armTop = P(xAtCut(s * 3.00, 7.00, s * 5.00, sbStrutDesignTopY), sbStrutCutY);
+      addSbStrut(vBot, node);
+      addSbStrut(oBot, node);
+      addSbStrut(node, armTop);
+      addSbRing(node, armTop, 1.0, 0.10, 0.05);
 
-    // Alt bağlantılar: uzun çapraz + dış bacak ortak kelepçe, dikey bacak ayrı kelepçe
-    addSbBase(s * 5.40, 0.90);
-    addSbBase(s * 3.00, 0.60);
-  });
+      // Düğüm göbeği (döküm küre + bağlantı bileziği)
+      const hub = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 24), pipeWhiteMat);
+      hub.position.copy(node);
+      sbStrutGroup.add(hub);
+      addSbRing(vBot, node, 0.94, 0.06, 0.20);
+
+      // Alt kedi yolu döşemesinden (Y = 0.0m) geçen dikey bacakta döşeme geçiş bileziği
+      if (deckSleeve) addSbRing(vBot, node, (0.03 - baseY) / (7.00 - baseY), 0.09, 0.06);
+
+      // Alt bağlantılar: uzun çapraz + dış bacak ortak kelepçe, dikey bacak ayrı kelepçe
+      addSbBase(s * 5.40, 0.90, pipeZ, baseZ, baseY, plateDepth);
+      addSbBase(s * 3.00, 0.60, pipeZ, baseZ, baseY, plateDepth);
+    });
+  };
+
+  // Arka sıra: Silindir 2 (Z = +0.55m) tepe ekseni, yüzey Y = -0.20m
+  buildSbStrutSet(0.55, 0.55, -0.12, 0.80);
+  // Ön sıra: Silindir 1 (Z = -1.67m). Skorbord arka iskeleti (Z ≤ -1.70m) ile çakışmaması için
+  // taban ekseni silindir üzerinde Z = -1.42m'ye kaydırıldı (yüzey Y ≈ -0.24m), plaka derinliği 0.55m.
+  // ±3m dikey bacaklar alt kedi yolunun ön kenarından (Z = -1.30m) geçer.
+  buildSbStrutSet(-1.67, -1.42, -0.14, 0.55, true);
 
   alan4Group.add(sbStrutGroup);
 
