@@ -5015,6 +5015,211 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
 }
 
 // =========================================================================
+// ORTAK MENFEZ (LOUVER) KAFES SİSTEMİ
+// Kullanıcı İsteği: "alan 1 3 olarak adlandırdıgım çalışma alanındaki beton üzerindeki
+// kafeslerin özelliklerini diger iki alanda da uygula ... alan-4 de kafes küçük oldugundan
+// reklam brandasını da ona göre hızala logoyu ortala"
+// ALAN 1-3 (kod alan2) addLouverEnclosure() özelliklerinin ALAN 2 (kod alan4) ve
+// ALAN 4 (kod alan3) kafeslerine uygulanmış genel hali:
+// - 1.70m alt bölüm üstünde üst menfez bandı (toplam cageHeight), tüm cepheler delikli menfez
+// - Yan cephelerin alt yarısı bölünmüş: ön yarı arkaya kayan kapı, arka yarı sabit
+// - 1.70m kotunda yatay kaide kirişi, kolonlardan kafese destek braketleri
+// - Ön cephede kafes genişliğine göre ölçeklenen, logosu ortalanmış reklam brandası
+// Mevcut ön kayar kapılar her alanın kendi kodunda kalır.
+// =========================================================================
+function addLouverCage(parentGroup, opts) {
+  const {
+    minX, maxX, frontZ, backZ,
+    baseY = 0,
+    cageHeight = 4.0,
+    doorsArray,
+    innerColumns = [], // Kafes içindeki kolonlar { x, z } (ön/arka braket)
+    sideColumns = [],  // Yan duvarların hemen dışındaki kolonlar { x, z } (yan braket)
+    bannerName
+  } = opts;
+
+  const group = new THREE.Group();
+  group.name = `louverCage_${bannerName}`;
+
+  const backDir = Math.sign(backZ - frontZ); // Arka cephenin yönü (+Z veya -Z)
+  const width = maxX - minX;
+  const centerX = (minX + maxX) / 2;
+  const midZ = (frontZ + backZ) / 2;
+  const sideDepth = Math.abs(backZ - frontZ) - 0.20;
+  const frontPanelZ = frontZ + backDir * 0.10;
+  const backPanelZ = backZ - backDir * 0.10;
+  const lowH = 1.70;
+  const topH = cageHeight - lowH;
+  const lowY = baseY + lowH / 2;
+  const topY = baseY + lowH + topH / 2;
+
+  function getLouverMat(w, h) {
+    const tex = createPerforatedMetalTexture();
+    tex.repeat.set(Math.max(1, Math.round(w * 4)), Math.max(1, Math.round(h * 4)));
+    tex.needsUpdate = true;
+    return new THREE.MeshStandardMaterial({
+      map: tex, transparent: true, alphaTest: 0.25,
+      metalness: 0.85, roughness: 0.35, color: 0x94a3b8, side: THREE.DoubleSide
+    });
+  }
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.6, metalness: 0.7 });
+
+  function createLouverPanel(x, y, z, w, h, isRotated, isFront) {
+    const panelGroup = new THREE.Group();
+    panelGroup.position.set(x, y, z);
+    if (isRotated) panelGroup.rotation.y = Math.PI / 2;
+
+    panelGroup.add(new THREE.Mesh(new THREE.PlaneGeometry(w, h), getLouverMat(w, h)));
+
+    const tGeo = new THREE.BoxGeometry(w, 0.04, 0.04);
+    const topF = new THREE.Mesh(tGeo, frameMat); topF.position.y = h / 2; panelGroup.add(topF);
+    const botF = new THREE.Mesh(tGeo, frameMat); botF.position.y = -h / 2; panelGroup.add(botF);
+    const vGeo = new THREE.BoxGeometry(0.04, h, 0.04);
+    const leftF = new THREE.Mesh(vGeo, frameMat); leftF.position.x = -w / 2; panelGroup.add(leftF);
+    const rightF = new THREE.Mesh(vGeo, frameMat); rightF.position.x = w / 2; panelGroup.add(rightF);
+
+    panelGroup.userData.isLouverPanel = true;
+    panelGroup.userData.isFrontPanel = !!isFront;
+    return panelGroup;
+  }
+
+  // 1. Ön cephe: üst menfez bandı + (sabit menfez modunda görünen) alt menfez
+  const fTop = createLouverPanel(centerX, topY, frontPanelZ, width, topH, false, true);
+  fTop.name = 'louver_top'; group.add(fTop);
+  const fBot = createLouverPanel(centerX, lowY, frontPanelZ, width, lowH, false, true);
+  fBot.name = 'louver_bot'; fBot.visible = false; group.add(fBot);
+
+  // 2. Arka cephe (camların yerine menfez)
+  const bTop = createLouverPanel(centerX, topY, backPanelZ, width, topH, false);
+  bTop.name = 'louver_top'; group.add(bTop);
+  const bBot = createLouverPanel(centerX, lowY, backPanelZ, width, lowH, false);
+  bBot.name = 'louver_bot_fixed'; group.add(bBot);
+
+  // 3. Yan cepheler: üst sabit, alt yarı bölünmüş (ön yarı arkaya kayar, arka yarı sabit)
+  const halfD = sideDepth / 2;
+  [{ x: minX, inside: 1 }, { x: maxX, inside: -1 }].forEach(side => {
+    const sTop = createLouverPanel(side.x, topY, midZ, sideDepth, topH, true);
+    sTop.name = 'louver_top'; group.add(sTop);
+
+    const wrap = new THREE.Group();
+    wrap.position.set(side.x, lowY, midZ);
+    wrap.rotation.y = -backDir * Math.PI / 2; // Yerel +X = arka cephe yönü
+    group.add(wrap);
+
+    const sBack = createLouverPanel(halfD / 2, 0, 0, halfD, lowH, false);
+    sBack.name = 'louver_bot'; wrap.add(sBack);
+
+    // Yerel Z ofseti kafesin içine doğru (sabit yarının önünden kayabilmesi için)
+    const sFront = createLouverPanel(-halfD / 2, 0, side.inside * -backDir * 0.05, halfD, lowH, false);
+    sFront.name = 'louver_bot';
+    sFront.userData.isSlidingDoor = true;
+    sFront.userData.closedX = -halfD / 2;
+    sFront.userData.openX = halfD / 2;
+    sFront.userData.targetX = -halfD / 2;
+    sFront.userData.isOpen = false;
+    wrap.add(sFront);
+    doorsArray.push(sFront);
+  });
+
+  // 4. 1.70m yatay kaide kirişi (alt bölüm / üst bant ayrımı)
+  const dividerMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7, metalness: 0.8 });
+  const backDiv = new THREE.Mesh(new THREE.BoxGeometry(width, 0.05, 0.05), dividerMat);
+  backDiv.position.set(centerX, baseY + lowH, backPanelZ);
+  group.add(backDiv);
+  [minX, maxX].forEach(sx => {
+    const sDiv = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, sideDepth), dividerMat);
+    sDiv.position.set(sx, baseY + lowH, midZ);
+    group.add(sDiv);
+  });
+
+  // 5. Kolonlardan kafes cephelerine destek braketleri
+  const bracketMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.9 });
+  const bracketHeights = [1.0, 2.5, cageHeight - 0.2];
+  const addBracket = (len, x, y, z, alongX, isFront, py) => {
+    if (len < 0.02) return;
+    const br = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, len), bracketMat);
+    if (alongX) br.rotation.z = Math.PI / 2; else br.rotation.x = Math.PI / 2;
+    br.position.set(x, y, z);
+    br.userData.isSupportBracket = true;
+    br.userData.bracketHeight = py;
+    br.userData.isFrontPanel = isFront;
+    group.add(br);
+  };
+  innerColumns.forEach(col => {
+    const colFrontFace = col.z - backDir * 0.20;
+    const colBackFace = col.z + backDir * 0.20;
+    bracketHeights.forEach(py => {
+      addBracket(Math.abs(colFrontFace - frontPanelZ), col.x, baseY + py, (colFrontFace + frontPanelZ) / 2, false, true, py);
+      addBracket(Math.abs(backPanelZ - colBackFace), col.x, baseY + py, (backPanelZ + colBackFace) / 2, false, false, py);
+    });
+  });
+  sideColumns.forEach(col => {
+    const wallX = Math.abs(col.x - minX) < Math.abs(col.x - maxX) ? minX : maxX;
+    bracketHeights.forEach(py => {
+      addBracket(Math.abs(col.x - wallX), (col.x + wallX) / 2, baseY + py, col.z, true, false, py);
+    });
+  });
+
+  // 6. Reklam brandası: kafes ön cephesi boyutunda, logo oranı korunarak ortalanır
+  const brandaW = width;
+  const brandaH = cageHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = 2048;
+  canvas.height = Math.round((2048 / brandaW) * brandaH);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const bannerTex = new THREE.CanvasTexture(canvas);
+  bannerTex.colorSpace = THREE.SRGBColorSpace;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = import.meta.env.BASE_URL + 'gsstore.png';
+  img.onload = () => {
+    // Geniş kafeste genişliğin %80'i, dar kafeste (ALAN 4) yüksekliğin %60'ı sınırı
+    const scale = Math.min((canvas.width * 0.8) / img.width, (canvas.height * 0.6) / img.height);
+    const logoW = img.width * scale;
+    const logoH = img.height * scale;
+    ctx.drawImage(img, (canvas.width - logoW) / 2, (canvas.height - logoH) / 2, logoW, logoH);
+    bannerTex.needsUpdate = true;
+  };
+
+  const brandaMat = new THREE.MeshStandardMaterial({
+    map: bannerTex, transparent: true, opacity: 0.5, side: THREE.DoubleSide,
+    depthWrite: false, roughness: 0.9, metalness: 0.0
+  });
+
+  const brandaGroup = new THREE.Group();
+  brandaGroup.name = bannerName;
+  brandaGroup.position.set(centerX, baseY + 0.02 + brandaH / 2, frontZ - backDir * 0.07);
+  if (backDir > 0) brandaGroup.rotation.y = Math.PI; // Ön cephe -Z'ye bakıyorsa logo ayna görünmesin
+  const brandaMesh = new THREE.Mesh(new THREE.PlaneGeometry(brandaW, brandaH), brandaMat);
+  brandaMesh.renderOrder = 999;
+  brandaGroup.add(brandaMesh);
+
+  const fThk = 0.04, fDep = 0.02;
+  const bFrameMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 });
+  const hFrameGeo = new THREE.BoxGeometry(brandaW + fThk * 2, fThk, fDep);
+  const vFrameGeo = new THREE.BoxGeometry(fThk, brandaH, fDep);
+  [[0, brandaH / 2 + fThk / 2, hFrameGeo], [0, -brandaH / 2 - fThk / 2, hFrameGeo],
+   [-brandaW / 2 - fThk / 2, 0, vFrameGeo], [brandaW / 2 + fThk / 2, 0, vFrameGeo]].forEach(([fx, fy, geo]) => {
+    const f = new THREE.Mesh(geo, bFrameMat);
+    f.position.set(fx, fy, 0);
+    brandaGroup.add(f);
+  });
+  group.add(brandaGroup);
+
+  // 7. Başlangıç görünürlüğü (ALAN 1-3 ile aynı): yan/arka üst bant ve üstteki braketler gizli
+  group.traverse(c => {
+    if (c.userData.isLouverPanel && !c.userData.isFrontPanel && c.name === 'louver_top') c.visible = false;
+    if (c.userData.isSupportBracket && !c.userData.isFrontPanel && c.userData.bracketHeight > lowH) c.visible = false;
+  });
+
+  parentGroup.add(group);
+}
+
+// =========================================================================
 // ALAN 3 STRÜKTÜRÜ (25m Kaide, 2.50m Korumalı Alan, 110cm Kayar Kapılar, 15cm Sabitler)
 // =========================================================================
 function createAlan3Structure() {
@@ -5310,13 +5515,7 @@ function createAlan3Structure() {
   leftBackPost.position.set(encMinX, encPostH / 2, encBackZ);
   alan3Group.add(leftBackPost);
 
-  const sidePanelDepth = (sideDepth / 2) - postWidth;
-  const leftGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  leftGlass1.position.set(encMinX, encGlassH / 2 + 0.02, encFrontZ - sideDepth / 4);
-  alan3Group.add(leftGlass1);
-  const leftGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  leftGlass2.position.set(encMinX, encGlassH / 2 + 0.02, encBackZ + sideDepth / 4);
-  alan3Group.add(leftGlass2);
+  // Yan camlar kaldırıldı -> addLouverCage() menfez panelleri (ALAN 1-3 ile aynı)
 
   // Sağ Yan Cam (X = -1.80)
   const rightMidPost = new THREE.Mesh(sidePostGeo, postMat);
@@ -5327,26 +5526,20 @@ function createAlan3Structure() {
   rightBackPost.position.set(encMaxX, encPostH / 2, encBackZ);
   alan3Group.add(rightBackPost);
 
-  const rightGlass1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  rightGlass1.position.set(encMaxX, encGlassH / 2 + 0.02, encFrontZ - sideDepth / 4);
-  alan3Group.add(rightGlass1);
-  const rightGlass2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sidePanelDepth), glassMat);
-  rightGlass2.position.set(encMaxX, encGlassH / 2 + 0.02, encBackZ + sideDepth / 4);
-  alan3Group.add(rightGlass2);
-
-  // Arka Cam Cephe (Z = -1.95, X = [-4.30, -1.80], 2.50m)
+  // Arka Cephe Direği (Z = -1.95) - camlar kaldırıldı, menfez addLouverCage() ile
   const backCenterPost = new THREE.Mesh(new THREE.BoxGeometry(postWidth, encPostH, postDepth), postMat);
   backCenterPost.position.set(encCenterX, encPostH / 2, encBackZ);
   alan3Group.add(backCenterPost);
 
-  const backPanelW = (encWidth / 2) - postWidth;
-  const backGlass1 = new THREE.Mesh(new THREE.BoxGeometry(backPanelW, encGlassH, glassThickness), glassMat);
-  backGlass1.position.set(encMinX + encWidth / 4, encGlassH / 2 + 0.02, encBackZ);
-  alan3Group.add(backGlass1);
-
-  const backGlass2 = new THREE.Mesh(new THREE.BoxGeometry(backPanelW, encGlassH, glassThickness), glassMat);
-  backGlass2.position.set(encMaxX - encWidth / 4, encGlassH / 2 + 0.02, encBackZ);
-  alan3Group.add(backGlass2);
+  // ALAN 1-3 kafes özellikleri: 4m menfez kafes, bölünmüş yan kapılar, braketler, 2.5m'ye ölçekli branda
+  // Sağ duvarın (X = -0.25) hemen dışında X = 0 taşıyıcı sütunu (Z = -1.35) var
+  addLouverCage(alan3Group, {
+    minX: encMinX, maxX: encMaxX, frontZ: encFrontZ, backZ: encBackZ,
+    baseY: 0, cageHeight: 4.0,
+    doorsArray: alan3SlidingDoors,
+    sideColumns: [{ x: 0, z: -1.35 }],
+    bannerName: 'reklam_brandasi_alan3'
+  });
 
   // -------------------------------------------------------------
   // 4. DİKEY TAŞIYICI ÇELİK SİLİNDİR DİREKLER (6 Metrede Bir)
@@ -8438,13 +8631,7 @@ function createAlan4Structure() {
       backP.position.set(sideX, baseGroundY + encPostH / 2, encBackZ);
       concreteGroup.add(backP);
 
-      const g1 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sSideGlassDepth), glassMat);
-      g1.position.set(sideX, baseGroundY + encGlassH / 2 + 0.02, encFrontZ + sDepth / 4);
-      concreteGroup.add(g1);
-
-      const g2 = new THREE.Mesh(new THREE.BoxGeometry(glassThickness, encGlassH, sSideGlassDepth), glassMat);
-      g2.position.set(sideX, baseGroundY + encGlassH / 2 + 0.02, encBackZ - sDepth / 4);
-      concreteGroup.add(g2);
+      // Yan camlar kaldırıldı -> addLouverCage() menfez panelleri (ALAN 1-3 ile aynı)
     });
 
     // 5. Arka Yüksek Cam Cephe (Z = encBackZ, 11.20m Açıklık, 8 Cam Panel)
@@ -8457,13 +8644,18 @@ function createAlan4Structure() {
       bPost.castShadow = true;
       concreteGroup.add(bPost);
     }
-    for (let bi = 0; bi < backPanelCount; bi++) {
-      const bMidX = minX + bi * backSpacing + backSpacing / 2;
-      const bGlassW = backSpacing - postWidth;
-      const bGlass = new THREE.Mesh(new THREE.BoxGeometry(bGlassW, encGlassH, glassThickness), glassMat);
-      bGlass.position.set(bMidX, baseGroundY + encGlassH / 2 + 0.02, encBackZ);
-      concreteGroup.add(bGlass);
-    }
+    // Arka camlar kaldırıldı (direkler kaldı) -> addLouverCage() menfez panelleri
+
+    // ALAN 1-3 kafes özellikleri: menfez kafes, bölünmüş yan kapılar, braketler, branda
+    // Yükseklik 3.80m: kolon başlık kirişi (Ø400, merkez baseGroundY + 4.0m) alt yüzüne kadar
+    addLouverCage(concreteGroup, {
+      minX, maxX, frontZ: encFrontZ, backZ: encBackZ,
+      baseY: baseGroundY, cageHeight: 3.80,
+      doorsArray: alan4SlidingDoors,
+      innerColumns: [{ x: isLeftSide ? -15 : 15, z: baseZ }],
+      sideColumns: isLeftSide ? [{ x: -21, z: baseZ }, { x: -9, z: baseZ }] : [{ x: 9, z: baseZ }, { x: 21, z: baseZ }],
+      bannerName: `reklam_brandasi_alan4_${sideName}`
+    });
   }
 
   // Sol İzole Alanı (X = -20.60m ile -9.40m arası, Kolon -21m ve Kolon -9m DIŞARIDA)
@@ -14080,9 +14272,10 @@ window.addEventListener('pointerup', () => {
 
     
     let handledLouver = false;
-    const alan2W = scene.getObjectByName('alan2Structure');
-    if (alan2W) {
-        const hits = raycaster.intersectObjects(alan2W.children, true);
+    // Kafes menfez paneli tıklaması: aktif alanın strüktürü (ALAN 1-3, ALAN 2, ALAN 4)
+    const activeCageW = scene.getObjectByName(state.currentArea + 'Structure');
+    if (activeCageW) {
+        const hits = raycaster.intersectObjects(activeCageW.children, true);
         let clickedLouver = null;
         for(let hit of hits) {
             let curr = hit.object;
@@ -19163,11 +19356,18 @@ louverUI.innerHTML = `
 `;
 document.body.appendChild(louverUI);
 
+// Kafes paneli ayarları üç alanın kafeslerine birlikte uygulanır (alanlar arası tutarlı durum)
+const forEachCageStructure = (cb) => {
+    ['alan2Structure', 'alan3Structure', 'alan4Structure'].forEach(n => {
+        const w = scene.getObjectByName(n);
+        if (w) w.traverse(cb);
+    });
+};
+
 let frontTopVis = true;
 document.getElementById('toggleFrontTop').addEventListener('click', () => {
     frontTopVis = !frontTopVis;
-    const w = scene.getObjectByName('alan2Structure');
-    if (w) w.traverse(c => {
+    forEachCageStructure(c => {
         if (c.userData.isLouverPanel && c.userData.isFrontPanel && c.name === 'louver_top') c.visible = frontTopVis;
     });
 });
@@ -19175,8 +19375,7 @@ document.getElementById('toggleFrontTop').addEventListener('click', () => {
 let otherTopVis = false;
 document.getElementById('toggleOtherTop').addEventListener('click', () => {
     otherTopVis = !otherTopVis;
-    const w = scene.getObjectByName('alan2Structure');
-    if (w) w.traverse(c => {
+    forEachCageStructure(c => {
         if (c.userData.isLouverPanel && !c.userData.isFrontPanel && c.name === 'louver_top') c.visible = otherTopVis;
     });
 });
@@ -19185,11 +19384,10 @@ let isDoorMode = true; // Default is door mode
 document.getElementById('toggleDoors').addEventListener('click', () => {
     isDoorMode = !isDoorMode;
     // Hide/Show sliding doors
-    alan2SlidingDoors.forEach(d => { if (!d.userData.isLouverPanel) d.visible = isDoorMode; });
-    
+    [...alan2SlidingDoors, ...alan3SlidingDoors, ...alan4SlidingDoors].forEach(d => { if (!d.userData.isLouverPanel) d.visible = isDoorMode; });
+
     // Show/Hide fixed front bottom louvers
-    const w = scene.getObjectByName('alan2Structure');
-    if (w) w.traverse(c => {
+    forEachCageStructure(c => {
         if (c.userData.isLouverPanel && c.userData.isFrontPanel && c.name === 'louver_bot') c.visible = !isDoorMode;
     });
 });
@@ -19198,24 +19396,18 @@ document.getElementById('toggleDoors').addEventListener('click', () => {
   let bannerState = 1; // 0: Opak, 1: %50, 2: Yok
   document.getElementById('toggleBanner').addEventListener('click', (e) => {
       bannerState = (bannerState + 1) % 3;
-      const w = scene.getObjectByName('alan2Structure');
-      let b1, b2;
-      if (w) {
-          b1 = w.getObjectByName('reklam_brandasi_1');
-          b2 = w.getObjectByName('reklam_brandasi_2');
-      }
-      
+      // Üç alandaki tüm reklam brandaları (reklam_brandasi_1/2, reklam_brandasi_alan3, reklam_brandasi_alan4_*)
+      const banners = [];
+      forEachCageStructure(c => { if (c.name && c.name.startsWith('reklam_brandasi')) banners.push(c); });
+
       if (bannerState === 0) { // Adım 1: Transparanlık yok
           e.target.innerText = 'Reklam Kaplama: Opak (Tam)';
-          if(b1 && b1.children.length > 0) { b1.visible = true; b1.children[0].material.transparent = false; b1.children[0].material.opacity = 1.0; b1.children[0].material.depthWrite = true; b1.children[0].material.needsUpdate = true; }
-          if(b2 && b2.children.length > 0) { b2.visible = true; b2.children[0].material.transparent = false; b2.children[0].material.opacity = 1.0; b2.children[0].material.depthWrite = true; b2.children[0].material.needsUpdate = true; }
+          banners.forEach(b => { if (b.children.length > 0) { b.visible = true; b.children[0].material.transparent = false; b.children[0].material.opacity = 1.0; b.children[0].material.depthWrite = true; b.children[0].material.needsUpdate = true; } });
       } else if (bannerState === 1) { // Adım 2: %50
           e.target.innerText = 'Reklam Kaplama: %50 Şeffaf';
-          if(b1 && b1.children.length > 0) { b1.visible = true; b1.children[0].material.transparent = true; b1.children[0].material.opacity = 0.5; b1.children[0].material.depthWrite = false; b1.children[0].material.needsUpdate = true; }
-          if(b2 && b2.children.length > 0) { b2.visible = true; b2.children[0].material.transparent = true; b2.children[0].material.opacity = 0.5; b2.children[0].material.depthWrite = false; b2.children[0].material.needsUpdate = true; }
+          banners.forEach(b => { if (b.children.length > 0) { b.visible = true; b.children[0].material.transparent = true; b.children[0].material.opacity = 0.5; b.children[0].material.depthWrite = false; b.children[0].material.needsUpdate = true; } });
       } else if (bannerState === 2) { // Adım 3: Yok
           e.target.innerText = 'Reklam Kaplama: Gizli';
-          if(b1) b1.visible = false;
-          if(b2) b2.visible = false;
+          banners.forEach(b => { b.visible = false; });
       }
   });
