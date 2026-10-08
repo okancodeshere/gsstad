@@ -35,7 +35,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-08
+- **Son güncelleyen:** Antigravity, 2026-10-08
 - **Son commit:** _(bu kaydın commit'i, bkz. günlük)_
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok.
@@ -64,6 +64,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ---
 
+### 2026-10-08 18:19 — Antigravity — Bağımlılık listesinin devir defterine eklenmesi
+- **Kullanıcı isteği:** package.json'daki bağımlılıkların AJAN_DEVIR.md'ye Kalıcı Kararlar altına eklenmesi.
+- **Değişen dosyalar:**
+  - `AJAN_DEVIR.md` → Güncel Durum ve Günlük güncellendi, Kalıcı Kararlar altına "Bağımlılıklar" eklendi.
+- **Neden / karar:** Kullanıcı talebi.
+- **Doğrulama:** Dosya değişikliği node scriptiyle yapıldı.
+- **Commit:** (commit edilecek)
+- **Yarım kalan / dikkat:** Yok.
+
+
 ### 2026-10-08 — Claude — Ajan devir sistemi kuruldu
 - **Kullanıcı isteği:** Claude Code ve Antigravity arasında, birbirlerinin yaptığı değişiklikleri istisnasız aktaran ortak bir rehber alanı oluşturulması.
 - **Değişen dosyalar:**
@@ -86,3 +96,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Alan isimleri:** kod `alan2` = UI ALAN 1 ve 3, kod `alan4` = UI ALAN 2, kod `alan3` = UI ALAN 4.
 - **`alan4` cam korkuluk dikmeleri** 1.5 m sabit ızgarada, X=0 merkezli kalır (`frontRailingSpans`).
 - **Varsayılan yerleşim:** `main.js` içindeki `PRESET_DRAFTS['taslak-v2']`.
+
+
+### Bağımlılıklar
+- `dxf-writer`: ^1.18.4
+- `three`: ^0.160.0
+- `xlsx`: ^0.18.5
+- `pptxgenjs`: ^4.0.1 (dev)
+- `puppeteer`: ^25.12.0 (dev)
+- `vite`: ^6.0.0 (dev)
+- `wrangler`: ^4.120.0 (dev)
+
