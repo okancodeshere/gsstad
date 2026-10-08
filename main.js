@@ -496,11 +496,9 @@ const alan2SlidingDoors = [];
 const alan4SlidingDoors = [];
 const alan3SlidingDoors = [];
 
-function createAlan2Structure() {
+function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
   const alan2Group = new THREE.Group();
-  alan2Group.name = 'alan2Structure';
-  alan2Group.visible = false; // Hidden by default
-  alan2SlidingDoors.length = 0;
+  alan2Group.position.set(offsetX, 0, offsetZ);
 
   // Concrete floor
   const floorWidth = 2.0; 
@@ -1263,7 +1261,19 @@ function createAlan2Structure() {
   // -------------------------------------------------------------
   createAlan2RoofTrussAndCableTray(alan2Group);
 
-  scene.add(alan2Group);
+  parentGroup.add(alan2Group);
+}
+
+function createAlan2Structure() {
+  const alan2Wrapper = new THREE.Group();
+  alan2Wrapper.name = 'alan2Structure';
+  alan2Wrapper.visible = false;
+  alan2SlidingDoors.length = 0;
+
+  buildAlan2Instance(alan2Wrapper, 0, 0);
+  buildAlan2Instance(alan2Wrapper, 30.0, 0);
+
+  scene.add(alan2Wrapper);
 }
 
 // =============================================================
@@ -14283,7 +14293,7 @@ if (selectAreaElem) {
       if (alan2Group) alan2Group.visible = true;
       if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
-      setCameraView(-0.65, 2.84, 6.34, -0.65, 1.50, -3.57);
+      setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
     }
 
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
@@ -16528,7 +16538,7 @@ if (presBtnResetCam) {
     } else if (currentArea === 'alan3') {
       setCameraView(-5.85, 8.33, 33.95, 2.24, 5.87, 28.61);
     } else {
-      setCameraView(-0.65, 2.84, 6.34, -0.65, 1.50, -3.57);
+      setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
     }
   });
 }
@@ -19448,7 +19458,7 @@ if (state.currentArea === 'alan4') {
   if (alan2Group) alan2Group.visible = true;
   if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = false;
-  setCameraView(-0.65, 2.84, 6.34, -0.65, 1.50, -3.57);
+  setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
 } else if (state.currentArea === 'alan3') {
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = false;
