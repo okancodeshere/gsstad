@@ -13077,26 +13077,26 @@ function spawnAlan2Alternatif2RRUBlok() {
 
 
 // =========================================================================
-// SKORBOARD ÇAPRAZ SÜTUNLARINA OFSET KOLLU MONTAJ POLÜ + 7 RRU (ALAN 2, kod alan4)
+// SKORBOARD ÇAPRAZ SÜTUNLARINA OFSET KOLLU YATAY MONTAJ POLÜ + 7 RRU (ALAN 2, kod alan4)
 // Kullanıcı İsteği:
 // - "7 li rru gruplarımız var ancak reelde kediyolunda bu rruları koyacak bir alan bulunmuyor bu nedenle
 //   yeni ekledigimiz taşıyıcı sutunlara ofset ile bir montaj polu asacagız rruları ise bu pol üzerine takacagız"
 // - "sagda ve solda da kedi yoluna en yakın nispeten daha dik bir açıyla duran sutunların hem ön hem de
 //   arkadakine yükü dagıtmak için pol koyabiliriz. Kedi yolundan ... dışarı çıkmadan erişim sağlanabilir"
 // - "iki boruyu da kullanarak birinde 3 birinde 4 tane"
-// Revizyon (Kullanıcı İsteği): "kedi yolunun korkuluklarının altında kalma ve rruları kısa kenarlarından pole
-// tuttur. Böylece daha az alan kaplar. Ayrıca kedi yolunda çizimlerimizde olmayan aydınlatma vs cihazlar var
-// o yüzden korkuluk seviyesinin üstünde kal" + "Kitap gibi, kedi yoluna dik" dizilim seçildi.
+// - "rrular kısa kenarlarından yan yana takılacak kedi yolunun korkulugunun biraz üstünde olacaklar ve
+//   yan yana kısa kenarlarından birbirine paralel duracaklar"
 // Yerleşim (bir taraf, s = -1 sol / +1 sağ; koordinatlar alan4 yerel):
-// - Tüm RRU'lar korkuluk üst kotunun (Y = 1.10m) üstünde, alt kenar Y = 1.20m; katlar 0.60m arayla üst üste
-// - RRU'lar kitap gibi: geniş yüzü korkuluğa dik (genişlik Z yönünde), kısa kenarındaki kelepçe ile pola bağlı;
-//   kedi yolu boyunca yalnızca ~14cm kalınlık kaplar
-// - Ön pol: X = s*2.60, Z = -1.21m (ön korkuluk Z = -1.30m'nin 9cm içi, korkuluk kotunun üstünde).
-//   4 RRU (Turkcell + TT) skorborda doğru uzanır: Z = -1.29 ... -1.69m (skorbord arka iskeleti Z = -1.70m)
-// - Arka pol: X = s*2.60, Z = -0.02m (arka korkuluk Z = -0.10m hemen dışı). 3 Vodafone RRU dışa (+Z) uzanır.
-//   Sol tarafta gemici merdiveni X = -2.40m'den başlar; RRU'lar X ≤ -2.53m
-// - Pol X = s*2.60, ±3m dikey bacağın kedi yolu merkezine bakan yanında (bacak yüzeyi X = s*2.746m)
-// - Her pol 3 ofset kolla Ø508 sütunu saran bilezik kelepçelere bağlanır (kollar RRU aralıklarında)
+// - Pol yatay (X yönünde, korkuluğa paralel), Y = 1.44m. RRU'lar tek sırada aynı kotta:
+//   alt kenar Y = 1.20m (korkuluk üst kotu 1.10m + 10cm), üst kenar 1.68m
+// - RRU'lar kitap gibi yan yana ve birbirine paralel: geniş yüzü korkuluğa dik (genişlik Z yönünde),
+//   kısa kenarındaki kelepçe ile yatay pola takılı; adım 0.20m (14cm gövde + 6cm boşluk)
+// - Ön pol: Z = -1.21m (ön korkuluk Z = -1.30m'nin 9cm içi, korkuluk kotunun üstünde). Ön sıra bacağına
+//   (X = s*3.00) eyer kelepçesiyle bağlı, kedi yolu merkezine doğru konsol; üstten çapraz destek.
+//   4 RRU (Turkcell + TT) X = s*2.62 / 2.42 / 2.22 / 2.02, skorborda doğru uzanır (Z = -1.29 ... -1.69m)
+// - Arka pol: Z = -0.06m (arka korkuluk hattı, korkuluk kotunun üstünde). Arka sıra bacağına X = s*3.00'te
+//   yatay ofset kol + üstten çapraz destekle bağlı. 3 Vodafone: kolun iç yanında X = s*2.78 / 2.58,
+//   dış yanında X = s*3.22; dışa (+Z) uzanır. Sol tarafta gemici merdiveni iniş açıklığı X = -2.40m'den başlar
 // Sütun ekseni scoreboardDiagonalColumns ile aynı: Z(y) = baseZ + (y - baseY) * tan(8°)
 // =========================================================================
 function buildScoreboardStrutPoleRRUBlok(side = 'left') {
@@ -13112,10 +13112,10 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
     category: 'RRU',
     name: `Sütun Ofset Pol 7 RRU Grubu - ${sideLabel}`,
     side: side,
-    width: 0.60,
+    width: 1.30,
     depth: 1.70,
-    height: 3.55,
-    weight: 230, // 190kg RRU + 40kg pol, ofset kol ve kelepçeler
+    height: 1.70,
+    weight: 230, // 190kg RRU + 40kg pol, ofset kol, destek ve kelepçeler
     interactive: true,
     locked: true,
     lockedX: true,
@@ -13133,16 +13133,26 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
 
   const strutR = 0.254;
   const lean = Math.tan(THREE.MathUtils.degToRad(8));
-  const strutAxis = (baseZ, baseY, y) => new THREE.Vector3(originX, y, baseZ + (y - baseY) * lean);
+  const strutZ = (baseZ, baseY, y) => baseZ + (y - baseY) * lean;
   const strutDir = new THREE.Vector3(0, 1, lean).normalize();
 
+  // İki nokta (alan4 yerel) arasında boru
   const addRod = (p1, p2, r, mat) => {
-    const d = new THREE.Vector3().subVectors(p2, p1);
+    const a = L(p1.x, p1.y, p1.z), b = L(p2.x, p2.y, p2.z);
+    const d = new THREE.Vector3().subVectors(b, a);
     const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 16), mat);
-    m.position.copy(p1).addScaledVector(d, 0.5);
+    m.position.copy(a).addScaledVector(d, 0.5);
     m.quaternion.setFromUnitVectors(up, d.normalize());
     blockGroup.add(m);
   };
+  // Sütunu saran bilezik kelepçe
+  const addCollar = (y, baseZ, baseY) => {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(strutR + 0.025, strutR + 0.025, 0.12, 32), clampMat);
+    c.position.copy(L(originX, y, strutZ(baseZ, baseY, y)));
+    c.quaternion.setFromUnitVectors(up, strutDir);
+    blockGroup.add(c);
+  };
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
   const tcell1 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5301') || { id: 'tcell-5301', category: 'Turkcell', name: 'RRU 5301', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
   const tcell2 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5502') || { id: 'tcell-5502', category: 'Turkcell', name: 'RRU 5502', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
@@ -13150,67 +13160,74 @@ function buildScoreboardStrutPoleRRUBlok(side = 'left') {
   const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
   const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
 
-  const rruBotY = 1.20;  // Korkuluk üst kotu (1.10m) + 10cm
-  const rruPitch = 0.60; // Katlar arası mesafe (RRU yüksekliği 0.48m + 12cm boşluk)
-  const levelY = (i) => rruBotY + 0.24 + i * rruPitch;
+  const poleY = 1.44;     // RRU orta kotu: alt kenar 1.20m, üst kenar 1.68m
+  const poleR = 0.038;    // Ø76mm yatay montaj polü
 
-  // Tek pol + ofset kollar + RRU'lar
-  // rrus: { item, label, y }, extendZ: RRU'ların polden uzandığı Z yönü (-1 skorborda, +1 dışa)
-  const buildPole = (poleX, poleZ, strutBaseZ, strutBaseY, poleBotY, poleTopY, armYs, extendZ, rrus, poleLabel) => {
-    // Ø76mm galvaniz montaj polü ve uç kapakları
-    addRod(L(poleX, poleBotY, poleZ), L(poleX, poleTopY, poleZ), 0.038, poleMat);
-    [poleBotY, poleTopY].forEach(cy => {
-      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 16), clampMat);
-      cap.position.copy(L(poleX, cy, poleZ));
-      blockGroup.add(cap);
-    });
-
-    armYs.forEach(ay => {
-      const c = strutAxis(strutBaseZ, strutBaseY, ay);
-      const p = new THREE.Vector3(poleX, ay, poleZ);
-      const dir = new THREE.Vector3().subVectors(p, c).normalize();
-      const start = c.clone().addScaledVector(dir, strutR);
-      // Ofset kol (Ø48mm) — sütun yüzeyinden pole
-      addRod(L(start.x, start.y, start.z), L(p.x, p.y, p.z), 0.024, armMat);
-      // Sütunu saran bilezik kelepçe
-      const collar = new THREE.Mesh(new THREE.CylinderGeometry(strutR + 0.025, strutR + 0.025, 0.12, 32), clampMat);
-      collar.position.copy(L(c.x, c.y, c.z));
-      collar.quaternion.setFromUnitVectors(up, strutDir);
-      blockGroup.add(collar);
-      // Pol kelepçesi
-      const pc = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.10, 16), clampMat);
-      pc.position.copy(L(poleX, ay, poleZ));
-      blockGroup.add(pc);
-    });
-
-    // RRU'lar kitap gibi: genişlik Z yönünde, kısa kenardaki kelepçe (model yerel -X yüzü) pola dönük
-    // Model yerel +X -> dünya extendZ yönü: Y ekseninde dönüş = -extendZ * 90°
-    rrus.forEach(r => {
+  // Yatay pol üzerine kitap gibi dizilmiş RRU'lar (kısa kenar kelepçesi pola dönük)
+  // extendZ: RRU'nun polden uzandığı Z yönü (-1 skorborda, +1 dışa)
+  const addRRUs = (poleZ, extendZ, list, poleLabel) => {
+    list.forEach(r => {
       const rru = buildCustomEquipmentModel(r.item);
       rru.userData.name = `${r.label} (${poleLabel} - ${sideLabel})`;
       rru.userData.interactive = true;
-      rru.rotation.set(0, -extendZ * Math.PI / 2, 0);
-      rru.position.copy(L(poleX, r.y, poleZ + extendZ * (r.item.width / 2 + 0.08)));
+      rru.rotation.set(0, -extendZ * Math.PI / 2, 0); // Model yerel +X -> dünya extendZ
+      rru.position.copy(L(r.x, poleY, poleZ + extendZ * (r.item.width / 2 + 0.08)));
       blockGroup.add(rru);
+      // Pol üzerindeki eyer kelepçesi
+      const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.08), clampMat);
+      saddle.position.copy(L(r.x, poleY, poleZ));
+      blockGroup.add(saddle);
     });
   };
+  const addPoleCap = (x, z) => {
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 16), clampMat);
+    cap.rotation.z = Math.PI / 2;
+    cap.position.copy(L(x, poleY, z));
+    blockGroup.add(cap);
+  };
 
-  const poleX = s * 2.60;
-
-  // Ön pol (ön sıra bacağı, Silindir 1): 4 RRU (Turkcell + TT) üst üste, skorborda doğru uzanır
-  buildPole(poleX, -1.21, -1.42, -0.14, 1.10, 3.55, [1.14, 2.34, 3.50], -1, [
-    { item: tcell1, label: 'Turkcell RRU5301', y: levelY(0) },
-    { item: tcell2, label: 'Turkcell RRU5502', y: levelY(1) },
-    { item: tt1, label: 'TT RRU5527', y: levelY(2) },
-    { item: tt2, label: 'TT RRU5818W', y: levelY(3) }
+  // ---------------- ÖN POL (ön sıra bacağı, Silindir 1): 4 RRU ----------------
+  const fBaseZ = -1.42, fBaseY = -0.14;
+  const fPoleZ = -1.21;
+  const fStartX = originX - s * strutR;   // Sütun yüzeyi (kedi yolu merkezine bakan yan)
+  const fEndX = s * 1.88;
+  addRod(V(fStartX, poleY, fPoleZ), V(fEndX, poleY, fPoleZ), poleR, poleMat);
+  addCollar(poleY, fBaseZ, fBaseY);
+  addPoleCap(fEndX, fPoleZ);
+  // Üstten çapraz destek: sütundan (Y = 2.40m) pol ucuna
+  const fBraceTopY = 2.40;
+  addRod(V(originX - s * strutR, fBraceTopY, strutZ(fBaseZ, fBaseY, fBraceTopY)), V(fEndX + s * 0.04, poleY, fPoleZ), 0.024, armMat);
+  addCollar(fBraceTopY, fBaseZ, fBaseY);
+  addRRUs(fPoleZ, -1, [
+    { item: tcell1, label: 'Turkcell RRU5301', x: s * 2.62 },
+    { item: tcell2, label: 'Turkcell RRU5502', x: s * 2.42 },
+    { item: tt1, label: 'TT RRU5527', x: s * 2.22 },
+    { item: tt2, label: 'TT RRU5818W', x: s * 2.02 }
   ], 'Ön Pol');
 
-  // Arka pol (arka sıra bacağı, Silindir 2): 3 Vodafone RRU üst üste, dışa doğru uzanır
-  // Kollar RRU aralıklarında (Y = 1.14 / 2.34 / 2.94), RRU gövdelerinden geçmez
-  buildPole(poleX, -0.02, 0.55, -0.12, 1.10, 2.98, [1.14, 2.34, 2.94], 1, [
-    { item: vodaItem, label: 'Vodafone RRU5526t #1', y: levelY(0) },
-    { item: vodaItem, label: 'Vodafone RRU5526t #2', y: levelY(1) },
-    { item: vodaItem, label: 'Vodafone RRU5526t #3', y: levelY(2) }
+  // ---------------- ARKA POL (arka sıra bacağı, Silindir 2): 3 Vodafone ----------------
+  const rBaseZ = 0.55, rBaseY = -0.12;
+  const rPoleZ = -0.06;
+  const rInX = s * 2.48;   // İç uç (gemici merdiveni iniş açıklığı X = -2.40m'nin dışında)
+  const rOutX = s * 3.32;  // Dış uç
+  addRod(V(rOutX, poleY, rPoleZ), V(rInX, poleY, rPoleZ), poleR, poleMat);
+  addPoleCap(rInX, rPoleZ);
+  addPoleCap(rOutX, rPoleZ);
+  // Yatay ofset kol: sütun ön yüzünden (X = s*3.00) pola, RRU'ların arasındaki boşlukta
+  const rArmStartZ = strutZ(rBaseZ, rBaseY, poleY) - strutR;
+  addRod(V(originX, poleY, rArmStartZ), V(originX, poleY, rPoleZ), 0.024, armMat);
+  addCollar(poleY, rBaseZ, rBaseY);
+  // Üstten çapraz destek: aynı düşey düzlemde (X = s*3.00) sütundan (Y = 2.20m) pola
+  const rBraceTopY = 2.20;
+  addRod(V(originX, rBraceTopY, strutZ(rBaseZ, rBaseY, rBraceTopY) - strutR), V(originX, poleY + 0.04, rPoleZ), 0.024, armMat);
+  addCollar(rBraceTopY, rBaseZ, rBaseY);
+  const armClamp = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.12, 0.10), clampMat);
+  armClamp.position.copy(L(originX, poleY, rPoleZ));
+  blockGroup.add(armClamp);
+  addRRUs(rPoleZ, 1, [
+    { item: vodaItem, label: 'Vodafone RRU5526t #1', x: s * 3.22 },
+    { item: vodaItem, label: 'Vodafone RRU5526t #2', x: s * 2.78 },
+    { item: vodaItem, label: 'Vodafone RRU5526t #3', x: s * 2.58 }
   ], 'Arka Pol');
 
   return blockGroup;

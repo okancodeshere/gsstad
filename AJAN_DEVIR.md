@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] Sütun pol RRU'ları korkuluk üstüne alındı, kısa kenardan kitap dizilimi`
+- **Son commit:** `[Claude] Pol RRU'ları yatay pola, korkuluğun biraz üstünde yan yana paralel dizildi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son beş commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU, pol RRU revizyonu) push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son altı commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU ve iki revizyonu) push edilmedi; kullanıcı onayı bekliyor.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +65,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 23:45 — Claude — Pol RRU'ları: yatay pol, aynı kotta yan yana paralel (önceki kayıt düzeltildi)
+- **Kullanıcı isteği:** "böyle demedim ben maymun muyum en üstteki rruya ulaşayım rrular kısa kenarlarından yan yana takılacak kedi yolunun korkulugunun biraz üstünde olacaklar ve yan yana kısa kenarlarından birbirine paralel duracaklar". 23:30 kaydındaki üst üste (düşey) dizilim YANLIŞ ANLAMAYDI ve geri alındı.
+- **Kalıcı karar:** RRU'lar asla üst üste dizilmez; erişilebilir tek kotta, korkuluğun biraz üstünde, yan yana durur (bkz. "3. Kalıcı Kararlar").
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardStrutPoleRRUBlok(side)` (~satır 13096) baştan yazıldı (başlık yorumu dahil). Blok tipi ve preset girdileri aynı.
+    - Pol YATAY (X yönünde, korkuluğa paralel), Y = 1.44. Tüm RRU'lar aynı kotta: Y = 1.20–1.68 (korkuluk üst kotu 1.10).
+    - RRU'lar kitap gibi yan yana ve paralel: genişlik Z yönünde, kısa kenar kelepçesi pola dönük, adım 0.20 m. Her RRU'da pol üstünde eyer kelepçesi var.
+    - Ön pol: Z = −1.21, ön sıra bacağının iç yüzünden (X = s*2.746) s*1.88'e konsol. Bacağa bilezik kelepçeli; sütundan (Y = 2.40) pol ucuna çapraz destek. 4 RRU: X = s*2.62 / 2.42 / 2.22 / 2.02 (Turkcell 5301, Turkcell 5502, TT 5527, TT 5818W). Skorborda uzanır, Z = −1.29…−1.69.
+    - Arka pol: Z = −0.06, X = s*2.48…s*3.32. Arka sıra bacağına X = s*3.00'te yatay ofset kol + aynı düşey düzlemde çapraz destek (sütun Y = 2.20). 3 Vodafone: X = s*3.22 (kolun dışı), s*2.78, s*2.58 (kolun içi). Dışa uzanır, Z = 0.02…0.45. Gemici merdiveni iniş açıklığı X = −2.40'tan başlıyor; sol iç uç X = −2.48.
+  - Değişiklik `.cjs` betiğiyle (işaretler arası blok değişimi, CRLF korunarak) yapıldı; betik scratchpad'de, projede değil.
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda 14 RRU ölçüldü (hepsi Y = 1.20–1.68). Sütun ekseni mesafesi dahil çakışma kontrolü temiz (yapı + diğer platformlar).
+- **Commit:** `[Claude] Pol RRU'ları yatay pola, korkuluğun biraz üstünde yan yana paralel dizildi`
+- **Yarım kalan / dikkat:** Feeder güzergahları ve DXF güncellenmedi.
 
 ### 2026-10-08 23:30 — Claude — Pol RRU'ları korkuluk üstüne, kısa kenardan kitap dizilimi
 - **Kullanıcı isteği:** "kedi yolunun korkuluklarının altında kalma ve rruları kısa kenarlarından pole tuttur. Böylece daha az alan kaplar. Ayrıca kedi yolunda çizimlerimizde olmayan aydınlatma vs cihazlar var o yüzden korkuluk seviyesinin üstünde kal". Soru üzerine "Kitap gibi, kedi yoluna dik" dizilimini seçti.
@@ -174,6 +188,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Alan isimleri:** kod `alan2` = UI ALAN 1 ve 3, kod `alan4` = UI ALAN 2, kod `alan3` = UI ALAN 4.
 - **`alan4` cam korkuluk dikmeleri** 1.5 m sabit ızgarada, X=0 merkezli kalır (`frontRailingSpans`).
 - **Varsayılan yerleşim:** `main.js` içindeki `PRESET_DRAFTS['taslak-v2']`.
+- **Erişilebilirlik:** Kedi yolundaki ekipman (RRU vb.) kedi yolundan elle erişilebilir olmalı. Üst üste yüksek dizilim yapılmaz. RRU'lar korkuluğun biraz üstünde, tek kotta, kısa kenarlarından yan yana ve paralel (kitap gibi) takılır.
+- **Kedi yolu korkuluk altı:** Korkuluk seviyesinin altına ekipman konmaz; çizimlerde olmayan aydınlatma vb. cihazlar var.
+- **Belirsiz tarifte:** Kullanıcının tarifi birden fazla şekilde okunabiliyorsa önce sor; tahminle büyük yerleşim değişikliği yapma.
 
 
 ### Bağımlılıklar
