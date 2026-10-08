@@ -13076,6 +13076,140 @@ function spawnAlan2Alternatif2RRUBlok() {
 }
 
 
+// =========================================================================
+// SKORBOARD ÇAPRAZ SÜTUNLARINA OFSET KOLLU MONTAJ POLÜ + 7 RRU (ALAN 2, kod alan4)
+// Kullanıcı İsteği:
+// - "7 li rru gruplarımız var ancak reelde kediyolunda bu rruları koyacak bir alan bulunmuyor bu nedenle
+//   yeni ekledigimiz taşıyıcı sutunlara ofset ile bir montaj polu asacagız rruları ise bu pol üzerine takacagız"
+// - "sagda ve solda da kedi yoluna en yakın nispeten daha dik bir açıyla duran sutunların hem ön hem de
+//   arkadakine yükü dagıtmak için pol koyabiliriz. Kedi yolundan ... dışarı çıkmadan erişim sağlanabilir"
+// - "iki boruyu da kullanarak birinde 3 birinde 4 tane"
+// Yerleşim (bir taraf, s = -1 sol / +1 sağ; koordinatlar alan4 yerel):
+// - Ön pol: ön sıra dikey bacağı (X = s*3.00, Silindir 1 sırası) yanında, alt kedi yolu ön korkuluğu (Z = -1.30m)
+//   ile skorbord arka iskeleti (Z = -1.70m) arasındaki boşlukta Z = -1.50m. 4 RRU: 2 kat x 2 (polün iki yanında)
+// - Arka pol: arka sıra dikey bacağının önünde, arka korkuluğun (Z = -0.10m) hemen dışında Z = +0.10m.
+//   3 Vodafone RRU: alt katta 2, üst katta 1 (kedi yolu merkezine bakan yanda)
+// - RRU'lar ince yüzü (derinlik Z) korkuluğa paralel, kedi yolundan erişilir; katlar Y = 0.70m / 1.35m
+// - Her pol 3 ofset kolla (Y = 0.30 / 1.03 / 1.80m) Ø508 sütunu saran bilezik kelepçelere bağlanır
+// Sütun ekseni scoreboardDiagonalColumns ile aynı: Z(y) = baseZ + (y - baseY) * tan(8°)
+// =========================================================================
+function buildScoreboardStrutPoleRRUBlok(side = 'left') {
+  const s = (side === 'right') ? 1 : -1;
+  const originX = s * 3.00;  // Blok orijini: dikey bacak aksı
+  const originZ = -0.70;     // Kedi yolu orta aksı (preset konumu ile aynı)
+  const sideLabel = s < 0 ? 'Sol' : 'Sağ';
+
+  const blockGroup = new THREE.Group();
+  blockGroup.userData = {
+    type: 'rru',
+    blockType: 'alan2-sutun-ofset-pol-7rru',
+    category: 'RRU',
+    name: `Sütun Ofset Pol 7 RRU Grubu - ${sideLabel}`,
+    side: side,
+    width: 1.10,
+    depth: 1.80,
+    height: 1.95,
+    weight: 230, // 190kg RRU + 40kg pol, ofset kol ve kelepçeler
+    interactive: true,
+    locked: true,
+    lockedX: true,
+    lockedY: true,
+    lockedZ: true,
+    allowPassThrough: true,
+    isFreestanding: true
+  };
+
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.85, roughness: 0.25 });
+  const armMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 });
+  const clampMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.9, roughness: 0.15 });
+  const up = new THREE.Vector3(0, 1, 0);
+  const L = (x, y, z) => new THREE.Vector3(x - originX, y, z - originZ); // alan4 yerel -> blok yerel
+
+  const strutR = 0.254;
+  const lean = Math.tan(THREE.MathUtils.degToRad(8));
+  const strutAxis = (baseZ, baseY, y) => new THREE.Vector3(originX, y, baseZ + (y - baseY) * lean);
+  const strutDir = new THREE.Vector3(0, 1, lean).normalize();
+
+  const addRod = (p1, p2, r, mat) => {
+    const d = new THREE.Vector3().subVectors(p2, p1);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 16), mat);
+    m.position.copy(p1).addScaledVector(d, 0.5);
+    m.quaternion.setFromUnitVectors(up, d.normalize());
+    blockGroup.add(m);
+  };
+
+  const tcell1 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5301') || { id: 'tcell-5301', category: 'Turkcell', name: 'RRU 5301', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tcell2 = EQUIPMENT_CATALOG.find(item => item.id === 'tcell-5502') || { id: 'tcell-5502', category: 'Turkcell', name: 'RRU 5502', width: 0.400, height: 0.480, depth: 0.140, weight: 25, color: '#1d4ed8' };
+  const tt1 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5527') || { id: 'tt-5527', category: 'Türk Telekom', name: '2G-3G-4G RRU5527', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const tt2 = EQUIPMENT_CATALOG.find(item => item.id === 'tt-5818w') || { id: 'tt-5818w', category: 'Türk Telekom', name: 'NR RRU 5818W', width: 0.356, height: 0.480, depth: 0.140, weight: 25, color: '#0891b2' };
+  const vodaItem = EQUIPMENT_CATALOG.find(item => item.id === 'vodafone-5526t') || { id: 'vodafone-5526t', category: 'Vodafone', name: 'RRU5526t', width: 0.432, height: 0.480, depth: 0.135, weight: 28, color: '#dc2626' };
+
+  const poleBotY = 0.20;
+  const poleTopY = 1.95;
+  const armYs = [0.30, 1.03, 1.80];
+
+  // Tek pol + ofset kollar + RRU'lar
+  // rrus: { item, label, y, dir } dir = -1 polün -X yanı, +1 polün +X yanı
+  const buildPole = (poleX, poleZ, strutBaseZ, strutBaseY, rrus, poleLabel) => {
+    // Ø76mm galvaniz montaj polü ve uç kapakları
+    addRod(L(poleX, poleBotY, poleZ), L(poleX, poleTopY, poleZ), 0.038, poleMat);
+    [poleBotY, poleTopY].forEach(cy => {
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 16), clampMat);
+      cap.position.copy(L(poleX, cy, poleZ));
+      blockGroup.add(cap);
+    });
+
+    armYs.forEach(ay => {
+      const c = strutAxis(strutBaseZ, strutBaseY, ay);
+      const p = new THREE.Vector3(poleX, ay, poleZ);
+      const dir = new THREE.Vector3().subVectors(p, c).normalize();
+      const start = c.clone().addScaledVector(dir, strutR);
+      // Ofset kol (Ø48mm) — sütun yüzeyinden pole
+      addRod(L(start.x, start.y, start.z), L(p.x, p.y, p.z), 0.024, armMat);
+      // Sütunu saran bilezik kelepçe
+      const collar = new THREE.Mesh(new THREE.CylinderGeometry(strutR + 0.025, strutR + 0.025, 0.12, 32), clampMat);
+      collar.position.copy(L(c.x, c.y, c.z));
+      collar.quaternion.setFromUnitVectors(up, strutDir);
+      blockGroup.add(collar);
+      // Pol kelepçesi
+      const pc = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.052, 0.10, 16), clampMat);
+      pc.position.copy(L(poleX, ay, poleZ));
+      blockGroup.add(pc);
+    });
+
+    // RRU'lar: ince yüz korkuluğa paralel, kelepçe tarafı pola bakar
+    rrus.forEach(r => {
+      const rru = buildCustomEquipmentModel(r.item);
+      rru.userData.name = `${r.label} (${poleLabel} - ${sideLabel})`;
+      rru.userData.interactive = true;
+      rru.rotation.set(0, r.dir < 0 ? Math.PI : 0, 0); // Kelepçe (-X yüzü) pola dönük
+      rru.position.copy(L(poleX + r.dir * (r.item.width / 2 + 0.08), r.y, poleZ));
+      blockGroup.add(rru);
+    });
+  };
+
+  const lvl1 = 0.70;
+  const lvl2 = 1.35;
+  const inward = -s; // Kedi yolu merkezine doğru X yönü
+
+  // Ön pol (ön sıra bacağı, Silindir 1): 4 RRU (Turkcell + TT), 2 kat x 2
+  buildPole(s * 2.15, -1.50, -1.42, -0.14, [
+    { item: tcell1, label: 'Turkcell RRU5301', y: lvl1, dir: -inward },
+    { item: tcell2, label: 'Turkcell RRU5502', y: lvl1, dir: inward },
+    { item: tt1, label: 'TT RRU5527', y: lvl2, dir: -inward },
+    { item: tt2, label: 'TT RRU5818W', y: lvl2, dir: inward }
+  ], 'Ön Pol');
+
+  // Arka pol (arka sıra bacağı, Silindir 2): 3 Vodafone RRU, alt kat 2 + üst kat 1
+  buildPole(s * 3.00, 0.10, 0.55, -0.12, [
+    { item: vodaItem, label: 'Vodafone RRU5526t #1', y: lvl1, dir: -1 },
+    { item: vodaItem, label: 'Vodafone RRU5526t #2', y: lvl1, dir: 1 },
+    { item: vodaItem, label: 'Vodafone RRU5526t #3', y: lvl2, dir: inward }
+  ], 'Arka Pol');
+
+  return blockGroup;
+}
+
 function spawnAlan4CiftRRUKompleksBlok() {
   const blockGroup = buildAlan4CiftRRUKompleksBlok(state.currentArea);
   blockGroup.userData.id = state.nextId++;
@@ -17240,6 +17374,9 @@ function deserializeItemToArea(item, targetArea) {
     }
     const op = item.operator || (blockType.includes('turkcell') ? 'turkcell' : (blockType.includes('vodafone') ? 'vodafone' : 'tt'));
     group = buildScoreboardSingleRRU(op, item.position ? item.position.x : 0);
+  } else if (blockType === 'alan2-sutun-ofset-pol-7rru' || itemName.includes('Sütun Ofset Pol 7 RRU')) {
+    const poleSide = (item.side === 'right' || itemName.includes('Sağ')) ? 'right' : 'left';
+    group = buildScoreboardStrutPoleRRUBlok(poleSide);
   } else if (blockType === 'alan2-alternatif2-rru-blok' || itemName.includes('Alternatif-2') || itemName.includes('Tablalı 4 Boru 7 RRU')) {
     group = buildAlan2Alternatif2RRUBlok(targetArea);
   } else if (blockType === 'alan2-kediyolu-42u-kompleks') {
@@ -18382,8 +18519,9 @@ const PRESET_DRAFTS = {
         "allowPassThrough": true
       },
       {
-        "name": "Tablalı 4 Boru 7 RRU Bloğu - Sol POI Yanı",
-        "blockType": "alan2-alternatif2-rru-blok",
+        "name": "Sütun Ofset Pol 7 RRU Grubu - Sol",
+        "blockType": "alan2-sutun-ofset-pol-7rru",
+        "side": "left",
         "catalogId": null,
         "type": "rru",
         "category": "RRU",
@@ -18392,24 +18530,25 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -1.731732010972016,
+          "x": -3,
           "y": 20,
-          "z": -0.8994569831600372
+          "z": -0.7
         },
         "rotation": {
           "x": 0,
           "y": 0,
           "z": 0
         },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
+        "locked": true,
+        "lockedX": true,
+        "lockedY": true,
+        "lockedZ": true,
         "allowPassThrough": true
       },
       {
-        "name": "Tablalı 4 Boru 7 RRU Bloğu - Sağ POI Yanı",
-        "blockType": "alan2-alternatif2-rru-blok",
+        "name": "Sütun Ofset Pol 7 RRU Grubu - Sağ",
+        "blockType": "alan2-sutun-ofset-pol-7rru",
+        "side": "right",
         "catalogId": null,
         "type": "rru",
         "category": "RRU",
@@ -18418,19 +18557,19 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 1.6787984389135993,
+          "x": 3,
           "y": 20,
-          "z": -0.8336789287648787
+          "z": -0.7
         },
         "rotation": {
           "x": 0,
           "y": 0,
           "z": 0
         },
-        "locked": false,
-        "lockedX": false,
-        "lockedY": false,
-        "lockedZ": false,
+        "locked": true,
+        "lockedX": true,
+        "lockedY": true,
+        "lockedZ": true,
         "allowPassThrough": true
       },
       {

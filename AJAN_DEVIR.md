@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] Skorbord çapraz sütunları üst kedi yolunda kesildi, ön silindire ikinci sıra eklendi`
+- **Son commit:** `[Claude] ALAN 2 7'li RRU grupları kedi yolundan sütunlara ofset kollu pollere taşındı`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son üç commit (kafesler, çapraz sütunlar, sütun revizyonu) push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son dört commit (kafesler, çapraz sütunlar, sütun revizyonu, pol RRU) push edilmedi; kullanıcı onayı bekliyor.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +65,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 23:15 — Claude — 7'li RRU grupları kedi yolundan sütunlara ofset kollu pollere taşındı
+- **Kullanıcı isteği:** "7 li rru gruplarımız var ancak reelde kediyolunda bu rruları koyacak bir alan bulunmuyor bu nedenle yeni ekledigimiz taşıyıcı sutunlara ofset ile bir montaj polu asacagız rruları ise bu pol üzerine takacagız". Sorular üzerine verdiği kararlar: sağda ve solda kedi yoluna en yakın, daha dik duran sütunların (±3 m dikey bacaklar) hem ön hem arka sırasına yük dağılımı için birer pol; kedi yolundan dışarı çıkmadan erişim; bir pola 4, diğerine 3 RRU.
+- **Değişen dosyalar:**
+  - `main.js` → YENİ `buildScoreboardStrutPoleRRUBlok(side)` (~satır 13096), blok tipi `alan2-sutun-ofset-pol-7rru`, ad `Sütun Ofset Pol 7 RRU Grubu - Sol/Sağ`. Blok orijini (s*3.00, 20, −0.70), kilitli. İçeriği:
+    - Ön pol: X = s*2.15, Z = −1.50. Ön sıra bacağı yanında; ön korkuluk (Z = −1.30) ile skorbord arka iskeleti (Z = −1.70) arasında. 4 RRU: alt kat (Y = 0.70) Turkcell RRU5301 + RRU5502, üst kat (Y = 1.35) TT RRU5527 + RRU5818W, polün iki yanında.
+    - Arka pol: X = s*3.00, Z = +0.10. Arka sıra bacağının önünde, arka korkuluğun (Z = −0.10) hemen dışında. 3 Vodafone RRU5526t: alt katta 2, üst katta 1 (kedi yolu merkezine bakan yanda). Sol tarafta gemici merdiveni X = −2.4'te başlıyor, RRU'lar X ≤ −2.49'da kalıyor.
+    - Ø76 mm pol (Y = 0.20–1.95), her polde 3 ofset kol (Ø48, Y = 0.30 / 1.03 / 1.80). Kollar Ø508 sütunu saran bilezik kelepçelere bağlı; sütun ekseni `scoreboardDiagonalColumns` ile aynı formül (8° eğim).
+    - RRU'lar `buildCustomEquipmentModel()` ile, ince yüzü korkuluğa paralel; kelepçe tarafı pola dönük (dir < 0 ise 180° döndürülür).
+  - `main.js` → `deserializeItemToArea()` (~satır 17377): yeni blok tipi eşlemesi (taraf `item.side` ya da isimdeki "Sağ" ile belirlenir).
+  - `main.js` → `PRESET_DRAFTS['taslak-v2']` alan4 (~satır 18522, 18549): iki `alan2-alternatif2-rru-blok` girdisi ("Tablalı 4 Boru 7 RRU Bloğu - Sol/Sağ POI Yanı") kaldırıldı, yerine iki `alan2-sutun-ofset-pol-7rru` girdisi eklendi. POI rack'leri kedi yolunda kaldı. `buildAlan2Alternatif2RRUBlok` fonksiyonu duruyor; eski JSON'lar yüklenebilir.
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda iki blok yüklendi, eski bloklar yok. Çakışma kontrolünde (ekipman, korkuluk, gemici merdiveni, POI rack'leri, sütunlar) yalnızca kolların sütun yüzeyine bağlandığı temas noktaları çıktı.
+- **Commit:** `[Claude] ALAN 2 7'li RRU grupları kedi yolundan sütunlara ofset kollu pollere taşındı`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_sutun_pol_rru_20261008_2241.js`. Feeder kablo güzergahları (`scoreboardFeederCablingSystem`) eski RRU konumlarına göre çizilmiş olabilir; güncellenmedi. DXF çıktıları güncellenmedi.
 
 ### 2026-10-08 23:00 — Claude — Skorbord çapraz sütunları: üst kesim + ön silindire ikinci sıra
 - **Kullanıcı isteği:** "bu direklerin üst kedi yolunu geçen kısmını sil" ve "skorboard ve kedi yolu 2 tane ana taşıyıcı yatay silindire yerleşmiş ya bu dikey borulardan arkasındaki silindire de koy". Soru üzerine kullanıcı "aynı setin tamamı" seçeneğini seçti.
