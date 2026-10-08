@@ -1271,7 +1271,7 @@ function createAlan2Structure() {
   alan2SlidingDoors.length = 0;
 
   buildAlan2Instance(alan2Wrapper, 0, 0);
-  buildAlan2Instance(alan2Wrapper, 30.0, 0);
+  buildAlan2Instance(alan2Wrapper, 22.5, 0);
 
   scene.add(alan2Wrapper);
 }
@@ -17226,7 +17226,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 25.638998740039547,
+            "x": 18.138998740039547,
             "y": 0,
             "z": -1.1805947860171155
           },
@@ -17252,7 +17252,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 26.384190609674476,
+            "x": 18.884190609674476,
             "y": 0,
             "z": -1.1914694272152344
           },
@@ -17278,7 +17278,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 24.896944729547947,
+            "x": 17.396944729547947,
             "y": 0,
             "z": -1.216680015245864
           },
@@ -17304,7 +17304,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 28.479484758085388,
+            "x": 20.979484758085388,
             "y": 0,
             "z": -1.164294472925311
           },
@@ -17330,7 +17330,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 34.194284776610374,
+            "x": 26.694284776610374,
             "y": 0,
             "z": -1.4117056039669595
           },
@@ -17356,7 +17356,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 33.40284644326525,
+            "x": 25.902846443265247,
             "y": 0,
             "z": -1.4206267185693213
           },
@@ -17382,7 +17382,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 32.60580870773442,
+            "x": 25.10580870773442,
             "y": 0,
             "z": -1.4547246070415678
           },
@@ -17408,7 +17408,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 31.74179554944642,
+            "x": 24.24179554944642,
             "y": 0,
             "z": -1.4595080285942583
           },
@@ -17434,7 +17434,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 30.839472259744543,
+            "x": 23.339472259744543,
             "y": 0,
             "z": -1.4119842935578095
           },
@@ -17460,7 +17460,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 35.050704812315495,
+            "x": 27.550704812315495,
             "y": 0,
             "z": -1.4139675859568794
           },
@@ -17486,7 +17486,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 6.976,
             "z": 41.568
           },
@@ -17512,7 +17512,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 9.385,
             "z": 37.934
           },
@@ -17538,7 +17538,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 9.022,
             "z": 35.234
           },
@@ -18749,7 +18749,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 28.24229190769497,
+            "x": 20.74229190769497,
             "y": 0,
             "z": -1.1805947860171155
           },
@@ -18775,7 +18775,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 28.96960146070859,
+            "x": 21.46960146070859,
             "y": 0,
             "z": -1.1914694272152344
           },
@@ -18801,7 +18801,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27.43871144002629,
+            "x": 19.93871144002629,
             "y": 0,
             "z": -1.216680015245864
           },
@@ -18827,7 +18827,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 25.77446531321604,
+            "x": 18.27446531321604,
             "y": 0,
             "z": -1.1860641464108814
           },
@@ -18853,7 +18853,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 34.194284776610374,
+            "x": 26.694284776610374,
             "y": 0,
             "z": -1.4117056039669595
           },
@@ -18879,7 +18879,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 33.40284644326525,
+            "x": 25.902846443265247,
             "y": 0,
             "z": -1.4206267185693213
           },
@@ -18905,7 +18905,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 32.60580870773442,
+            "x": 25.10580870773442,
             "y": 0,
             "z": -1.4547246070415678
           },
@@ -18931,7 +18931,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 31.74179554944642,
+            "x": 24.24179554944642,
             "y": 0,
             "z": -1.4595080285942583
           },
@@ -18957,7 +18957,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 30.839472259744543,
+            "x": 23.339472259744543,
             "y": 0,
             "z": -1.4119842935578095
           },
@@ -18983,7 +18983,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 35.050704812315495,
+            "x": 27.550704812315495,
             "y": 0,
             "z": -1.4139675859568794
           },
@@ -19009,7 +19009,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 6.976,
             "z": 41.568
           },
@@ -19035,7 +19035,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 9.385,
             "z": 37.934
           },
@@ -19061,7 +19061,7 @@ const PRESET_DRAFTS = {
           "isOffsetCarrier": false,
           "isInclinedPipe": false,
           "position": {
-            "x": 27,
+            "x": 19.5,
             "y": 9.022,
             "z": 35.234
           },
