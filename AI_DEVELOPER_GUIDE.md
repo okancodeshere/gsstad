@@ -1,5 +1,7 @@
 # GS STAD Catwalk Planner - AI & Developer Guide
 
+> **ZORUNLU:** Bu projede Claude Code ve Google Antigravity sırayla çalışır. Herhangi bir değişiklik yapmadan önce `AJAN_DEVIR.md` dosyasını oku; her değişiklikten sonra oraya kayıt ekle.
+
 Bu belge, projeye sonradan dahil olacak diğer yapay zeka asistanları (Cursor, Copilot, vs.) veya geliştiriciler için **projenin mimarisini, geçmişte çözülen kronik sorunları ve geliştirme kurallarını** içermektedir. Lütfen projede değişiklik yapmadan önce bu belgeyi okuyun.
 
 ## 1. Proje Özeti ve Mimari
@@ -26,7 +28,7 @@ Proje 3 ana bölgeden oluşur ancak kod içerisindeki isimlendirmelerle arayüzd
 **DİKKAT AI:** `main.js` üzerinde `sed` veya terminal üzerinden çok satırlı Regex manipülasyonu (replace) **YAPMAYIN**. Geçmişte bu durum dosyanın yarısının silinmesine yol açmıştır. Bunun yerine node tabanlı `.cjs` betikleri oluşturup `fs.readFileSync` ve basit `replace()` metodları kullanarak değişiklik yapın.
 
 ### 3.2. GitHub Pages ve Statik Dosya (Asset) Yolları
-Site GitHub Pages üzerinde (bir alt dizinde, örn: `/gsstad/`) yayınlanmaktadır.
+Site şu akışla yayınlanır: `git push` → GitHub (`okancodeshere/gsstad`) → Cloudflare GitHub'dan otomatik çekip yayınlar. `vite.config.js` içinde `base: './'` (göreli) kullanılır; site bir alt dizinde de çalışabilmelidir.
 - Görseller (logo, branda vb.) `public/` klasöründe yer alır.
 - JavaScript içerisinden (örn: Three.js Texture Loader) bir görsel çağırırken KESİNLİKLE mutlak yol (`/gorsel.png`) kullanmayın (GitHub Pages'de 404 verir). 
 - Bunun yerine Vite'ın sağladığı çevre değişkenini kullanın: `import.meta.env.BASE_URL + 'gorsel.png'`
