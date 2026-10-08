@@ -496,9 +496,11 @@ const alan2SlidingDoors = [];
 const alan4SlidingDoors = [];
 const alan3SlidingDoors = [];
 
-function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
+function createAlan2Structure() {
   const alan2Group = new THREE.Group();
-  alan2Group.position.set(offsetX, 0, offsetZ);
+  alan2Group.name = 'alan2Structure';
+  alan2Group.visible = false; // Hidden by default
+  alan2SlidingDoors.length = 0;
 
   // Concrete floor
   const floorWidth = 2.0; 
@@ -1261,19 +1263,7 @@ function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
   // -------------------------------------------------------------
   createAlan2RoofTrussAndCableTray(alan2Group);
 
-  parentGroup.add(alan2Group);
-}
-
-function createAlan2Structure() {
-  const alan2Wrapper = new THREE.Group();
-  alan2Wrapper.name = 'alan2Structure';
-  alan2Wrapper.visible = false;
-  alan2SlidingDoors.length = 0;
-
-  buildAlan2Instance(alan2Wrapper, 0, 0);
-  buildAlan2Instance(alan2Wrapper, 171.40, -145.22);
-
-  scene.add(alan2Wrapper);
+  scene.add(alan2Group);
 }
 
 // =============================================================
