@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] ALAN 1-3 kafes özellikleri ALAN 2 ve ALAN 4'e uygulandı`
+- **Son commit:** `[Claude] ALAN 2 skorbord arkasına fotoğraf bazlı çapraz taşıyıcı sütunlar eklendi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. (Push edilmedi; kullanıcı onayı bekliyor.)
+- **Yarım kalan iş:** Yok. Son iki commit (kafesler + çapraz sütunlar) push edilmedi; kullanıcı onayı bekliyor.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
   - Kökteki kopya `.pptx` dosyaları ve 96 MB `stad_full_backup.zip` için kullanıcıya sor.
@@ -65,6 +65,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 22:50 — Claude — ALAN 2 skorbord arkasına çapraz kalın taşıyıcı sütunlar
+- **Kullanıcı isteği:** Skorbord arkasından uzaktan çekilmiş fotoğraftaki "önde olan çapraz kalın taşıyıcı sütunların" eklenmesi. Claude fotoğraftaki düzeni anlattı, kullanıcı "kodla" diyerek onayladı.
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan4Structure()` içinde, `alan4Group.add(scoreboardIntermediateCw2)` satırından hemen sonra YENİ bölüm "9.5. SKORBOARD ARKASI ÇAPRAZ KALIN TAŞIYICI SÜTUNLAR" (~satır 8167). Grup adı `scoreboardDiagonalColumns`. Simetrik (s = ±1):
+    - Uzun çapraz: alt uç X = ±5.55, üst uç X = ±10.80 / Y = 12.5, alt bölümde 3 bilezik, üstte flanş.
+    - Dallanan düğüm A/B: X = ±3.00, Y = 7.00 (skorbord üst kenarı), Ø0.84 küre göbek. Dikey bacak (X = ±3.00) + dış çapraz bacak (alt X = ±5.25) + dışa eğimli üst kol (üst X = ±5.00, Y = 12.5).
+    - Alt uçlar Silindir 2 (Ø1.5 m, Y = −0.95, Z = +0.55) üzerinde kelepçe bandı + taban plakası (Y = −0.12).
+    - Boru Ø508 mm, `pipeWhiteMat`; bilezik/flanş `flangeSteelMat`.
+    - Düzlem +Z yönüne 8° eğik (`sbStrutLean`): düğüm Z ≈ 1.55; üst kedi yolu (Z ≤ 0.80) ve gemici merdiveni (X = −2.4…−1.1) ile çakışmaz.
+- **Neden / karar:** Ölçüler fotoğraftan tahmini (perspektif, ~88 px/m). Üst uçlar Y = 12.5'te flanşla bitiyor; çatı modelde olmadığından bağlandığı eleman yok. Kullanıcı ölçü verirse `sbP()` koordinatları ve `sbStrutR` güncellenebilir.
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda görüldü. Bounding box kontrolüyle kablo tavası, braketler, üst kedi yolu, gemici merdiveni ve 60 m taşıyıcı ile gerçek çakışma yok.
+- **Commit:** `[Claude] ALAN 2 skorbord arkasına fotoğraf bazlı çapraz taşıyıcı sütunlar eklendi`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_skorbord_capraz_sutun_20261008_2226.js`. DXF çıktıları (`generate_*.cjs`) bu sütunları içermiyor.
 
 ### 2026-10-08 22:40 — Claude — ALAN 1-3 kafes özellikleri ALAN 2 ve ALAN 4'e uygulandı
 - **Kullanıcı isteği:** "alan 1 3 ... beton üzerindeki kafeslerin özelliklerini diger iki alanda da uygula ama alan-4 de kafes küçük oldugundan reklam brandasını da ona göre hızala logoyu ortala"

@@ -8165,6 +8165,86 @@ function createAlan4Structure() {
   alan4Group.add(scoreboardIntermediateCw2);
 
   // =========================================================================
+  // 9.5. SKORBOARD ARKASI ÇAPRAZ KALIN TAŞIYICI SÜTUNLAR (FOTOĞRAF BAZLI)
+  // Kullanıcı İsteği: "fotografa göre önde olan çapraz kalın taşıyıcı sutunları kastediyorum"
+  // (skorbord arkasından uzaktan çekilmiş fotoğraf; ölçüler fotoğraftan tahmini)
+  // Fotoğraftan okunan düzen (soldan sağa, skorborda paralel düzlemde):
+  // - Sol / sağ uzun çapraz: alt uç X = ∓5.55m, dışa doğru yükselir, alt bölümde 3 bilezik
+  // - A / B dallanan düğümleri: X = ∓3.00m, Y = 7.00m (skorbord üst kenarı), gemici merdiveninin iki yanı
+  //   Düğümden alt boruya: 1 dikey bacak + 1 dış çapraz bacak (X = ∓5.25m); düğümden çatıya dışa eğimli üst kol
+  // - Alt uçlar Ø1.5m Silindir 2 (Z = +0.55m) üzerine kelepçe + taban plakasıyla oturur
+  // - Düzlem, üst kedi yolu (Z ≤ 0.80m) ve gemici merdiveninden kurtulmak için +Z'ye ~8° eğiktir
+  // - Boru: Ø508mm beyaz çelik (60m taşıyıcı malzemesi)
+  // =========================================================================
+  const sbStrutGroup = new THREE.Group();
+  sbStrutGroup.name = 'scoreboardDiagonalColumns';
+  const sbStrutR = 0.254;
+  const sbStrutBaseY = -0.12; // Silindir 2 üst yüzü (Y = -0.20m) üzerindeki taban plakası
+  const sbStrutBaseZ = 0.55;
+  const sbStrutLean = Math.tan(THREE.MathUtils.degToRad(8));
+  const sbStrutTopY = 12.5;
+  const sbP = (x, y) => new THREE.Vector3(x, y, sbStrutBaseZ + (y - sbStrutBaseY) * sbStrutLean);
+  const sbUp = new THREE.Vector3(0, 1, 0);
+
+  const addSbStrut = (p1, p2) => {
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(sbStrutR, sbStrutR, dir.length(), 32), pipeWhiteMat);
+    m.position.copy(p1).addScaledVector(dir, 0.5);
+    m.quaternion.setFromUnitVectors(sbUp, dir.clone().normalize());
+    sbStrutGroup.add(m);
+  };
+  // Boru ekseni üzerinde bilezik / flanş (t: 0 = p1, 1 = p2)
+  const addSbRing = (p1, p2, t, rExtra, h) => {
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(sbStrutR + rExtra, sbStrutR + rExtra, h, 32), flangeSteelMat);
+    r.position.copy(p1).addScaledVector(dir, t);
+    r.quaternion.setFromUnitVectors(sbUp, dir.clone().normalize());
+    sbStrutGroup.add(r);
+  };
+  // Silindir 2'yi saran kelepçe bandı ve üstündeki taban plakası
+  const addSbBase = (x, width) => {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, width, 36), flangeSteelMat);
+    band.rotation.z = Math.PI / 2;
+    band.position.set(x, -0.95, 0.55);
+    sbStrutGroup.add(band);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.06, 0.80), flangeSteelMat);
+    plate.position.set(x, sbStrutBaseY - 0.03, sbStrutBaseZ);
+    sbStrutGroup.add(plate);
+  };
+
+  [-1, 1].forEach(s => {
+    const node = sbP(s * 3.00, 7.00);
+
+    // Sol/sağ uzun çapraz
+    const lBot = sbP(s * 5.55, sbStrutBaseY);
+    const lTop = sbP(s * 10.80, sbStrutTopY);
+    addSbStrut(lBot, lTop);
+    [0.20, 0.24, 0.28].forEach(t => addSbRing(lBot, lTop, t, 0.035, 0.16));
+    addSbRing(lBot, lTop, 1.0, 0.10, 0.05);
+
+    // Dallanan düğüm: dikey bacak, dış çapraz bacak, üst kol
+    const vBot = sbP(s * 3.00, sbStrutBaseY);
+    const oBot = sbP(s * 5.25, sbStrutBaseY);
+    const armTop = sbP(s * 5.00, sbStrutTopY);
+    addSbStrut(vBot, node);
+    addSbStrut(oBot, node);
+    addSbStrut(node, armTop);
+    addSbRing(node, armTop, 1.0, 0.10, 0.05);
+
+    // Düğüm göbeği (döküm küre + bağlantı bileziği)
+    const hub = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 24), pipeWhiteMat);
+    hub.position.copy(node);
+    sbStrutGroup.add(hub);
+    addSbRing(vBot, node, 0.94, 0.06, 0.20);
+
+    // Alt bağlantılar: uzun çapraz + dış bacak ortak kelepçe, dikey bacak ayrı kelepçe
+    addSbBase(s * 5.40, 0.90);
+    addSbBase(s * 3.00, 0.60);
+  });
+
+  alan4Group.add(sbStrutGroup);
+
+  // =========================================================================
   // 10. 54M BETON KAİDE, 6 METREDE BİR DİREK, YATAY BİRLEŞTİRİCİLER, CAM KORUMA,
   // 3 DOLAPLI CAM & KAYAR KAPILI DOLAP VE 300MM KABLO MERDİVENİ
   // Kullanıcı İsteği:
