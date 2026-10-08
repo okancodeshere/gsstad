@@ -17167,8 +17167,8 @@ document.getElementById('btn-export-json').addEventListener('click', () => {
 const PRESET_DRAFTS = {
   "taslak-v2": {
   "version": "2.0",
-  "savedAt": "2026-10-08T14:08:32.652Z",
-  "currentArea": "alan2",
+  "savedAt": "2026-10-08T14:47:03.333Z",
+  "currentArea": "alan4",
   "areas": {
     "alan1": [
       {
@@ -18228,7 +18228,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -15.9,
+          "x": -15.763505306104317,
           "y": 18.121,
           "z": 59.87
         },
@@ -18254,7 +18254,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -16.70460129207983,
+          "x": -16.472919238524952,
           "y": 18.121,
           "z": 59.87
         },
@@ -18280,7 +18280,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -17.449288669525544,
+          "x": -17.204591173131476,
           "y": 18.121,
           "z": 59.87
         },
@@ -18358,7 +18358,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 15.961103617634103,
+          "x": 15.806592579548498,
           "y": 18.121,
           "z": 59.87
         },
@@ -18384,7 +18384,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 16.86904811054761,
+          "x": 16.55263874500804,
           "y": 18.121,
           "z": 59.87
         },
@@ -18410,7 +18410,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 17.732562796276078,
+          "x": 17.24509156249988,
           "y": 18.121,
           "z": 59.87
         },
@@ -18765,9 +18765,7 @@ const PRESET_DRAFTS = {
       }
     ]
   }
-}
-
-};
+}};
 PRESET_DRAFTS['taslak-v1'] = PRESET_DRAFTS['taslak-v2'];
 
 
