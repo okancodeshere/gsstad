@@ -15043,6 +15043,8 @@ if (selectAreaElem) {
   selectAreaElem.addEventListener('change', (e) => {
     const selectedArea = e.target.value;
     state.currentArea = selectedArea;
+    // Odak menüde kalırsa WASD / Shift uçuş tuşları yok sayılır; seçimden sonra odağı bırak
+    if (document.activeElement === e.target) e.target.blur();
     
     updateAreaButtonVisibility();
 
@@ -17265,6 +17267,7 @@ if (presBtnExit) {
 if (presSelectArea) {
   presSelectArea.addEventListener('change', (e) => {
     const val = e.target.value;
+    e.target.blur(); // Sunum modunda da WASD / Shift uçuş tuşları menüye takılmasın
     const selectArea = document.getElementById('select-area');
     if (selectArea && selectArea.value !== val) {
       selectArea.value = val;
@@ -19431,7 +19434,26 @@ const flyKeys = {
   slow: false
 };
 
+// Shift / Ctrl / Alt durumunu olayın kendi bilgisinden yeniden oku.
+// Alt+Tab veya odak değişiminde keyup kaçarsa (ör. Alt basılı kalmış sayılıp yavaş mod Shift'i ezer)
+// bir sonraki klavye/fare olayında kendiliğinden düzelir.
+const syncFlyModifiers = (e) => {
+  flyKeys.boost = !!e.shiftKey;
+  flyKeys.slow = !!(e.ctrlKey || e.altKey);
+};
+
+// Pencere odağını kaybedince veya sekme gizlenince tüm uçuş tuşlarını bırak (keyup bu durumda gelmez)
+const resetFlyKeys = () => {
+  Object.keys(flyKeys).forEach(k => { flyKeys[k] = false; });
+};
+window.addEventListener('blur', resetFlyKeys);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) resetFlyKeys();
+});
+renderer.domElement.addEventListener('pointerdown', syncFlyModifiers);
+
 window.addEventListener('keydown', (e) => {
+  syncFlyModifiers(e);
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
     return;
   }
@@ -19448,6 +19470,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('keyup', (e) => {
+  syncFlyModifiers(e);
   const code = e.code;
   if (code === 'KeyW') { flyKeys.forward = false; }
   else if (code === 'KeyS') { flyKeys.backward = false; }

@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] taslak-v2: skorbord arkası POI rack konumları güncellendi`
+- **Son commit:** `[Claude] Serbest uçuş: Alt+Tab sonrası Shift hızlı uçuşun çalışmaması düzeltildi`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. Son yedi commit push edilmedi; kullanıcı onayı bekliyor.
+- **Yarım kalan iş:** Yok. Son sekiz commit push edilmedi; kullanıcı onayı bekliyor.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +66,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-09 00:10 — Claude — Serbest uçuş: Shift hızlı uçuş takılma hatası
+- **Kullanıcı isteği:** "wasd tuşları işe yarıyor ama bazen shift tuşuyla uçuş modu çalışmıyor sayfaya f5 atınca düzeliyor genelde bi yerlere vs tıklayınca ya da alt tab ile başka sekmeye gidip geri gelince tetikleniyor"
+- **Kök neden:** `flyKeys.slow` sol Alt / Ctrl keydown ile açılıyor, yalnızca keyup ile kapanıyordu. Alt+Tab'da pencere odağı gittiği için Alt keyup hiç gelmiyor, `slow` açık kalıyordu. `animate()` içinde hız hesabında `slow` (3.5 m/s) `boost`u (30 m/s) eziyor, bu yüzden Shift çalışmıyor gibi görünüyordu. Ek olarak alan seçme menüsü (`#select-area`) değiştikten sonra odak menüde kalınca uçuş tuşları yok sayılıyordu.
+- **Değişen dosyalar:**
+  - `main.js` → "SERBEST UÇUŞ (FREE FLIGHT) VE WASD GEZİNME SİSTEMİ" (~satır 19420):
+    - YENİ `syncFlyModifiers(e)`: `boost = e.shiftKey`, `slow = e.ctrlKey || e.altKey`. Her keydown/keyup'ta (input odaklıyken de) ve kanvas `pointerdown`'unda çağrılıyor; kaçan keyup bir sonraki olayda kendiliğinden düzeliyor.
+    - YENİ `resetFlyKeys()`: `window` `blur` ve `document` `visibilitychange` (gizlenince) olaylarında tüm uçuş tuşlarını bırakıyor.
+  - `main.js` → `#select-area` change dinleyicisi (~satır 15043) ve sunum modu `presSelectArea` change dinleyicisi (~satır 17268): seçimden sonra `blur()`.
+- **Doğrulama:** `npm run build` hatasız. Panel gizli olduğu için tarayıcıda rAF çalışmadı. Bunun yerine `main.js`'teki uçuş tuş kodu aynen çıkarılıp Node'da sahte olaylarla 7 senaryo test edildi (betik scratchpad'de: `test_flykeys.cjs`). Yeni kod 7/7 geçti; eski kod (HEAD) Alt+Tab, kaçan Alt keyup, sekme gizlenmesi ve kanvas tıklaması senaryolarında kaldı, yani hata yeniden üretildi ve düzeldi. Tarayıcıda alan değiştikten sonra odağın BODY'ye döndüğü doğrulandı.
+- **Commit:** `[Claude] Serbest uçuş: Alt+Tab sonrası Shift hızlı uçuşun çalışmaması düzeltildi`
+- **Yarım kalan / dikkat:** Yok.
 
 ### 2026-10-08 23:55 — Claude — taslak-v2: skorbord arkası POI rack konumları
 - **Kullanıcı isteği:** "skorboard arkasındaki poı grubunun konumunu fotograflardaki konumlara göre güncelle ve taslak versiyon 2 ye yaz". Kullanıcı, özellikler panelinin iki ekran görüntüsünü gönderdi.
