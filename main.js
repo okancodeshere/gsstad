@@ -2635,7 +2635,7 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   const roofEndWorldZ = -1.35 + slopeLen * Math.cos(slopeAngleRad); // ~45.082m
   const roofEndWorldY = 4.10 + slopeLen * Math.sin(slopeAngleRad); // ~10.347m (Kot 50.35m)
 
-  const cwLength = 20.0; // 20 metre boyunda (Alan 1 standardı)
+  const cwLength = 24.0; // 20 metre boyunda (Alan 1 standardı)
   const cwWidth = 1.0; // 100 cm genişlik
 
   // A) Kedi Yolu Taban Sacı (100cm Genişlik, Izgara Stil, Yürüme Kotu = 7.75m)
@@ -3765,7 +3765,7 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   // Beton kolon eksenine (Z = -1.35m) mesafe: 26.934 - (-1.35) = 28.28m ≈ 28.5 metre!
   const midCwCenterZ = 27.434;
   const midCwCenterX = -3.00; // 45m çatı makası aksı
-  const midCwLength = 20.0;   // 20 metre boyunda (Alan-1 standardı)
+  const midCwLength = 24.0;   // 20 metre boyunda (Alan-1 standardı)
   const midCwWidth = 1.0;     // 100 cm genişlik
 
   // Kot Hesabı: 45m çatı makası bu Z kotunda (s ≈ 29.04m) Y ≈ 7.97m seviyesindedir.
