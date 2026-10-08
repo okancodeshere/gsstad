@@ -1264,6 +1264,43 @@ function buildAlan2Instance(parentGroup, offsetX, offsetZ) {
   parentGroup.add(alan2Group);
 }
 
+function buildSuperColumns(parentGroup) {
+    const concreteMat = new THREE.MeshStandardMaterial({ 
+      color: 0x95a5a6, 
+      roughness: 0.8,
+      metalness: 0.1
+    });
+
+    const colWidth = 5.0;  // X ekseninde
+    const colDepth = 7.5;  // Z ekseninde (180 derece cephesi)
+    const colHeight = 5.0; // Yükseklik (Kullanıcı belirtecek, şimdilik 5m placeholder)
+
+    const colGeo = new THREE.BoxGeometry(colWidth, colHeight, colDepth);
+
+    // SAG SÜPER KOLON
+    // Referans: X = 36 (Son direk)
+    // En yakın mesafe = 28.3m
+    // Başlangıç X = 36 + 28.3 = 64.3m
+    // Merkez X = 64.3 + (5.0 / 2) = 66.8m
+    // Z Sapması = +2.5m (Kedi yolu tarafı)
+    const rightCol = new THREE.Mesh(colGeo, concreteMat);
+    rightCol.position.set(66.8, colHeight / 2 - 0.2, 2.5); // Y'yi zeminle eşlemek için ayarladık (Zemin Y=0 civarı)
+    rightCol.castShadow = true;
+    rightCol.receiveShadow = true;
+    parentGroup.add(rightCol);
+
+    // SOL SÜPER KOLON
+    // Referans: X = -12 (İlk direk)
+    // En yakın mesafe = 28.3m
+    // Başlangıç X = -12 - 28.3 = -40.3m
+    // Merkez X = -40.3 - (5.0 / 2) = -42.8m
+    // Z Sapması = +2.5m (Kedi yolu tarafı)
+    const leftCol = new THREE.Mesh(colGeo, concreteMat);
+    leftCol.position.set(-42.8, colHeight / 2 - 0.2, 2.5);
+    leftCol.castShadow = true;
+    leftCol.receiveShadow = true;
+    parentGroup.add(leftCol);
+  }
 function createAlan2Structure() {
   const alan2Wrapper = new THREE.Group();
   alan2Wrapper.name = 'alan2Structure';
@@ -14293,7 +14330,7 @@ if (selectAreaElem) {
       if (alan2Group) alan2Group.visible = true;
       if (alan3Group) alan3Group.visible = false;
       if (alan4Group) alan4Group.visible = false;
-      setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
+      setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
     }
 
     setPlatformGroupVisibility(state.alan1Platforms, selectedArea === 'alan1');
@@ -16538,7 +16575,7 @@ if (presBtnResetCam) {
     } else if (currentArea === 'alan3') {
       setCameraView(-5.85, 8.33, 33.95, 2.24, 5.87, 28.61);
     } else {
-      setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
+      setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
     }
   });
 }
@@ -20134,7 +20171,7 @@ if (state.currentArea === 'alan4') {
   if (alan2Group) alan2Group.visible = true;
   if (alan3Group) alan3Group.visible = false;
   if (alan4Group) alan4Group.visible = false;
-  setCameraView(15.00, 10.00, 40.00, 15.00, 0.00, 0.00);
+  setCameraView(12.00, 25.00, 80.00, 12.00, 0.00, 0.00);
 } else if (state.currentArea === 'alan3') {
   if (catwalkGroup) catwalkGroup.visible = false;
   if (alan2Group) alan2Group.visible = false;
