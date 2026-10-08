@@ -18,7 +18,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ### Çalışırken (kota her an bitebilir!)
 4. Çok adımlı bir işe **başlamadan önce** "1. Güncel Durum"daki *Yarım kalan iş* alanına planı kısaca yaz. Kota ortada biterse diğer ajan nerede kaldığını bilsin.
 5. Her **anlamlı değişiklikten hemen sonra** (oturum sonunu bekleme) "2. Günlük"e kayıt ekle. Küçük ardışık düzeltmeler aynı kayda eklenebilir.
-6. Kayıt **istisnasız** şunları içermeli: hangi dosya, hangi fonksiyon/bölüm (`main.js` için fonksiyon adı + yaklaşık satır), ne değişti, neden, build sonucu, commit hash'i.
+6. Kayıt **istisnasız** şunları içermeli: hangi dosya, hangi fonksiyon/bölüm (`main.js` için fonksiyon adı + yaklaşık satır), ne değişti, neden, build sonucu, commit bilgisi.
+   - Kayıt ve kod aynı commit'e girdiği için hash önceden bilinemez. "Commit" alanına commit mesajının **birebir aynısını** yaz (ör. `[Antigravity] Bağımlılıklar listesi eklendi`). Sonraki ajan `git log --oneline` ile eşleştirir.
+   - Önceki ajanın kaydında "commit edilecek" yazıyor ama git'te o mesajla commit yoksa, kota commit'ten önce bitmiş demektir → "Devralma notu" yaz.
 
 ### Oturum sonunda / iş bitince
 7. "1. Güncel Durum" bölümünü **baştan güncelle** (eski bilgiyi bırakma, üzerine yaz).
@@ -35,8 +37,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Antigravity, 2026-10-08
-- **Son commit:** _(bu kaydın commit'i, bkz. günlük)_
+- **Son güncelleyen:** Claude Code, 2026-10-08
+- **Son commit:** `[Claude] Devir protokolü: commit alanı netleştirildi`
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
@@ -63,6 +65,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-08 18:30 — Claude — Antigravity kaydı denetlendi, commit alanı kuralı netleştirildi
+- **Kullanıcı isteği:** "Antigravity ne yaptı?" Devir sisteminin iki yönlü testi.
+- **Devralma kontrolü:** Antigravity'nin 18:19 kaydı git ile uyumlu (`184b42b`, tek dosya: `AJAN_DEVIR.md`, +22/-1). Kökte geride bırakılmış betik yok. Kayıt protokole uygun.
+- **Değişen dosyalar:**
+  - `AJAN_DEVIR.md` → Protokol madde 6'ya commit alanının nasıl doldurulacağı eklendi; Güncel Durum güncellendi.
+- **Neden / karar:** Hem Claude'un hem Antigravity'nin kaydında commit alanı belirsiz kalmıştı ("hash için git log", "commit edilecek"). Hash commit'ten önce bilinemez; bunun yerine commit mesajı yazılacak.
+- **Doğrulama:** Kod değişmedi, build gerekmez.
+- **Commit:** `[Claude] Devir protokolü: commit alanı netleştirildi`
+- **Yarım kalan / dikkat:** Yok. Devir sistemi iki yönde de test edildi ve çalışıyor.
 
 ### 2026-10-08 18:19 — Antigravity — Bağımlılık listesinin devir defterine eklenmesi
 - **Kullanıcı isteği:** package.json'daki bağımlılıkların AJAN_DEVIR.md'ye Kalıcı Kararlar altına eklenmesi.
