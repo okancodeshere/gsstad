@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-09
-- **Son commit:** `[Claude] Pafta 11: skorbord arkası çapraz sütun ve pol RRU kesiti DXF`
-- **Build durumu:** `npm run build` hatasız (bu işte `main.js` değişmedi).
-- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7` (devir defteri) ve pafta 11 commit'i yerelde, push edilmedi.
+- **Son commit:** `[Claude] Pafta 12: ALAN 1-3 süper kolon tava planı DXF`
+- **Build durumu:** `npm run build` hatasız (bu işlerde `main.js` değişmedi).
+- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7` (devir defteri), pafta 11 ve pafta 12 commit'leri yerelde, push edilmedi.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +66,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-09 10:00 — Claude — Pafta 12: ALAN 1-3 süper kolon tava planı (DXF)
+- **Kullanıcı isteği:** "bana sadece super kolon üstüne ekledigimiz tavanın kesiti lazım üstten olsa yeterli"
+- **Değişen dosyalar:**
+  - `generate_super_kolon_tava_plan_dxf.cjs` → YENİ (kök, `generate_*.cjs` istisnası). Çalıştırma: `node generate_super_kolon_tava_plan_dxf.cjs` (`generate_all_dxfs.cjs`'e eklenmedi).
+  - `DXF_Ciktilari/Milimetre/12_ALAN_1_3_SUPER_KOLON_TAVA_PLANI_mm.dxf` ve `DXF_Ciktilari/Metre/..._m.dxf` → YENİ.
+- **İçerik:** `main.js` `buildSuperColumns()` (~satır 1126) içindeki tavalar, sol ve sağ süper kolon için:
+  - `createSuperColTrays`: ön yüz 2600 mm, yan yüz 2682 mm (kot +3.00/+3.20) ve düşey iniş tavası (+0.225/+3.10)
+  - `createBridgeTray`: köprü tavası 200 × 25541 mm (±0.00/+0.05)
+  - Referans katmanında (kesik çizgi) kolon (5.0 × 7.5 m, ±7.88° dönük) ve köprü betonu dış hatları
+  - Katmanlar: `SUPER_KOLON_TAVASI`, `REFERANS`, `METIN_BILGI`. Plan: yatay = model X, düşey = model −Z, orijin model X=0 / Z=0.
+- **Neden / karar:** Kolon yüzü tavaları modelde duvara dik (200 mm düşeyde, 50 mm kalınlık); planda 50 mm şerit olarak çizildi, modelde olduğu gibi. Kafes üzerindeki ana tavalar (`createAlan2Structure` Sol/Sağ Kafes Tavası) kapsam dışında bırakıldı.
+- **Doğrulama:** Kolon ve köprü koordinatları tarayıcıda sahneden okundu. Betik kendi hesapladığı köşeleri bu değerlerle karşılaştırıyor (`selfCheck`, 2 mm tolerans) ve kontrolü geçti. DXF: 63 varlık, NaN yok. SVG önizlemede iki kolon da kontrol edildi.
+- **Commit:** `[Claude] Pafta 12: ALAN 1-3 süper kolon tava planı DXF`
+- **Yarım kalan / dikkat:** Yok.
 
 ### 2026-10-09 09:30 — Claude — Pafta 11: skorbord arkası çapraz sütun + pol RRU kesiti (DXF)
 - **Kullanıcı isteği:** "bana skorboard arkası için kesit lazım. RRU lar ve yeni eklenen direkler olursa yeterli farklı bir autocad dosyasının içine aktaracagım"
