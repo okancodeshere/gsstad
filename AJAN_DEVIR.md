@@ -37,10 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-08
-- **Son commit:** `[Claude] Serbest uçuş: Alt+Tab sonrası Shift hızlı uçuşun çalışmaması düzeltildi`
-- **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. 2026-10-09'da kullanıcı onayıyla `42e6e20`'e kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
+- **Son güncelleyen:** Claude Code, 2026-10-09
+- **Son commit:** `[Claude] Pafta 11: skorbord arkası çapraz sütun ve pol RRU kesiti DXF`
+- **Build durumu:** `npm run build` hatasız (bu işte `main.js` değişmedi).
+- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7` (devir defteri) ve pafta 11 commit'i yerelde, push edilmedi.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +66,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-09 09:30 — Claude — Pafta 11: skorbord arkası çapraz sütun + pol RRU kesiti (DXF)
+- **Kullanıcı isteği:** "bana skorboard arkası için kesit lazım. RRU lar ve yeni eklenen direkler olursa yeterli farklı bir autocad dosyasının içine aktaracagım"
+- **Değişen dosyalar:**
+  - `generate_skorbord_arkasi_sutun_rru_kesit_dxf.cjs` → YENİ (kök; `.gitignore` `!generate_*.cjs` istisnasıyla izleniyor). `dxf_engine.cjs` `DxfBuilder` kullanır. Çalıştırma: `node generate_skorbord_arkasi_sutun_rru_kesit_dxf.cjs` (`generate_all_dxfs.cjs`'e eklenmedi).
+  - `DXF_Ciktilari/Milimetre/11_ALAN_2_SKORBORD_ARKASI_SUTUN_VE_RRU_KESITI_mm.dxf` ve `DXF_Ciktilari/Metre/..._m.dxf` → YENİ.
+- **İçerik:** Yalnızca `scoreboardDiagonalColumns` sütunları (iki sıra, +7.45'te kesik), 14 RRU, pol / ofset kol / destekler ve kot referans çizgileri.
+  - Görünüş B-B (XY): ham model koordinatı, orijin X=0 skorbord ekseni, Y=0 alt kedi yolu döşemesi.
+  - Kesit A-A (YZ, X = −3.00 sol grup): yatay = Z + 16000 mm.
+  - Plan C-C (XZ, Y = +1.44): düşey = −Z − 6000 mm.
+  - Katmanlar: `SKORBORD_CAPRAZ_SUTUN`, `POL_KOL_DESTEK`, `EKP_TURKCELL_RRU`, `EKP_TURK_TELEKOM_RRU`, `EKP_VODAFONE_RRU`, `REFERANS_KOT`, `EKSEN`, `OLCULER`, `METIN_BILGI`.
+- **Neden / karar:** Geometri sayıları `main.js` (`createAlan4Structure` 9.5 bölümü ve `buildScoreboardStrutPoleRRUBlok`) ile birebir aynı ve betiğin başında sabit olarak yazılı. `main.js`'te bu geometri değişirse betik de güncellenmeli.
+- **Doğrulama:** DXF üretildi (274 varlık, NaN yok). DXF tekrar okunup SVG önizlemeye çevrildi ve tarayıcıda görsel olarak kontrol edildi (önizleme betikleri scratchpad'de; puppeteer bu ortamda tarayıcı başlatamadı).
+- **Commit:** `[Claude] Pafta 11: skorbord arkası çapraz sütun ve pol RRU kesiti DXF`
+- **Yarım kalan / dikkat:** Yok.
 
 ### 2026-10-09 00:10 — Claude — Serbest uçuş: Shift hızlı uçuş takılma hatası
 - **Kullanıcı isteği:** "wasd tuşları işe yarıyor ama bazen shift tuşuyla uçuş modu çalışmıyor sayfaya f5 atınca düzeliyor genelde bi yerlere vs tıklayınca ya da alt tab ile başka sekmeye gidip geri gelince tetikleniyor"
