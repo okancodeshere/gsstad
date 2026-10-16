@@ -1859,6 +1859,108 @@ function buildCylinderMountedHorizontalPoiShelf(options = {}) {
   return group;
 }
 
+// =========================================================================
+// ÇATI MAKASI TAVALARI: 5.70m AKS ARALIĞI VE ARA TAVA DESTEKLERİ (TÜM ALANLAR)
+// Kullanıcı İsteği:
+// - "kedi yolundaki tavanın sabitlendigi aks aralıgı 570cm haliyle tava agırlıktan dolayı egilir bu nedenle
+//   ekte sarıyla çizdigim gibi bir destek lazım ... bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember
+//   2 tane dikey kol ve bi tane 70 cm yatay tabla at"
+// - "tüm tavalara uygula" (tüm alanlardaki çatı makası tavaları)
+// Kullanım: ALAN 1-3 createAlan2RoofTrussAndCableTray, ALAN 4 createAlan3RoofTrussAndCableTray,
+//           ALAN 2 buildScoreboardRoofTruss60m (3 taşıyıcı)
+// =========================================================================
+const TRAY_SUPPORT_AXIS_STEP = 5.70;
+
+// Makas istasyonları (V-kol + tava traversi): s = 0'dan başlayan 5.70m ızgara.
+// zones: kedi yolu geçiş bölgeleri [başlangıç, bitiş]. Izgara istasyonu bir bölgeye düşerse kaldırılır,
+// bölgenin iki kenarına istasyon konur ve ızgara bölge bitişinden yeniden başlar (hiçbir açıklık > step olmaz).
+// endS: son istasyon (makas ucu).
+function buildTrayStations(endS, step = TRAY_SUPPORT_AXIS_STEP, zones = []) {
+  const stations = [0];
+  let s = 0;
+  for (let guard = 0; guard < 200; guard++) {
+    const next = s + step;
+    const zone = zones.find(z => z[1] > s + 0.01 && z[0] < next - 0.01);
+    if (zone) {
+      if (zone[0] - s > 0.3) stations.push(+zone[0].toFixed(3));
+      stations.push(+zone[1].toFixed(3));
+      s = zone[1];
+      continue;
+    }
+    if (next >= endS - 0.3) {
+      if (endS - s > 0.01) stations.push(+endS.toFixed(3));
+      break;
+    }
+    stations.push(+next.toFixed(3));
+    s = next;
+  }
+  return stations;
+}
+
+// Her istasyon açıklığının 1/3 ve 2/3 noktasına ara tava desteği:
+// taşıyıcı boruyu saran çember + çemberden tablaya 2 dikey kol + tava altında 70cm yatay tabla + tava kenar çeneleri.
+// Tava normal kotunda değilse (kedi yolu altı alçak geçiş / kot geçişi) veya tava yoksa destek konmaz.
+// Koordinatlar makas grubunun yerel ekseninde: Z = makas boyunca s, Y = taşıyıcı boru ekseninden yukarı.
+function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
+  // noSupportZones: [başlangıç, bitiş] s aralıkları; başka bir yapının makasa bağlandığı bölgelerde destek konmaz
+  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [] } = opts;
+  const trayEndS = traySegments[traySegments.length - 1].zEnd;
+  const trayBottomAt = (s) => {
+    for (const seg of traySegments) {
+      if (s >= seg.zStart - 1e-6 && s <= seg.zEnd + 1e-6) {
+        return seg.yStart + (seg.yEnd - seg.yStart) * (s - seg.zStart) / (seg.zEnd - seg.zStart);
+      }
+    }
+    return null;
+  };
+
+  const group = new THREE.Group();
+  group.name = name;
+  const ringR = carrierR + 0.02;
+  const ringGeo = new THREE.CylinderGeometry(ringR, ringR, 0.08, 24);
+  ringGeo.rotateX(Math.PI / 2);
+  const tablaT = 0.03;
+  const tablaGeo = new THREE.BoxGeometry(0.70, tablaT, 0.10);
+  const clampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.06);
+  const up = new THREE.Vector3(0, 1, 0);
+  const addRod = (p1, p2, r) => {
+    const d = new THREE.Vector3().subVectors(p2, p1);
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 12), mat);
+    m.position.copy(p1).addScaledVector(d, 0.5);
+    m.quaternion.setFromUnitVectors(up, d.normalize());
+    group.add(m);
+  };
+
+  for (let i = 0; i < stations.length - 1; i++) {
+    const a = stations[i], b = stations[i + 1];
+    [1 / 3, 2 / 3].forEach(f => {
+      const s = a + (b - a) * f;
+      if (s > trayEndS - 0.1) return;
+      if (noSupportZones.some(z => s > z[0] && s < z[1])) return;
+      const trayY = trayBottomAt(s);
+      if (trayY === null || trayY < trayNormalY - 0.05) return;
+
+      const ring = new THREE.Mesh(ringGeo, mat);
+      ring.position.set(0, 0, s);
+      group.add(ring);
+
+      const tabla = new THREE.Mesh(tablaGeo, mat);
+      tabla.position.set(0, trayY - tablaT / 2, s);
+      group.add(tabla);
+
+      [-1, 1].forEach(sx => {
+        // Çemberin üst omzundan tabla uçlarına (çizimdeki gibi hafif açılan) dikey kol
+        addRod(new THREE.Vector3(sx * ringR * 0.57, ringR * 0.82, s), new THREE.Vector3(sx * 0.30, trayY - tablaT, s), 0.022);
+        const c = new THREE.Mesh(clampGeo, clampMat);
+        c.position.set(sx * 0.26, trayY - 0.005, s);
+        group.add(c);
+      });
+    });
+  }
+  parent.add(group);
+  return group;
+}
+
 // Çatı Makası, Çapraz Taşıyıcı Beyaz Borular ve 50cm x 15cm Delikli Kablo Tavası Üretici Fonksiyonu
 // Kullanıcı İsteği:
 // 1. Açı 10 dereceye düşürüldü (slope = 10°).
@@ -1971,11 +2073,12 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   // Alttaki silindir taşıyıcıdan iki üst köşeye doğru açılan ~3m uzunluğunda çelik borular
   // Y = 0.42m kotunda iki kol arası mesafe net 60 cm (X = -0.30m ve X = +0.30m) olur
   // -------------------------------------------------------------
-  const stationSpacing = 2.5; // Her 2.5 metrede bir çatı makası istasyonu (45 / 2.5 = 18 bay)
-  const armStationsZ = [];
-  for (let z = 0.0; z <= slopeLen + 0.01; z += stationSpacing) {
-    armStationsZ.push(Number(z.toFixed(2)));
-  }
+  // Çatı makası istasyonları: 5.70m aks aralığı (Kullanıcı İsteği: "tüm tavalara uygula"; eskiden 2.5m)
+  // Ara kedi yolu (s ≈ 29.04m) iki yanındaki 27.5 / 30.0 istasyonları korunur; 30.0m istasyonu orta kedi
+  // yolu RRU ofset montaj borularının bağlandığı makas çapraz kolu (stZ_midTruss = 30.00). Tava ucu / iniş
+  // tavası ve çatı ucu kedi yolu 45° askı kolunun bağlandığı bölgede 40.0 / 42.5 istasyonları korunur.
+  // Uç istasyon 45.0m (çatı ucu kedi yolu taşıyıcı silindiri askısı).
+  const armStationsZ = buildTrayStations(45.0, TRAY_SUPPORT_AXIS_STEP, [[27.5, 30.0], [40.0, 42.5]]);
   const diagonalRadius = 0.07; // Ø14cm kalın beyaz çelik boru
   const armBaseX = 0.12; // Alt bağlantı noktası X (±0.12m)
   const armBaseY = 0.08; // Alt bağlantı noktası Y
@@ -2157,6 +2260,13 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
   const dipSaddle = new THREE.Mesh(dipSaddleGeo, steelFlangeMat);
   dipSaddle.position.set(0, trayBottomYDip - 0.02, 29.0);
   slopedGroup.add(dipSaddle);
+
+  // 5.70m aks açıklıklarında ara tava destekleri (çember + 2 dikey kol + 70cm tabla)
+  addTrayIntermediateSupports(slopedGroup, armStationsZ, traySegments, {
+    carrierR: carrierRadius, trayNormalY: trayBottomYNormal,
+    mat: steelFlangeMat, clampMat: darkJointMat, name: 'alan2RoofTrayIntermediateSupports',
+    noSupportZones: [[40.0, 42.5]] // Tava ucu iniş tavası + çatı ucu kedi yolu 45° askı kolu bölgesi
+  });
 
   // E) Tava İçi Rijitlik Köprüleri (Köprüler in-çık bölgesini atlayarak dizilir)
   const ribGeo = new THREE.BoxGeometry(trayW - 0.01, 0.01, 0.02);
@@ -4332,11 +4442,10 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   const armTopX = 0.55;
   const armTopY = 1.45;
   const strutRadius = 0.07;
-  const zStep = 2.50;
-  const armStationsZ = [];
-  for (let z = 0.0; z <= slopeLen; z += zStep) {
-    armStationsZ.push(z);
-  }
+  // Çatı makası istasyonları: 5.70m aks aralığı (Kullanıcı İsteği: "tüm tavalara uygula"; eskiden 2.5m)
+  // 1. kedi yolu (s = 23.0m) iki yanındaki 22.5 / 25.0 ve 2. kedi yolu (s = 39.0m) iki yanındaki 37.5 / 40.0
+  // istasyonları korunur; uç istasyon 45.0m.
+  const armStationsZ = buildTrayStations(45.0, TRAY_SUPPORT_AXIS_STEP, [[22.5, 25.0], [37.5, 40.0]]);
 
   const collarClampGeo = new THREE.CylinderGeometry(carrierRadius + 0.015, carrierRadius + 0.015, 0.16, 24);
   collarClampGeo.rotateX(Math.PI / 2);
@@ -4496,6 +4605,12 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   const dipSaddle = new THREE.Mesh(dipSaddleGeo, steelFlangeMat);
   dipSaddle.position.set(0, trayBottomYDip - 0.02, 23.0);
   slopedGroup.add(dipSaddle);
+
+  // 5.70m aks açıklıklarında ara tava destekleri (çember + 2 dikey kol + 70cm tabla)
+  addTrayIntermediateSupports(slopedGroup, armStationsZ, traySegments, {
+    carrierR: carrierRadius, trayNormalY: trayBottomYNormal,
+    mat: steelFlangeMat, clampMat: darkJointMat, name: 'alan3RoofTrayIntermediateSupports'
+  });
 
   // Anten 1 ve Anten 2 Feeder Kablo İniş Olukları (Drop-out Chutes at s = 33.25m ve s = 34.25m)
   const chuteGeo = new THREE.BoxGeometry(0.24, 0.02, 0.35);
@@ -7706,14 +7821,10 @@ function createAlan4Structure() {
     const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
     collarGeo.rotateX(Math.PI / 2);
 
-    // İstasyon (V-strut + tava travers) aralığı
-    // Kullanıcı İsteği: "kedi yolundaki tavanın sabitlendigi aks aralıgı 570cm ... Sadece bir alandaki bir kedi yolunun
-    // destek aralıklarını 570cm yap" -> yalnızca ortadaki taşıyıcı (X = 0) 5.70m; yan taşıyıcılar 3.0m kalır.
-    // 60m tam bölünmediği için son istasyon taşıyıcı ucunda (s = 60m) eklenir.
-    const stationStep = (xOffset === 0) ? 5.70 : 3.0;
-    const stations = [];
-    for (let s = 0.0; s <= trussLen + 0.001; s += stationStep) stations.push(+s.toFixed(3));
-    if (trussLen - stations[stations.length - 1] > 0.01) stations.push(trussLen);
+    // İstasyon (V-strut + tava travers) aralığı: 5.70m (Kullanıcı İsteği; önce yalnızca ortadaki taşıyıcı,
+    // ardından "tüm tavalara uygula" ile üç taşıyıcı). Kedi yolu geçişleri (s = 16 / 32) ızgarayla çakışmaz.
+    // 60m tam bölünmediği için son istasyon taşıyıcı ucunda (s = 60m).
+    const stations = buildTrayStations(trussLen, TRAY_SUPPORT_AXIS_STEP, []);
 
     for (const zSt of stations) {
       // Omurgayı saran çelik bilezik
@@ -7970,63 +8081,14 @@ function createAlan4Structure() {
       }
     }
 
-    // 3.B. ARA TAVA DESTEKLERİ (yalnızca ortadaki taşıyıcı, 5.70m istasyon aralığı)
-    // Kullanıcı İsteği: "aks aralıgı 570cm haliyle tava agırlıktan dolayı egilir bu nedenle ekte sarıyla çizdigim
-    // gibi bir destek lazım ... bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve
-    // bi tane 70 cm yatay tabla at"
-    // Her istasyon açıklığının 1/3 ve 2/3 noktasında (5.70m açıklıkta 1.90m arayla):
-    // omurgayı (Ø350) saran çember + çemberden tablaya 2 dikey kol + tava altında 70cm yatay tabla.
-    // Tavanın kedi yolları altında alçaldığı bölgede (dip) destek konmaz; orayı mevcut dip eyerleri taşır.
-    if (xOffset === 0) {
-      const supportGroup = new THREE.Group();
-      supportGroup.name = 'scoreboardTrussTrayIntermediateSupports';
-      const trayBottomAt = (s) => {
-        for (const seg of traySegments) {
-          if (s >= seg.zStart - 1e-6 && s <= seg.zEnd + 1e-6) {
-            return seg.yStart + (seg.yEnd - seg.yStart) * (s - seg.zStart) / (seg.zEnd - seg.zStart);
-          }
-        }
-        return trayBottomYNormal;
-      };
-      const ringGeo = new THREE.CylinderGeometry(0.195, 0.195, 0.08, 24);
-      ringGeo.rotateX(Math.PI / 2);
-      const tablaW = 0.70, tablaT = 0.03, tablaD = 0.10;
-      const tablaGeo = new THREE.BoxGeometry(tablaW, tablaT, tablaD);
-
-      for (let i = 0; i < stations.length - 1; i++) {
-        const a = stations[i], b = stations[i + 1];
-        [1 / 3, 2 / 3].forEach(f => {
-          const s = a + (b - a) * f;
-          const trayY = trayBottomAt(s);
-          if (trayY < trayBottomYNormal - 0.05) return; // dip / kot geçişi bölgesi
-
-          // Omurgayı saran çember
-          const ring = new THREE.Mesh(ringGeo, flangeSteelMat);
-          ring.position.set(0, 0, s);
-          supportGroup.add(ring);
-
-          // 70cm yatay tabla (üst yüzü tava tabanında)
-          const tabla = new THREE.Mesh(tablaGeo, flangeSteelMat);
-          tabla.position.set(0, trayY - tablaT / 2, s);
-          supportGroup.add(tabla);
-
-          // Çemberden tablaya 2 dikey kol (çizimdeki gibi hafif açılarak)
-          [-1, 1].forEach(sx => {
-            supportGroup.add(createPipeHelper(
-              new THREE.Vector3(sx * 0.11, 0.16, s),
-              new THREE.Vector3(sx * 0.30, trayY - tablaT, s),
-              0.022,
-              flangeSteelMat
-            ));
-            // Tava kenar tespit çenesi
-            const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
-            hClamp.position.set(sx * 0.26, trayY - 0.005, s);
-            supportGroup.add(hClamp);
-          });
-        });
-      }
-      trayGroup.add(supportGroup);
-    }
+    // 3.B. ARA TAVA DESTEKLERİ (üç taşıyıcı, 5.70m istasyon aralığı)
+    // Kullanıcı İsteği: "bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve bi tane
+    // 70 cm yatay tabla at" + "tüm tavalara uygula". Ortak fonksiyon: addTrayIntermediateSupports (dosya başı).
+    // Kedi yolları altındaki alçak geçiş (dip) bölgesine destek konmaz; orayı mevcut dip eyerleri taşır.
+    addTrayIntermediateSupports(trayGroup, stations, traySegments, {
+      carrierR: 0.175, trayNormalY: trayBottomYNormal,
+      mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports'
+    });
 
     // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)
     const elbowGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.45, 16);

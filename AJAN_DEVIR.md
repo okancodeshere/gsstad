@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-16
-- **Son commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: 5.70 m istasyon aralığı ve ara tava destekleri`
+- **Son commit:** `[Claude] Tüm çatı makası tavalarına 5.70 m aks aralığı ve ara tava destekleri`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7`, pafta 11, pafta 12 ve 5.70 m tava desteği commit'leri yerelde, push edilmedi.
+- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7`, pafta 11, pafta 12, orta taşıyıcı 5.70 m ve tüm tavalar 5.70 m commit'leri yerelde, push edilmedi.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +66,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-16 13:20 — Claude — Tüm çatı makası tavalarına 5.70 m aks + ara tava destekleri
+- **Kullanıcı isteği:** "tüm tavalara uygula" (12:50 kaydındaki 5.70 m aks + ara destek). Soru üzerine kapsam olarak "Tüm alanlardaki çatı tavaları" seçildi.
+- **Değişen dosyalar:**
+  - `main.js` → YENİ üst düzey yardımcılar (`createAlan2RoofTrussAndCableTray` hemen önünde, ~satır 1862):
+    - `TRAY_SUPPORT_AXIS_STEP = 5.70`.
+    - `buildTrayStations(endS, step, zones)`: s = 0'dan 5.70 m ızgara. Bir ızgara istasyonu kedi yolu / bağlantı bölgesine (`zones`) düşerse kaldırılır, bölgenin iki kenarına istasyon konur ve ızgara bölge bitişinden yeniden başlar. Hiçbir açıklık 5.70 m'yi geçmez.
+    - `addTrayIntermediateSupports(parent, stations, traySegments, opts)`: her açıklığın 1/3 ve 2/3 noktasına çember (taşıyıcı R + 0.02) + 2 dikey kol + 700 mm tabla + tava çeneleri. Tava normal kotta değilse (dip / kot geçişi), tava bitmişse ya da `noSupportZones` içindeyse destek konmaz.
+  - `main.js` → ALAN 1-3 `createAlan2RoofTrussAndCableTray()`: `stationSpacing = 2.5` döngüsü → `buildTrayStations(45.0, 5.70, [[27.5, 30.0], [40.0, 42.5]])`. İstasyonlar: 0, 5.7, 11.4, 17.1, 22.8, 27.5, 30.0, 35.7, 40.0, 42.5, 45.0. 30.0 (orta kedi yolu RRU ofset boruları, `stZ_midTruss`) ve tava ucu / iniş tavası / çatı ucu kedi yolu 45° askı kolu bölgesindeki 40.0 / 42.5 korundu. Ara destekler (`alan2RoofTrayIntermediateSupports`, 14 adet): 1.9 … 38.57; `noSupportZones: [[40.0, 42.5]]`.
+  - `main.js` → ALAN 4 `createAlan3RoofTrussAndCableTray()`: `zStep = 2.50` döngüsü → `buildTrayStations(45.0, 5.70, [[22.5, 25.0], [37.5, 40.0]])`. İstasyonlar: 0, 5.7, 11.4, 17.1, 22.5, 25.0, 30.7, 36.4, 37.5, 40.0, 45.0. Ara destekler (`alan3RoofTrayIntermediateSupports`, 13 adet; tava 34.8'de bitiyor).
+  - `main.js` → ALAN 2 `buildScoreboardRoofTruss60m()`: 12:50'deki yalnızca X = 0 koşulu kaldırıldı. `stations = buildTrayStations(60, 5.70, [])` üç taşıyıcı için. Satır içi destek bloğu ortak `addTrayIntermediateSupports(...)` çağrısıyla değiştirildi (carrierR 0.175; görünüm aynı). Üç taşıyıcıda 20'şer destek.
+- **Neden / karar:** Izgarayı s = 0'dan düz 5.70 başlatmak ALAN 1-3'te 30 m RRU istasyonunu yok ediyor ve 28.5'i kedi yolu içine, ALAN 4'te 22.8'i kedi yoluna, ALAN 1-3'te 41.4'ü iniş tavasına düşürüyordu; bu yüzden bölge kuralı eklendi. Kedi yolu iki yanındaki istasyonlar eskiden de vardı.
+- **Doğrulama:** `npm run build` hatasız, konsol hatası yok. Tarayıcıda her makasın istasyon ve destek konumları sahneden okundu (yukarıdaki listeler). Çakışma kontrolü: ara desteklerin hiçbiri başka yapı veya ekipmana değmiyor. Yeni istasyonlarda yeni çakışma yok; kalan temaslar (asılı antenler, dip eyerleri, tava ucu oluğu, 42.5 istasyonu-iniş tavası) değişiklikten önce de vardı. ALAN 1-3 görsel kontrol yapıldı.
+- **Commit:** `[Claude] Tüm çatı makası tavalarına 5.70 m aks aralığı ve ara tava destekleri`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_570_tum_tavalar_20261016_1246.js`. Kablo tavası DXF'i (pafta 08) eski istasyon aralıklarını gösteriyor olabilir; güncellenmedi.
 
 ### 2026-10-16 12:50 — Claude — ALAN 2 orta çatı taşıyıcısı: 5.70 m istasyon aralığı + ara tava destekleri
 - **Kullanıcı isteği:** (Ekran görüntüsü + sarı çizim) "kedi yolundaki tavanın sabitlendigi aks aralıgı 570cm haliyle tava agırlıktan dolayı egilir bu nedenle ekte sarıyla çizdigim gibi bir destek lazım. Sadece bir alandaki bir kedi yolunun destek aralıklarını 570cm yap ve bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve bi tane 70 cm yatay tabla at"
