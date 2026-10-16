@@ -40,7 +40,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Son güncelleyen:** Claude Code, 2026-10-16
 - **Son commit:** `[Claude] Tüm çatı makası tavalarına 5.70 m aks aralığı ve ara tava destekleri`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7`, pafta 11, pafta 12, orta taşıyıcı 5.70 m ve tüm tavalar 5.70 m commit'leri yerelde, push edilmedi.
+- **Yarım kalan iş:** Yok. 2026-10-16'da kullanıcı onayıyla `918b5ba`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
