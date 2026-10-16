@@ -7706,7 +7706,16 @@ function createAlan4Structure() {
     const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
     collarGeo.rotateX(Math.PI / 2);
 
-    for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
+    // İstasyon (V-strut + tava travers) aralığı
+    // Kullanıcı İsteği: "kedi yolundaki tavanın sabitlendigi aks aralıgı 570cm ... Sadece bir alandaki bir kedi yolunun
+    // destek aralıklarını 570cm yap" -> yalnızca ortadaki taşıyıcı (X = 0) 5.70m; yan taşıyıcılar 3.0m kalır.
+    // 60m tam bölünmediği için son istasyon taşıyıcı ucunda (s = 60m) eklenir.
+    const stationStep = (xOffset === 0) ? 5.70 : 3.0;
+    const stations = [];
+    for (let s = 0.0; s <= trussLen + 0.001; s += stationStep) stations.push(+s.toFixed(3));
+    if (trussLen - stations[stations.length - 1] > 0.01) stations.push(trussLen);
+
+    for (const zSt of stations) {
       // Omurgayı saran çelik bilezik
       const collar = new THREE.Mesh(collarGeo, flangeSteelMat);
       collar.position.set(0, 0, zSt);
@@ -7740,10 +7749,11 @@ function createAlan4Structure() {
       trussGroup.add(topTie);
 
       // İstasyonlar arası X-çapraz gergi bağları
-      if (zSt + 3.0 <= trussLen) {
+      const zNext = stations[stations.indexOf(zSt) + 1];
+      if (zNext !== undefined) {
         const diag1 = createPipeHelper(
           new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-          new THREE.Vector3(chordOffsetW, chordHeightH, zSt + 3.0),
+          new THREE.Vector3(chordOffsetW, chordHeightH, zNext),
           0.028,
           flangeSteelMat
         );
@@ -7751,7 +7761,7 @@ function createAlan4Structure() {
 
         const diag2 = createPipeHelper(
           new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-          new THREE.Vector3(-chordOffsetW, chordHeightH, zSt + 3.0),
+          new THREE.Vector3(-chordOffsetW, chordHeightH, zNext),
           0.028,
           flangeSteelMat
         );
@@ -7800,7 +7810,7 @@ function createAlan4Structure() {
     const pedestalGeo = new THREE.BoxGeometry(0.52, 0.03, 0.10);
     const holdClampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.06);
 
-    for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
+    for (const zSt of stations) {
       const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
       if (!isNearDip) {
         const cBeam = new THREE.Mesh(crossBeamGeo, flangeSteelMat);
@@ -7923,7 +7933,7 @@ function createAlan4Structure() {
       }
 
       // Kablo Tutucu Klemens / Kelepçeler (Her 3 metrede bir kabloları tavaya kilitleyen kelepçeler)
-      for (let zSt = 0.0; zSt <= trussLen; zSt += 3.0) {
+      for (const zSt of stations) {
         const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
         if (!isNearDip) {
           const cleatBar = new THREE.Mesh(new THREE.BoxGeometry(trayW - 0.04, 0.015, 0.04), cleatMat);
@@ -7958,6 +7968,64 @@ function createAlan4Structure() {
         // cableMesh.castShadow = true; // disabled for perf
         trayGroup.add(cableMesh);
       }
+    }
+
+    // 3.B. ARA TAVA DESTEKLERİ (yalnızca ortadaki taşıyıcı, 5.70m istasyon aralığı)
+    // Kullanıcı İsteği: "aks aralıgı 570cm haliyle tava agırlıktan dolayı egilir bu nedenle ekte sarıyla çizdigim
+    // gibi bir destek lazım ... bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve
+    // bi tane 70 cm yatay tabla at"
+    // Her istasyon açıklığının 1/3 ve 2/3 noktasında (5.70m açıklıkta 1.90m arayla):
+    // omurgayı (Ø350) saran çember + çemberden tablaya 2 dikey kol + tava altında 70cm yatay tabla.
+    // Tavanın kedi yolları altında alçaldığı bölgede (dip) destek konmaz; orayı mevcut dip eyerleri taşır.
+    if (xOffset === 0) {
+      const supportGroup = new THREE.Group();
+      supportGroup.name = 'scoreboardTrussTrayIntermediateSupports';
+      const trayBottomAt = (s) => {
+        for (const seg of traySegments) {
+          if (s >= seg.zStart - 1e-6 && s <= seg.zEnd + 1e-6) {
+            return seg.yStart + (seg.yEnd - seg.yStart) * (s - seg.zStart) / (seg.zEnd - seg.zStart);
+          }
+        }
+        return trayBottomYNormal;
+      };
+      const ringGeo = new THREE.CylinderGeometry(0.195, 0.195, 0.08, 24);
+      ringGeo.rotateX(Math.PI / 2);
+      const tablaW = 0.70, tablaT = 0.03, tablaD = 0.10;
+      const tablaGeo = new THREE.BoxGeometry(tablaW, tablaT, tablaD);
+
+      for (let i = 0; i < stations.length - 1; i++) {
+        const a = stations[i], b = stations[i + 1];
+        [1 / 3, 2 / 3].forEach(f => {
+          const s = a + (b - a) * f;
+          const trayY = trayBottomAt(s);
+          if (trayY < trayBottomYNormal - 0.05) return; // dip / kot geçişi bölgesi
+
+          // Omurgayı saran çember
+          const ring = new THREE.Mesh(ringGeo, flangeSteelMat);
+          ring.position.set(0, 0, s);
+          supportGroup.add(ring);
+
+          // 70cm yatay tabla (üst yüzü tava tabanında)
+          const tabla = new THREE.Mesh(tablaGeo, flangeSteelMat);
+          tabla.position.set(0, trayY - tablaT / 2, s);
+          supportGroup.add(tabla);
+
+          // Çemberden tablaya 2 dikey kol (çizimdeki gibi hafif açılarak)
+          [-1, 1].forEach(sx => {
+            supportGroup.add(createPipeHelper(
+              new THREE.Vector3(sx * 0.11, 0.16, s),
+              new THREE.Vector3(sx * 0.30, trayY - tablaT, s),
+              0.022,
+              flangeSteelMat
+            ));
+            // Tava kenar tespit çenesi
+            const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
+            hClamp.position.set(sx * 0.26, trayY - 0.005, s);
+            supportGroup.add(hClamp);
+          });
+        });
+      }
+      trayGroup.add(supportGroup);
     }
 
     // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)

@@ -37,10 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-09
-- **Son commit:** `[Claude] Pafta 12: ALAN 1-3 süper kolon tava planı DXF`
-- **Build durumu:** `npm run build` hatasız (bu işlerde `main.js` değişmedi).
-- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7` (devir defteri), pafta 11 ve pafta 12 commit'leri yerelde, push edilmedi.
+- **Son güncelleyen:** Claude Code, 2026-10-16
+- **Son commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: 5.70 m istasyon aralığı ve ara tava destekleri`
+- **Build durumu:** `npm run build` hatasız.
+- **Yarım kalan iş:** Yok. `42e6e20`'e kadar push edildi; sonrasındaki `f22bfd7`, pafta 11, pafta 12 ve 5.70 m tava desteği commit'leri yerelde, push edilmedi.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +66,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-16 12:50 — Claude — ALAN 2 orta çatı taşıyıcısı: 5.70 m istasyon aralığı + ara tava destekleri
+- **Kullanıcı isteği:** (Ekran görüntüsü + sarı çizim) "kedi yolundaki tavanın sabitlendigi aks aralıgı 570cm haliyle tava agırlıktan dolayı egilir bu nedenle ekte sarıyla çizdigim gibi bir destek lazım. Sadece bir alandaki bir kedi yolunun destek aralıklarını 570cm yap ve bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve bi tane 70 cm yatay tabla at"
+- **Tespit:** Ekran görüntüsündeki yapı ALAN 2 (kod alan4) ortadaki 60 m çatı taşıyıcısı (`scoreboard60mRoofCarrier`, X = 0). Mavi 14 DC enerji kablosu yalnızca bu taşıyıcının tavasında var; sarı korkuluklu ara kedi yolu ve kaidedeki kafes de görüntüyle uyumlu.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m(xOffset, trussName)` (~satır 7671-7990):
+    - YENİ `stationStep` / `stations`: `xOffset === 0` için 5.70 m, yan taşıyıcılar 3.0 m. İstasyonlar 0, 5.7 … 57.0; 60 m tam bölünmediği için uçta s = 60 ek istasyon.
+    - V kolları + omurga bileziği + üst gergi döngüsü, tava travers kaideleri döngüsü ve DC kablo kelepçe döngüsü `for (const zSt of stations)` oldu (eskiden `zSt += 3.0`). X çapraz gergiler bir sonraki istasyona (`zNext`) bağlanıyor.
+    - YENİ "3.B. ARA TAVA DESTEKLERİ" (yalnızca X = 0), grup `scoreboardTrussTrayIntermediateSupports`. Her istasyon açıklığının 1/3 ve 2/3 noktasında (5.70 m açıklıkta 1.90 m arayla): omurgayı saran çember (R 0.195, 80 mm), çemberden tablaya iki dikey kol (Ø44, hafif açılı, çizimdeki gibi), tava altında 700 × 30 × 100 mm yatay tabla ve tava kenar tespit çeneleri. Tabla üst yüzü tava tabanında (`traySegments`'ten okunan kot). Kedi yolları altındaki alçak geçiş (dip) bölgesine düşen s = 15.2 ve 32.3 noktalarına destek konmadı; orayı mevcut dip eyerleri taşıyor. Toplam 20 ara destek.
+- **Neden / karar:** Kullanıcının tarifindeki "2 tane" her 5.70 m açıklığa eşit aralıkla 2 destek olarak yorumlandı; her destek = 1 çember + 2 kol + 1 tabla (çizimle uyumlu). Sol/sağ çatı taşıyıcıları değişmedi.
+- **Doğrulama:** `npm run build` hatasız. Tarayıcıda: orta taşıyıcı bilezikleri 0 … 57, 60; ara destekler 1.9 … 59.0 (20 adet); yan taşıyıcı 21 bilezikle değişmedi. Çakışma kontrolünde yeni V kollar ve ara desteklerde temas yok (yalnızca önceden var olan s = 16/32 dip eyerleri ile s = 0 başlangıç temasları). Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: 5.70 m istasyon aralığı ve ara tava destekleri`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_570_tava_destek_20261016_1239.js`. Pafta 08 (kablo tavası DXF) eski 3 m aralığı gösteriyor olabilir; güncellenmedi.
 
 ### 2026-10-09 10:00 — Claude — Pafta 12: ALAN 1-3 süper kolon tava planı (DXF)
 - **Kullanıcı isteği:** "bana sadece super kolon üstüne ekledigimiz tavanın kesiti lazım üstten olsa yeterli"
