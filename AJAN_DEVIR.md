@@ -67,6 +67,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ---
 
+### 2026-10-19 11:45 — Claude — Yazısız görseller + ofsetlerin 4 görünüşlü paftaları
+- **Kullanıcı isteği:** "sadece modellediğin ofsetlerin birer görsellerini oluştur tek fotoğrafta anten tava vs görünmeden 4 farklı açıdan anlaşılır şekilde ... Ayrıca öncesinde bu görsellerin de yazıları tamamen kaldırdığın bir versiyon ver."
+- **Üretilen dosyalar** (`Gorseller/`, git dışı):
+  - Yazısız sürümler (aynı kamera açıları, başlık/etiket/not yok): `01_..._yazisiz.png`, `02_..._yazisiz.png`, `03_..._yazisiz.png`, `04_..._yazisiz.png`.
+  - 4 görünüşlü paftalar (2×2; sol üst ön, sağ üst yan, sol alt üst, sağ alt izometrik; yazısız): `05_matsing_ofset_montaji_4_gorunus.png`, `06_gammanu_ofset_montaji_4_gorunus.png`, `07_tava_tasiyici_1_travers_4_gorunus.png`, `08_tava_tasiyici_2_ara_destek_4_gorunus.png`.
+- **Yöntem:**
+  - Yalnızca ofset donanımı render edildi. Anten montajlarında anten grubu çıkarıldı. Travers paftası: ALAN 1-3 s = 17.1'deki travers profili, 2 kol kelepçesi, kaide ve 2 çene (V-kollar ve bilezik hariç). Ara destek paftası: s = 19.0'daki çember, 2 kol, tabla ve 2 çene.
+  - Ön / yan / üst görünüşler ortografik ve aynı ölçekte; izometrik perspektif. Görünüş eksenleri parçanın kendi çerçevesi: tava taşıyıcılarında makas yerel ekseni (X enine, Y yukarı, Z makas boyunca), anten montajlarında dünya ekseni.
+  - Yalnızca render sırasında geçici olarak: metaliklik düşürüldü (ortam haritası olmadığı için borular siyah görünüyordu), ek ortam ve yön ışığı eklendi, büyük çaplı kapalı kelepçe/çember silindirleri et kalınlıklı halka olarak çizildi (taşıyıcı boru olmadan dolu disk görünmesin diye). Sahne ve `main.js` değişmedi.
+- **Değişen kod:** Yok.
+- **Commit:** `[Claude] Devir defteri: yazısız görseller ve 4 görünüşlü ofset paftaları kaydı`
+
 ### 2026-10-19 11:00 — Claude — Gammanu görseli farklı açıdan yeniden alındı
 - **Kullanıcı isteği:** "bir tek gammanu anlaşılmıyor arkada kalan kediyolu vs yüzünden farklı bir açıdan tekrar al"
 - **Değişen dosya:** `Gorseller/02_gammanu_spot_beam_anten_ofset_montaji.png` (git dışı). Görüntüye yalnızca `alan3RoofTrussAndCableTray` ana makas grubu (`children[0]`) ve Anten 1 montajı alındı; `alan3KediYolu1_23m` / `alan3KediYolu2_39m` ve kedi yolu taşıyıcı silindiri çıkarıldı. Kamera antenin önünden, biraz alttan ve sağdan (montaj merkezine göre +4.9, −1.0, −1.7 m); arka plan boş.
