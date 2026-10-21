@@ -7784,6 +7784,13 @@ function createAlan4Structure() {
   const pipeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xebedf0, roughness: 0.38, metalness: 0.35 });
   const flangeSteelMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.40, metalness: 0.75 });
 
+  // Saha DXF'i (veriler/kediyolu.dxf, Kullanıcı İsteği 2026-10-21): beton yüzü x = 37099 cm → s = 60m, s = x/100 - 311.0
+  // V istasyonları (kolların omurgaya indiği düğüm). Planda kollar ">" şeklinde eğik; kullanıcı kararıyla
+  // modelde makasa dik düzlemde (düz) çizilir. Makas uçlarında (s = 0 / 60) V yok.
+  const SB_TRUSS_V_STATIONS = [1.55, 7.25, 12.96, 18.57, 24.31, 29.94, 35.72, 41.50, 47.20, 53.02];
+  // Üç makası kesen ara kedi yollarının merkezleri (net 1.2-1.4m genişlik). 3. kedi yolu beton kaide önünde.
+  const SB_INTERMEDIATE_CW_S = [27.72, 43.50];
+
   function buildScoreboardRoofTruss60m(xOffset, trussName) {
     const trussGroup = new THREE.Group();
     trussGroup.name = trussName;
@@ -7833,10 +7840,9 @@ function createAlan4Structure() {
     const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
     collarGeo.rotateX(Math.PI / 2);
 
-    // İstasyon (V-strut + tava travers) aralığı: 5.70m (Kullanıcı İsteği; önce yalnızca ortadaki taşıyıcı,
-    // ardından "tüm tavalara uygula" ile üç taşıyıcı). Kedi yolu geçişleri (s = 16 / 32) ızgarayla çakışmaz.
-    // 60m tam bölünmediği için son istasyon taşıyıcı ucunda (s = 60m).
-    const stations = buildTrayStations(trussLen, TRAY_SUPPORT_AXIS_STEP, []);
+    // İstasyonlar (V-strut + tava travers): saha DXF'indeki gerçek konumlar (ortalama aks aralığı ≈ 5.72m),
+    // üç taşıyıcıda aynı. Ara kedi yolları istasyonların arasından geçer.
+    const stations = SB_TRUSS_V_STATIONS;
 
     for (const zSt of stations) {
       // Omurgayı saran çelik bilezik
@@ -7942,7 +7948,7 @@ function createAlan4Structure() {
     const legClampGeo = new THREE.CylinderGeometry(photoVLegR + 0.012, photoVLegR + 0.012, 0.09, 16);
 
     for (const zSt of stations) {
-      const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
+      const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
       if (!isNearDip && trayMode !== 'traverssiz3') {
         const cBeam = new THREE.Mesh(crossBeamGeo, flangeSteelMat);
         cBeam.position.set(0, 0.38 + trayLift, zSt);
@@ -7970,29 +7976,37 @@ function createAlan4Structure() {
       }
     }
 
-    // Kedi yolları altında alçak geçiş havuzu taşıyıcı eyerleri (s = 16.0m ve s = 32.0m)
+    // Kedi yolları altında alçak geçiş havuzu taşıyıcı eyerleri (ara kedi yolu merkezlerinde)
     const dipSaddleGeo = new THREE.BoxGeometry(trayW + 0.06, 0.04, 0.25);
-    [16.0, 32.0].forEach(dipZ => {
+    SB_INTERMEDIATE_CW_S.forEach(dipZ => {
       const dipSaddle = new THREE.Mesh(dipSaddleGeo, flangeSteelMat);
       dipSaddle.position.set(0, trayBottomYDip - 0.02, dipZ);
       trayGroup.add(dipSaddle);
     });
 
     // 2. Battı-Çıktı (Kot Düşürmeli) Tava Segmentleri
-    // Catwalk 2 (s = 16m) ve Catwalk 1 (s = 32m) kesişimlerinde kot düşürme
-    // Kot geçiş (rampa) boyu: orta taşıyıcıda tava ~1.5m daha yüksekten indiği için 1.20m, yanlarda 0.60m
+    // Her ara kedi yolu altında ±0.80m alçak geçiş. Kot geçiş (rampa) boyu: orta ve sol taşıyıcıda tava daha
+    // yüksekten indiği için en fazla 1.20m, sağda 0.60m; rampa komşu V istasyonuna 15cm'den fazla yaklaşmaz
+    // (tava V kollarının arasından yalnızca normal kotta geçebilir).
     const rampL = usePhotoV ? 1.20 : 0.60;
-    const traySegments = [
-      { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 15.20 - rampL },
-      { yStart: trayBottomYNormal, zStart: 15.20 - rampL, yEnd: trayBottomYDip, zEnd: 15.20 }, // 1. Battı (Catwalk 2 inişi)
-      { yStart: trayBottomYDip, zStart: 15.20, yEnd: trayBottomYDip, zEnd: 16.80 },    // Catwalk 2 altı alçak geçiş
-      { yStart: trayBottomYDip, zStart: 16.80, yEnd: trayBottomYNormal, zEnd: 16.80 + rampL }, // 1. Çıktı (Normal kota dönüş)
-      { yStart: trayBottomYNormal, zStart: 16.80 + rampL, yEnd: trayBottomYNormal, zEnd: 31.20 - rampL },
-      { yStart: trayBottomYNormal, zStart: 31.20 - rampL, yEnd: trayBottomYDip, zEnd: 31.20 }, // 2. Battı (Catwalk 1 inişi)
-      { yStart: trayBottomYDip, zStart: 31.20, yEnd: trayBottomYDip, zEnd: 32.80 },    // Catwalk 1 altı alçak geçiş
-      { yStart: trayBottomYDip, zStart: 32.80, yEnd: trayBottomYNormal, zEnd: 32.80 + rampL }, // 2. Çıktı (Normal kota dönüş)
-      { yStart: trayBottomYNormal, zStart: 32.80 + rampL, yEnd: trayBottomYNormal, zEnd: 59.80 }  // Beton kaideye kadar normal seyir
-    ];
+    const dipHalf = 0.80, rampVClear = 0.15;
+    const traySegments = [];
+    let segS = 0.0;
+    SB_INTERMEDIATE_CW_S.forEach(cwS => {
+      const f0 = cwS - dipHalf, f1 = cwS + dipHalf;
+      const prevV = Math.max(...stations.filter(v => v < f0));
+      const nextV = Math.min(...stations.filter(v => v > f1));
+      const r0 = Math.min(rampL, f0 - (prevV + rampVClear));
+      const r1 = Math.min(rampL, (nextV - rampVClear) - f1);
+      traySegments.push(
+        { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: f0 - r0 },
+        { yStart: trayBottomYNormal, zStart: f0 - r0, yEnd: trayBottomYDip, zEnd: f0 }, // Battı (kedi yolu inişi)
+        { yStart: trayBottomYDip, zStart: f0, yEnd: trayBottomYDip, zEnd: f1 },          // Kedi yolu altı alçak geçiş
+        { yStart: trayBottomYDip, zStart: f1, yEnd: trayBottomYNormal, zEnd: f1 + r1 }  // Çıktı (normal kota dönüş)
+      );
+      segS = f1 + r1;
+    });
+    traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
 
     traySegments.forEach(seg => {
       const dy = seg.yEnd - seg.yStart;
@@ -8076,7 +8090,7 @@ function createAlan4Structure() {
 
       // Kablo Tutucu Klemens / Kelepçeler (Her 3 metrede bir kabloları tavaya kilitleyen kelepçeler)
       for (const zSt of stations) {
-        const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
+        const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
         if (!isNearDip) {
           const cleatBar = new THREE.Mesh(new THREE.BoxGeometry(trayW - 0.04, 0.015, 0.04), cleatMat);
           cleatBar.position.set(0, trayBottomYNormal + dcRadius * 3 + 0.012, zSt);
@@ -8116,10 +8130,14 @@ function createAlan4Structure() {
     // Kullanıcı İsteği: "bu aralıga eşit olacak şekilde 2 tane çizdigim gibi çember 2 tane dikey kol ve bi tane
     // 70 cm yatay tabla at" + "tüm tavalara uygula". Ortak fonksiyon: addTrayIntermediateSupports (dosya başı).
     // Kedi yolları altındaki alçak geçiş (dip) bölgesine destek konmaz; orayı mevcut dip eyerleri taşır.
-    addTrayIntermediateSupports(trayGroup, stations, traySegments, {
+    // Uçlarda V olmadığından makas başı (s = 0) ve beton tarafı (s = 60) açıklıkları da desteklenir
+    addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
       carrierR: 0.175, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
-      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3]
+      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3],
+      // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
+      // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
+      noSupportZones: xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]]
     });
 
     // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)
@@ -8318,12 +8336,14 @@ function createAlan4Structure() {
     return cwGroup;
   }
 
-  // 1. Kedi Yolu: Betondan 28m önce (Station s = 32m)
-  const scoreboardIntermediateCw1 = buildScoreboardIntermediateCatwalk(32.0, 'scoreboardIntermediateCatwalk1_32m');
+  // Konumlar saha DXF'inden (veriler/kediyolu.dxf, SB_INTERMEDIATE_CW_S). Eskiden s = 32 / 16 idi;
+  // "betondan 28m / 16m sonra" mesafeleri yanlış uçtan (skorbord) ölçülmüştü.
+  // 1. Kedi Yolu: Betondan ≈ 32m önce (s ≈ 27.7m)
+  const scoreboardIntermediateCw1 = buildScoreboardIntermediateCatwalk(SB_INTERMEDIATE_CW_S[0], 'scoreboardIntermediateCatwalk1_27_7m');
   alan4Group.add(scoreboardIntermediateCw1);
 
-  // 2. Kedi Yolu: 1. Kedi yolundan 16m sonra (Station s = 16m)
-  const scoreboardIntermediateCw2 = buildScoreboardIntermediateCatwalk(16.0, 'scoreboardIntermediateCatwalk2_16m');
+  // 2. Kedi Yolu: Betondan ≈ 16m önce (s ≈ 43.5m)
+  const scoreboardIntermediateCw2 = buildScoreboardIntermediateCatwalk(SB_INTERMEDIATE_CW_S[1], 'scoreboardIntermediateCatwalk2_43_5m');
   alan4Group.add(scoreboardIntermediateCw2);
 
   // =========================================================================

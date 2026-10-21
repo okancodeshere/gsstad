@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2 sol çatı taşıyıcısı: traverssiz, aks arası 3 eşit ara destek, V'den temassız tava kotu`
-- **Açık sorun:** ALAN 2 orta ve sol taşıyıcıda s = 17.1 istasyonunda tava rampası V kollarına giriyor (bkz. 2026-10-21 11:15 kaydı). Kullanıcı kararı bekleniyor.
+- **Son commit:** `[Claude] ALAN 2: V istasyonları ve ara kedi yolları saha DXF'ine göre (veriler/kediyolu.dxf)`
+- **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok. `918b5ba`'ya kadar push edildi; sonraki commit'ler yerelde, push için kullanıcı onayı bekleniyor.
 - **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
@@ -68,6 +68,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 12:30 — Claude — ALAN 2: V istasyonları ve ara kedi yolları saha DXF'ine göre
+- **Kullanıcı isteği:** `veriler/kediyolu.dxf`: yeşil = kedi yolları, mavi = kullanıcının elle boyadığı orta makas V aksları ("diğerleri de aynı seviyede"). Çizim ALAN 2 (skorbord); 3. kedi yolunda V yok, son V biraz gerisinde bitiyor. Önerilen plan onaylandı ("Evet, uygula"); V eğimi için "Düz kalsın".
+- **DXF okuması** (birim cm; beton yüzü x = 37099 → s = 60, s = x/100 − 311.0): V omurga düğümleri s = 1.55, 7.25, 12.96, 18.57, 24.31, 29.94, 35.72, 41.50, 47.20, 53.02 (ortalama 5.72 m). Kedi yolları s = 27.11–28.33, 42.81–44.19 ve 57.32–58.69 (3. kedi yolu beton kaide önü; modelde beton platformu var, eklenmedi). Planda V kolları ">" şeklinde makas boyunca 0.6–0.9 m eğik; modelde düz bırakıldı.
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan4Structure()`: YENİ `SB_TRUSS_V_STATIONS` ve `SB_INTERMEDIATE_CW_S = [27.72, 43.50]` (`buildScoreboardRoofTruss60m` hemen önünde).
+  - `buildScoreboardRoofTruss60m()`:
+    - `stations = SB_TRUSS_V_STATIONS` (eski 5.70 ızgara, s = 0 / 60 uç istasyonları yok).
+    - `isNearDip` ve dip eyerleri kedi yolu dizisinden okunuyor.
+    - `traySegments` döngüyle üretiliyor: kedi yolu ±0.80 alçak geçiş; rampa en fazla `rampL`, komşu V'ye 15 cm'den fazla yaklaşmıyor.
+    - Ara destekler `[0, ...stations, 60]` açıklıklarında. `noSupportZones`: s < 1.2 (üst kedi yolu kablo sistemi / kule); yan taşıyıcılarda omurgaya asılı Matsing montajları (s 19.35–21.40, 22.35–24.40).
+  - Ara kedi yolları `buildScoreboardIntermediateCatwalk(SB_INTERMEDIATE_CW_S[i])`, adlar `scoreboardIntermediateCatwalk1_27_7m` / `scoreboardIntermediateCatwalk2_43_5m`. Eskiden s = 32 / 16'daydılar; "betondan 28 m / 16 m" mesafeleri yanlış uçtan ölçülmüştü.
+- **Doğrulama:** `npm run build` hatasız. Her istasyonda tava-V kolu boşluğu: orta 10.5 cm, sol 2.0 cm; sağ −4.1 cm (eski geniş V + eski 0.45 kotu, önceden de vardı). Taşıyıcı yerel ekseninde çakışma: yalnızca tava dip bölümü ile kedi yolu eyer kirişi (önceden de vardı). Ara destek sayısı orta 16, sol 24, sağ 16; orta ve solda kedi yollarına komşu açıklıklarda rampaya düşenler konmadı. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2: V istasyonları ve ara kedi yolları saha DXF'ine göre (veriler/kediyolu.dxf)`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_dxf_istasyon_kediyolu_20261021.js`. Pafta 08 / DXF üreticileri ve görseller eski konumları gösteriyor. 11:15 kaydındaki "SORUN" bu kayıtla çözüldü.
 
 ### 2026-10-21 11:15 — Claude — ALAN 2 sol taşıyıcı: traverssiz, aks arası 3 eşit ara destek, V'den değmeden geçen tava kotu
 - **Kullanıcı isteği:** "aynı alanda bir kedi yolunu ise traverssiz sadece aks aralarında 2 değil 3 taşıyıcı koy tam eşit olacak şekilde. Ama tava kotunu V aks noktasında 50cm'lik tavanın geçeceği en alt kota göre yap ama temas etmesin."
