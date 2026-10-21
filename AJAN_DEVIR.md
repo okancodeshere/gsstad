@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2: V istasyonları ve ara kedi yolları saha DXF'ine göre (veriler/kediyolu.dxf)`
+- **Son commit:** `[Claude] ALAN 2 sağ çatı taşıyıcısı: ölçülen V, traverssiz 300x250 tava, aks arası 3 ara destek`
+- **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok. `918b5ba`'ya kadar push edildi; sonraki commit'ler yerelde, push için kullanıcı onayı bekleniyor.
@@ -68,6 +69,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 13:00 — Claude — ALAN 2 sağ taşıyıcı: ölçülen V, traverssiz 300 x 250 tava, 3 ara destek
+- **Kullanıcı isteği:** "sağ makası da yap. Onda da tavayı 300mm'ye düşür ve ona uygun yükseklikte travers kullanmadan yap. ara bağlantı 3'er tane olsun tava yüksekliği 25cm olsun"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`: `trayMode` artık orta için `'travers68'`, iki yan taşıyıcı için `'traverssiz3'`; `'standart'` mod kalmadı, üç taşıyıcıda da ölçülen V. Sağ taşıyıcıda (X = +18) `trayW = 0.30`, `trayH = 0.25` ("tava yüksekliği 25 cm" kenar yüksekliği olarak yorumlandı). Tava tabanı `photoFreeTrayY` ile Y = 0.862 m (omurga üstünden 0.69 m, V kollarına her iki yanda 2 cm). Feeder demeti dar tavaya sığması için `fStep` ile sıkıştırıldı; 500 mm tavada dizilim aynı.
+  - `main.js` → `addTrayIntermediateSupports()`: YENİ `trayW` seçeneği (varsayılan 0.50). Tava çeneleri `trayW/2 + 0.01`'de (eskiden sabit ±0.26). Tabla 70 cm kaldı.
+- **Doğrulama:** `npm run build` hatasız. Sağ taşıyıcı: travers 0, ara destek 24, tava-V boşluğu 2.0 cm, aşıklar ±0.65. Orta ve sol taşıyıcılar değişmedi (10.5 / 2.0 cm). Çakışma kontrolünde yalnızca kedi yolu altındaki dip bölümü ile kedi yolu döşemesi ve eyer kirişi çıktı; 250 mm tavada üst kenar Y 0.43, döşeme alt yüzü Y 0.40. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 sağ çatı taşıyıcısı: ölçülen V, traverssiz 300x250 tava, aks arası 3 ara destek`
 
 ### 2026-10-21 12:30 — Claude — ALAN 2: V istasyonları ve ara kedi yolları saha DXF'ine göre
 - **Kullanıcı isteği:** `veriler/kediyolu.dxf`: yeşil = kedi yolları, mavi = kullanıcının elle boyadığı orta makas V aksları ("diğerleri de aynı seviyede"). Çizim ALAN 2 (skorbord); 3. kedi yolunda V yok, son V biraz gerisinde bitiyor. Önerilen plan onaylandı ("Evet, uygula"); V eğimi için "Düz kalsın".

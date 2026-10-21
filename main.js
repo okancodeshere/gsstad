@@ -1904,7 +1904,7 @@ function buildTrayStations(endS, step = TRAY_SUPPORT_AXIS_STEP, zones = []) {
 function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
   // noSupportZones: [başlangıç, bitiş] s aralıkları; başka bir yapının makasa bağlandığı bölgelerde destek konmaz
   // fractions: açıklık içindeki destek noktaları (varsayılan 1/3 ve 2/3)
-  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [], fractions = [1 / 3, 2 / 3] } = opts;
+  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [], fractions = [1 / 3, 2 / 3], trayW = 0.50 } = opts;
   const trayEndS = traySegments[traySegments.length - 1].zEnd;
   const trayBottomAt = (s) => {
     for (const seg of traySegments) {
@@ -1953,7 +1953,7 @@ function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
         // Çemberin üst omzundan tabla uçlarına (çizimdeki gibi hafif açılan) dikey kol
         addRod(new THREE.Vector3(sx * ringR * 0.57, ringR * 0.82, s), new THREE.Vector3(sx * 0.30, trayY - tablaT, s), 0.022);
         const c = new THREE.Mesh(clampGeo, clampMat);
-        c.position.set(sx * 0.26, trayY - 0.005, s);
+        c.position.set(sx * (trayW / 2 + 0.01), trayY - 0.005, s);
         group.add(c);
       });
     });
@@ -7813,13 +7813,14 @@ function createAlan4Structure() {
     // Doğrusal uyum: açıklık = 0.438 h + 3.9 cm. 500mm tava + iki yanda 9'ar cm bağlantı payı = 68 cm travers.
     // Sol taşıyıcı (X = -18): aynı V ölçüsü, travers yok; tava V kollarına değmeden geçebildiği en alt kotta,
     // her aks aralığında eşit aralıklı 3 ara destekle taşınır (Kullanıcı İsteği, 2026-10-21).
-    const trayMode = xOffset === 0 ? 'travers68' : (xOffset < 0 ? 'traverssiz3' : 'standart');
+    // Sağ taşıyıcı (X = +18): aynı düzen, ancak 300mm genişlik x 250mm yükseklik tava (Kullanıcı İsteği, 2026-10-21).
+    const trayMode = xOffset === 0 ? 'travers68' : 'traverssiz3';
     const usePhotoV = trayMode !== 'standart';
     const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.07;
     const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
     const photoTraversLen = 0.68;
     const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
-    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Orta ve sol: ±0.65m, sağ: ±1.52m (Alan 1 standardı)
+    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Ölçülen V: ±0.65m (eski Alan 1 standardı: ±1.52m)
     const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
     chordGeo.rotateX(Math.PI / 2);
 
@@ -7904,8 +7905,8 @@ function createAlan4Structure() {
     const trayGroup = new THREE.Group();
     trayGroup.name = `scoreboardTruss50cmTray_${xOffset === 0 ? 'center' : (xOffset < 0 ? 'left' : 'right')}`;
 
-    const trayW = 0.50; // 500mm genişlik
-    const trayH = 0.15; // 150mm kenar yüksekliği
+    const trayW = xOffset > 0 ? 0.30 : 0.50; // 500mm genişlik (sağ taşıyıcı 300mm)
+    const trayH = xOffset > 0 ? 0.25 : 0.15; // 150mm kenar yüksekliği (sağ taşıyıcı 250mm)
     const trayWallThick = 0.003;
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
@@ -8103,7 +8104,8 @@ function createAlan4Structure() {
       const fRadius = 0.014;
       const numFeeders = 6;
       for (let fi = 0; fi < numFeeders; fi++) {
-        const fx = -trayW / 2 + 0.07 + fi * 0.072;
+        const fStep = Math.min(0.072, (trayW - 0.10) / (numFeeders - 1)); // Dar tavada demet sıkışır
+        const fx = -(numFeeders - 1) * fStep / 2 + fi * fStep;
         const yOffset = fRadius + 0.003;
 
         const pts = [];
@@ -8134,7 +8136,7 @@ function createAlan4Structure() {
     addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
       carrierR: 0.175, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
-      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3],
+      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW,
       // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
       // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
       noSupportZones: xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]]
