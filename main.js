@@ -1903,7 +1903,8 @@ function buildTrayStations(endS, step = TRAY_SUPPORT_AXIS_STEP, zones = []) {
 // Koordinatlar makas grubunun yerel ekseninde: Z = makas boyunca s, Y = taşıyıcı boru ekseninden yukarı.
 function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
   // noSupportZones: [başlangıç, bitiş] s aralıkları; başka bir yapının makasa bağlandığı bölgelerde destek konmaz
-  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [] } = opts;
+  // fractions: açıklık içindeki destek noktaları (varsayılan 1/3 ve 2/3)
+  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [], fractions = [1 / 3, 2 / 3] } = opts;
   const trayEndS = traySegments[traySegments.length - 1].zEnd;
   const trayBottomAt = (s) => {
     for (const seg of traySegments) {
@@ -1933,7 +1934,7 @@ function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
 
   for (let i = 0; i < stations.length - 1; i++) {
     const a = stations[i], b = stations[i + 1];
-    [1 / 3, 2 / 3].forEach(f => {
+    fractions.forEach(f => {
       const s = a + (b - a) * f;
       if (s > trayEndS - 0.1) return;
       if (noSupportZones.some(z => s > z[0] && s < z[1])) return;
@@ -7803,12 +7804,15 @@ function createAlan4Structure() {
     // Ortadaki taşıyıcı (X = 0): V kolları sahadan ölçülen açıya göre (Kullanıcı İsteği, 2026-10-21 fotoğrafı).
     // Kollar arası net açıklık / omurga üstünden yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152.
     // Doğrusal uyum: açıklık = 0.438 h + 3.9 cm. 500mm tava + iki yanda 9'ar cm bağlantı payı = 68 cm travers.
-    const usePhotoV = xOffset === 0;
+    // Sol taşıyıcı (X = -18): aynı V ölçüsü, travers yok; tava V kollarına değmeden geçebildiği en alt kotta,
+    // her aks aralığında eşit aralıklı 3 ara destekle taşınır (Kullanıcı İsteği, 2026-10-21).
+    const trayMode = xOffset === 0 ? 'travers68' : (xOffset < 0 ? 'traverssiz3' : 'standart');
+    const usePhotoV = trayMode !== 'standart';
     const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.07;
     const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
     const photoTraversLen = 0.68;
     const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
-    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Orta: ±0.65m, yanlar: ±1.52m (Alan 1 standardı)
+    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Orta ve sol: ±0.65m, sağ: ±1.52m (Alan 1 standardı)
     const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
     chordGeo.rotateX(Math.PI / 2);
 
@@ -7898,7 +7902,10 @@ function createAlan4Structure() {
     const trayH = 0.15; // 150mm kenar yüksekliği
     const trayWallThick = 0.003;
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
-    const trayLift = usePhotoV ? photoTraversY - 0.38 : 0;
+    // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
+    const photoTrayClear = 0.02;
+    const photoFreeTrayY = 0.175 + (trayW + 2 * photoTrayClear - photoVGapAt0) / photoVGapSlope;
+    const trayLift = trayMode === 'travers68' ? photoTraversY - 0.38 : (trayMode === 'traverssiz3' ? photoFreeTrayY - 0.45 : 0);
     const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
     const trayBottomYDip = 0.18;    // Kedi yolları altı kot düşürülmüş alçak havuz kotu (kedi yolunun altından rahatça geçer)
 
@@ -7936,7 +7943,7 @@ function createAlan4Structure() {
 
     for (const zSt of stations) {
       const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
-      if (!isNearDip) {
+      if (!isNearDip && trayMode !== 'traverssiz3') {
         const cBeam = new THREE.Mesh(crossBeamGeo, flangeSteelMat);
         cBeam.position.set(0, 0.38 + trayLift, zSt);
         // cBeam.castShadow = true; // disabled for perf
@@ -8111,7 +8118,8 @@ function createAlan4Structure() {
     // Kedi yolları altındaki alçak geçiş (dip) bölgesine destek konmaz; orayı mevcut dip eyerleri taşır.
     addTrayIntermediateSupports(trayGroup, stations, traySegments, {
       carrierR: 0.175, trayNormalY: trayBottomYNormal,
-      mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports'
+      mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
+      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3]
     });
 
     // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)

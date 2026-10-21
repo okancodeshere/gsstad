@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: sahadan ölçülen V kol açısı, 68 cm travers ve yükseltilmiş tava`
+- **Son commit:** `[Claude] ALAN 2 sol çatı taşıyıcısı: traverssiz, aks arası 3 eşit ara destek, V'den temassız tava kotu`
+- **Açık sorun:** ALAN 2 orta ve sol taşıyıcıda s = 17.1 istasyonunda tava rampası V kollarına giriyor (bkz. 2026-10-21 11:15 kaydı). Kullanıcı kararı bekleniyor.
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok. `918b5ba`'ya kadar push edildi; sonraki commit'ler yerelde, push için kullanıcı onayı bekleniyor.
 - **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
@@ -67,6 +68,15 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 11:15 — Claude — ALAN 2 sol taşıyıcı: traverssiz, aks arası 3 eşit ara destek, V'den değmeden geçen tava kotu
+- **Kullanıcı isteği:** "aynı alanda bir kedi yolunu ise traverssiz sadece aks aralarında 2 değil 3 taşıyıcı koy tam eşit olacak şekilde. Ama tava kotunu V aks noktasında 50cm'lik tavanın geçeceği en alt kota göre yap ama temas etmesin."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`: YENİ `trayMode`: `'travers68'` (orta, X = 0), `'traverssiz3'` (sol, X = −18), `'standart'` (sağ, X = +18, değişmedi). Sol taşıyıcıya da sahadan ölçülen V uygulandı (`usePhotoV`). İstasyon traversleri, kaideleri ve çeneleri konmuyor. Tava tabanı `photoFreeTrayY` = 0.175 + (0.50 + 2 × 0.02 − 0.039) / 0.438 ≈ Y 1.319 m (omurga üstünden 1.14 m; V kolları ile her iki yanda 2 cm boşluk).
+  - `main.js` → `addTrayIntermediateSupports()` (~satır 1904): YENİ `fractions` seçeneği (varsayılan [1/3, 2/3]). Sol taşıyıcı [1/4, 2/4, 3/4] kullanıyor: 5.70 m açıklıkta 1.425 m eşit aralık, toplam 29 destek (dip / rampa bölgesine düşenler konmadı).
+- **Doğrulama:** `npm run build` hatasız. Sahneden okunan değerler: sol taşıyıcıda travers 0, normal kotlu tüm istasyonlarda tava ile V kolu arasındaki boşluk 2.0 cm.
+- **SORUN (önceki kayıtta da var, kullanıcıya bildirildi):** s = 17.1 istasyonu, 16 m ara kedi yolu altındaki dipten çıkış rampasının (16.8 → 18.0) üzerine düşüyor. Hem orta hem sol taşıyıcıda tava bu istasyonda V kollarının içinden geçiyor: orta taşıyıcıda −14.6 cm, sol taşıyıcıda −16.7 cm (girişim). 10:30 kaydındaki "yeni çakışma yok" ifadesi yanlıştı, çünkü kontrol taşıyıcının kendi kollarını kapsamıyordu. Çözüm için kullanıcının kararı bekleniyor.
+- **Commit:** `[Claude] ALAN 2 sol çatı taşıyıcısı: traverssiz, aks arası 3 eşit ara destek, V'den temassız tava kotu`
 
 ### 2026-10-21 10:30 — Claude — ALAN 2 orta taşıyıcı: sahadan ölçülen V kol açısı, 68 cm travers, yükseltilmiş tava
 - **Kullanıcı isteği:** Saha fotoğrafındaki ölçüler: V kolları arası net açıklık / alttaki taşıyıcıdan yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152. "500mm tava kullanacağız, tavanın da yükselmesi gerekecek. Traverslerin sağ ve soldan 9'ar cm bağlantı payları var ... neredeyse 70 cm'ye çıkacaklar. Buna göre sadece bir tane kedi yolunu çizer misin."
