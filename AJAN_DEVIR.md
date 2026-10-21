@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: kameraya dönen tava yükseklik etiketleri`
+- **Son commit:** `[Claude] ALAN 2: tava etiketleri aşıkların üstüne alındı, 500mm tavalar 200mm kenar yüksekliği`
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 13:40 — Claude — Etiketler yukarı alındı, 500 mm tavalar 200 mm yükseklik
+- **Kullanıcı isteği:** "biraz yukarı al. diğer sistemlerle kesişmesin ayrıca tava yüksekliklerini 50cm olan için 20cm yükseklik ver."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `trayH`: 500 mm tavalar (orta ve sol) 0.15 → 0.20; sağdaki 300 mm tava 0.25 kaldı.
+    - Etiket kotu `labelY = chordHeightH + 0.08 + 0.25 + 0.405` (≈ 3.47 m). Sprite'ın alt kenarı üst aşık üst yüzünün 25 cm üstünde. Sprite'ın yatay ekseni kamera açısından bağımsız olarak hep yatay kaldığı için, alt kenar hiçbir açıda bu kotun altına inmez.
+    - Gösterge çizgisi tava üst kenarından etikete uzuyor.
+- **Doğrulama:** `npm run build` hatasız. Etiket ve gösterge çizgisi için çakışma kontrolü yapıldı. Yalnızca eğik çapraz gergilerin eksen hizalı kutularından kaynaklanan yanlış alarmlar çıktı; gerçek mesafeler kontrol edildi, temas yok. İki açıdan görsel kontrol yapıldı. V kolu boşlukları değişmedi (tavada kritik nokta alt kenar).
+- **Commit:** `[Claude] ALAN 2: tava etiketleri aşıkların üstüne alındı, 500mm tavalar 200mm kenar yüksekliği`
 
 ### 2026-10-21 13:20 — Claude — ALAN 2 çatı taşıyıcıları: tava yükseklik etiketleri
 - **Kullanıcı isteği:** "3 kedi yolunda da en yakın taşıyıcıya yakın bir yere havada duran bir label ile tavanın yüksekliğini yaz. Label bakılan açıya göre yön değiştirsin."

@@ -7906,7 +7906,7 @@ function createAlan4Structure() {
     trayGroup.name = `scoreboardTruss50cmTray_${xOffset === 0 ? 'center' : (xOffset < 0 ? 'left' : 'right')}`;
 
     const trayW = xOffset > 0 ? 0.30 : 0.50; // 500mm genişlik (sağ taşıyıcı 300mm)
-    const trayH = xOffset > 0 ? 0.25 : 0.15; // 150mm kenar yüksekliği (sağ taşıyıcı 250mm)
+    const trayH = xOffset > 0 ? 0.25 : 0.20; // 500mm tava 200mm, sağ taşıyıcıdaki 300mm tava 250mm kenar yüksekliği
     const trayWallThick = 0.003;
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
@@ -8176,7 +8176,8 @@ function createAlan4Structure() {
       const labelTex = new THREE.CanvasTexture(canvas);
       labelTex.colorSpace = THREE.SRGBColorSpace;
       const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex, depthWrite: false }));
-      const labelY = trayBottomYNormal + trayH + 0.95;
+      // Üst aşıkların (Y = chordHeightH, R 0.08) üstünde, diğer sistemlerle kesişmeyecek kotta
+      const labelY = chordHeightH + 0.08 + 0.25 + 0.405;
       label.scale.set(2.0, 0.81, 1);
       label.position.set(0, labelY, firstSupportS);
       label.name = `scoreboardTrayHeightLabel_${sideLabel}`;
