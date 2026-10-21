@@ -7799,8 +7799,16 @@ function createAlan4Structure() {
     // 9.2. Üst İki Boyuna Aşık Borusu (Ø160mm / R = 0.08m) ve V-Kafes Strutlar
     // Alan 1-3 Standardı: Tepe yüksekliği Y = 2.73m, Tepe açıklığı ±1.52m (~3.04m toplam tepe genişliği)
     // Böylece kedi yolunun içinden geçen yürüme alanı 2.33m tavan yüksekliğiyle tamamen konforlu ve kullanılabilir olur
-    const chordOffsetW = 1.52; // ±1.52m genişlik (Alan 1 standardı: armTopX = 1.52m)
     const chordHeightH = 2.73; // Omurganın 2.73m üzerinde (Alan 1 standardı: armTopY = 2.73m)
+    // Ortadaki taşıyıcı (X = 0): V kolları sahadan ölçülen açıya göre (Kullanıcı İsteği, 2026-10-21 fotoğrafı).
+    // Kollar arası net açıklık / omurga üstünden yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152.
+    // Doğrusal uyum: açıklık = 0.438 h + 3.9 cm. 500mm tava + iki yanda 9'ar cm bağlantı payı = 68 cm travers.
+    const usePhotoV = xOffset === 0;
+    const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.07;
+    const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
+    const photoTraversLen = 0.68;
+    const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
+    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Orta: ±0.65m, yanlar: ±1.52m (Alan 1 standardı)
     const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
     chordGeo.rotateX(Math.PI / 2);
 
@@ -7817,7 +7825,7 @@ function createAlan4Structure() {
     // Her 3 metrede bir V-Strut ve Güçlendirme İstasyonları (20 Adet İstasyon)
     const vStrutRadius = 0.07; // Ø140mm kalın beyaz çelik boru (Alan 1 standardı: diagonalRadius = 0.07m)
     const topTieRadius = 0.05; // Ø100mm üst gergi borusu
-    const armBaseX = 0.14;     // Alt omurga üzerindeki montaj ayrımı (±0.14m)
+    const armBaseX = usePhotoV ? photoVLegAxisX(0) : 0.14; // Alt omurga üzerindeki montaj ayrımı (orta ±0.09m, yanlar ±0.14m)
     const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
     collarGeo.rotateX(Math.PI / 2);
 
@@ -7889,7 +7897,9 @@ function createAlan4Structure() {
     const trayW = 0.50; // 500mm genişlik
     const trayH = 0.15; // 150mm kenar yüksekliği
     const trayWallThick = 0.003;
-    const trayBottomYNormal = 0.45; // Normal seyir kotu (travers kaidesi üzerinde)
+    // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
+    const trayLift = usePhotoV ? photoTraversY - 0.38 : 0;
+    const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
     const trayBottomYDip = 0.18;    // Kedi yolları altı kot düşürülmüş alçak havuz kotu (kedi yolunun altından rahatça geçer)
 
     // Tava Malzemeleri
@@ -7917,27 +7927,39 @@ function createAlan4Structure() {
     });
 
     // 1. Tava Taşıyıcı Travers Kaideleri (Her 3 metrede bir V-strut kolları arasına gerilen travers kirişi ve kelepçeler)
-    const crossBeamGeo = new THREE.BoxGeometry(0.66, 0.05, 0.08);
+    const crossBeamGeo = new THREE.BoxGeometry(usePhotoV ? photoTraversLen : 0.66, 0.05, 0.08);
     const pedestalGeo = new THREE.BoxGeometry(0.52, 0.03, 0.10);
     const holdClampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.06);
+    // Orta taşıyıcı: travers uçlarında V kollarını saran kelepçeler (9'ar cm bağlantı payı bölgesi)
+    const photoLegTilt = Math.atan(photoVGapSlope / 2);
+    const legClampGeo = new THREE.CylinderGeometry(photoVLegR + 0.012, photoVLegR + 0.012, 0.09, 16);
 
     for (const zSt of stations) {
       const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
       if (!isNearDip) {
         const cBeam = new THREE.Mesh(crossBeamGeo, flangeSteelMat);
-        cBeam.position.set(0, 0.38, zSt);
+        cBeam.position.set(0, 0.38 + trayLift, zSt);
         // cBeam.castShadow = true; // disabled for perf
         trayGroup.add(cBeam);
 
         const ped = new THREE.Mesh(pedestalGeo, flangeSteelMat);
-        ped.position.set(0, 0.42, zSt);
+        ped.position.set(0, 0.42 + trayLift, zSt);
         trayGroup.add(ped);
 
         [-0.26, 0.26].forEach(hx => {
           const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
-          hClamp.position.set(hx, 0.445, zSt);
+          hClamp.position.set(hx, 0.445 + trayLift, zSt);
           trayGroup.add(hClamp);
         });
+
+        if (usePhotoV) {
+          [-1, 1].forEach(sx => {
+            const legClamp = new THREE.Mesh(legClampGeo, sbDarkJointMat);
+            legClamp.rotation.z = -sx * photoLegTilt;
+            legClamp.position.set(sx * photoVLegAxisX(photoTraversY - 0.175), photoTraversY, zSt);
+            trayGroup.add(legClamp);
+          });
+        }
       }
     }
 
@@ -7951,16 +7973,18 @@ function createAlan4Structure() {
 
     // 2. Battı-Çıktı (Kot Düşürmeli) Tava Segmentleri
     // Catwalk 2 (s = 16m) ve Catwalk 1 (s = 32m) kesişimlerinde kot düşürme
+    // Kot geçiş (rampa) boyu: orta taşıyıcıda tava ~1.5m daha yüksekten indiği için 1.20m, yanlarda 0.60m
+    const rampL = usePhotoV ? 1.20 : 0.60;
     const traySegments = [
-      { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 14.60 },
-      { yStart: trayBottomYNormal, zStart: 14.60, yEnd: trayBottomYDip, zEnd: 15.20 }, // 1. Battı (Catwalk 2 inişi)
+      { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 15.20 - rampL },
+      { yStart: trayBottomYNormal, zStart: 15.20 - rampL, yEnd: trayBottomYDip, zEnd: 15.20 }, // 1. Battı (Catwalk 2 inişi)
       { yStart: trayBottomYDip, zStart: 15.20, yEnd: trayBottomYDip, zEnd: 16.80 },    // Catwalk 2 altı alçak geçiş
-      { yStart: trayBottomYDip, zStart: 16.80, yEnd: trayBottomYNormal, zEnd: 17.40 }, // 1. Çıktı (Normal kota dönüş)
-      { yStart: trayBottomYNormal, zStart: 17.40, yEnd: trayBottomYNormal, zEnd: 30.60 },
-      { yStart: trayBottomYNormal, zStart: 30.60, yEnd: trayBottomYDip, zEnd: 31.20 }, // 2. Battı (Catwalk 1 inişi)
+      { yStart: trayBottomYDip, zStart: 16.80, yEnd: trayBottomYNormal, zEnd: 16.80 + rampL }, // 1. Çıktı (Normal kota dönüş)
+      { yStart: trayBottomYNormal, zStart: 16.80 + rampL, yEnd: trayBottomYNormal, zEnd: 31.20 - rampL },
+      { yStart: trayBottomYNormal, zStart: 31.20 - rampL, yEnd: trayBottomYDip, zEnd: 31.20 }, // 2. Battı (Catwalk 1 inişi)
       { yStart: trayBottomYDip, zStart: 31.20, yEnd: trayBottomYDip, zEnd: 32.80 },    // Catwalk 1 altı alçak geçiş
-      { yStart: trayBottomYDip, zStart: 32.80, yEnd: trayBottomYNormal, zEnd: 33.40 }, // 2. Çıktı (Normal kota dönüş)
-      { yStart: trayBottomYNormal, zStart: 33.40, yEnd: trayBottomYNormal, zEnd: 59.80 }  // Beton kaideye kadar normal seyir
+      { yStart: trayBottomYDip, zStart: 32.80, yEnd: trayBottomYNormal, zEnd: 32.80 + rampL }, // 2. Çıktı (Normal kota dönüş)
+      { yStart: trayBottomYNormal, zStart: 32.80 + rampL, yEnd: trayBottomYNormal, zEnd: 59.80 }  // Beton kaideye kadar normal seyir
     ];
 
     traySegments.forEach(seg => {
@@ -8048,7 +8072,7 @@ function createAlan4Structure() {
         const isNearDip = (Math.abs(zSt - 16.0) < 2.0 || Math.abs(zSt - 32.0) < 2.0);
         if (!isNearDip) {
           const cleatBar = new THREE.Mesh(new THREE.BoxGeometry(trayW - 0.04, 0.015, 0.04), cleatMat);
-          cleatBar.position.set(0, 0.45 + dcRadius * 3 + 0.012, zSt);
+          cleatBar.position.set(0, trayBottomYNormal + dcRadius * 3 + 0.012, zSt);
           trayGroup.add(cleatBar);
         }
       }

@@ -37,10 +37,11 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-19
-- **Son commit:** `[Claude] Devir defteri: anten ofset ve tava taşıyıcı görselleri kaydı`
+- **Son güncelleyen:** Claude Code, 2026-10-21
+- **Son commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: sahadan ölçülen V kol açısı, 68 cm travers ve yükseltilmiş tava`
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. 2026-10-16'da kullanıcı onayıyla `918b5ba`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
+- **Yarım kalan iş:** Yok. `918b5ba`'ya kadar push edildi; sonraki commit'ler yerelde, push için kullanıcı onayı bekleniyor.
+- **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
   - Proje kökündeki ~70 adet tek seferlik `.cjs` betiğini `scripts/` altına taşımak / temizlemek (silme için kullanıcı onayı gerekir).
@@ -66,6 +67,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 10:30 — Claude — ALAN 2 orta taşıyıcı: sahadan ölçülen V kol açısı, 68 cm travers, yükseltilmiş tava
+- **Kullanıcı isteği:** Saha fotoğrafındaki ölçüler: V kolları arası net açıklık / alttaki taşıyıcıdan yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152. "500mm tava kullanacağız, tavanın da yükselmesi gerekecek. Traverslerin sağ ve soldan 9'ar cm bağlantı payları var ... neredeyse 70 cm'ye çıkacaklar. Buna göre sadece bir tane kedi yolunu çizer misin."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` (~satır 7786-8110), yalnızca `xOffset === 0` (ortadaki `scoreboard60mRoofCarrier`, `usePhotoV`):
+    - V kolları ölçüye uyduruldu: net açıklık = 0.438 h + 3.9 cm (h omurga üstünden). Kol alt ucu ±0.09 m, üst aşıklar ±0.65 m (eskiden ±0.14 / ±1.52). Aşık kotu 2.73 m değişmedi.
+    - Travers 68 cm (500 tava + 2 × 90 bağlantı payı), kolların 68 cm açıldığı kotta: Y = 1.64 m (omurga üstünden 1.46 m). Uçlarda V kolu kelepçeleri eklendi. Kaide, tava çeneleri ve `trayBottomYNormal` `trayLift` (+1.258 m) kadar yükseldi: tava tabanı Y = 1.71 m.
+    - Kedi yolu altı alçak geçiş korunuyor (Y = 0.18). Kot geçiş rampaları 0.60 m yerine 1.20 m (`rampL`): 14.0→15.2, 16.8→18.0, 30.0→31.2, 32.8→34.0.
+    - DC kablo kelepçeleri sabit 0.45 yerine `trayBottomYNormal` kullanıyor. Ara destekler (`addTrayIntermediateSupports`) yeni kota kendiliğinden uyuyor: 19 adet, s = 30.4 rampaya düştüğü için 1 eksildi.
+  - Yan taşıyıcılar (X = ±18) değişmedi.
+- **Neden / karar:** Model V'si (her kol düşeyle ~28°) gerçekte ~12.5°. 68 cm'lik travers eski V'de yaklaşık 0.6 m kotta kalırdı; ölçüye uymak için kollar ve aşıklar daraltıldı.
+- **Doğrulama:** `npm run build` hatasız, konsol hatası yok. Sahneden okunan değerler: travers Y = 1.638 (11 istasyon), tava tabanı Y = 1.693–1.708, aşıklar ±0.651. Taşıyıcı yerel ekseninde çakışma kontrolü: yalnızca kedi yolu altı dip bölgesindeki önceden var olan temaslar çıktı. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 orta çatı taşıyıcısı: sahadan ölçülen V kol açısı, 68 cm travers ve yükseltilmiş tava`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_foto_v_kol_travers_20261021.js`. s = 0'da tava üst kedi yoluna döşemenin ~1.55 m üstünden giriyor (korkuluğun üstü). Pafta 08 ve görsel 07 eski travers kotunu gösteriyor.
 
 ### 2026-10-19 11:45 — Claude — Yazısız görseller + ofsetlerin 4 görünüşlü paftaları
 - **Kullanıcı isteği:** "sadece modellediğin ofsetlerin birer görsellerini oluştur tek fotoğrafta anten tava vs görünmeden 4 farklı açıdan anlaşılır şekilde ... Ayrıca öncesinde bu görsellerin de yazıları tamamen kaldırdığın bir versiyon ver."
