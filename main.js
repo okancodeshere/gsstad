@@ -8133,7 +8133,7 @@ function createAlan4Structure() {
     // 70 cm yatay tabla at" + "tüm tavalara uygula". Ortak fonksiyon: addTrayIntermediateSupports (dosya başı).
     // Kedi yolları altındaki alçak geçiş (dip) bölgesine destek konmaz; orayı mevcut dip eyerleri taşır.
     // Uçlarda V olmadığından makas başı (s = 0) ve beton tarafı (s = 60) açıklıkları da desteklenir
-    addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
+    const supportGroup = addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
       carrierR: 0.175, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
       fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW,
@@ -8141,6 +8141,55 @@ function createAlan4Structure() {
       // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
       noSupportZones: xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]]
     });
+
+    // 3.C. TAVA YÜKSEKLİK ETİKETİ (Kullanıcı İsteği: "en yakın taşıyıcıya yakın bir yere havada duran bir label ile
+    // tavanın yüksekliğini yaz. Label bakılan açıya göre yön değiştirsin"): ilk ara desteğin üstünde, kameraya dönen
+    // Sprite. Yükseklik, sahadan ölçümdeki gibi taşıyıcı boru üst yüzünden tava tabanına.
+    {
+      const firstSupportS = Math.min(...supportGroup.children
+        .filter(c => c.geometry.parameters && c.geometry.parameters.width === 0.70).map(c => c.position.z));
+      const sideLabel = xOffset === 0 ? 'ORTA' : (xOffset < 0 ? 'SOL' : 'SAĞ');
+      const heightCm = Math.round((trayBottomYNormal - 0.175) * 100);
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 260;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+      ctx.beginPath();
+      ctx.roundRect(8, 8, 624, 244, 22);
+      ctx.fill();
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#facc15';
+      ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Satırı 590px genişliğe sığacak şekilde yazı boyutunu küçült
+      const fitText = (text, weight, maxPx, y, color) => {
+        let px = maxPx;
+        do { ctx.font = `${weight} ${px}px Arial, sans-serif`; px -= 2; } while (ctx.measureText(text).width > 590 && px > 16);
+        ctx.fillStyle = color;
+        ctx.fillText(text, 320, y);
+      };
+      fitText(`TAVA YÜKSEKLİĞİ ${heightCm} cm`, 900, 64, 76, '#facc15');
+      fitText(`${sideLabel} makas · ${Math.round(trayW * 1000)}×${Math.round(trayH * 1000)} tava`, 700, 42, 148, '#e2e8f0');
+      fitText('taşıyıcı boru üstü → tava tabanı', 600, 32, 206, '#94a3b8');
+      const labelTex = new THREE.CanvasTexture(canvas);
+      labelTex.colorSpace = THREE.SRGBColorSpace;
+      const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex, depthWrite: false }));
+      const labelY = trayBottomYNormal + trayH + 0.95;
+      label.scale.set(2.0, 0.81, 1);
+      label.position.set(0, labelY, firstSupportS);
+      label.name = `scoreboardTrayHeightLabel_${sideLabel}`;
+      label.raycast = () => {}; // Tıklama seçimine girmesin
+      trayGroup.add(label);
+
+      // Etiketten tava üst kenarına ince gösterge çizgisi
+      const leaderH = labelY - 0.405 - (trayBottomYNormal + trayH);
+      const leader = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, leaderH, 6), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+      leader.position.set(0, trayBottomYNormal + trayH + leaderH / 2, firstSupportS);
+      leader.raycast = () => {};
+      trayGroup.add(leader);
+    }
 
     // 4. Beton Kaide Tarafı Tava İniş Dirseği (Transition Bend at s = 59.8m)
     const elbowGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.45, 16);

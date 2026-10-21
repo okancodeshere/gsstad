@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2 sağ çatı taşıyıcısı: ölçülen V, traverssiz 300x250 tava, aks arası 3 ara destek`
+- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: kameraya dönen tava yükseklik etiketleri`
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-21 13:20 — Claude — ALAN 2 çatı taşıyıcıları: tava yükseklik etiketleri
+- **Kullanıcı isteği:** "3 kedi yolunda da en yakın taşıyıcıya yakın bir yere havada duran bir label ile tavanın yüksekliğini yaz. Label bakılan açıya göre yön değiştirsin."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` YENİ "3.C. TAVA YÜKSEKLİK ETİKETİ":
+    - Her taşıyıcıda ilk ara desteğin (makas başına en yakın) 0.95 m üstünde `THREE.Sprite` (her zaman kameraya döner). Adı `scoreboardTrayHeightLabel_SOL/ORTA/SAĞ`.
+    - Etiket ile tava üst kenarı arasında ince sarı gösterge çizgisi.
+    - Metin canvas'ta: "TAVA YÜKSEKLİĞİ N cm", "<taraf> makas · G×Y tava", "taşıyıcı boru üstü → tava tabanı". Satırlar 590 px'e sığacak şekilde küçültülüyor.
+    - Değer `trayBottomYNormal − 0.175` ile koddan hesaplanıyor: SOL 114, ORTA 153, SAĞ 69 cm.
+    - `raycast` boş; etiket tıklama seçimine girmez.
+  - `addTrayIntermediateSupports()` artık oluşturduğu grubu döndürüyor ve dönen değer kullanılıyor.
+- **Doğrulama:** `npm run build` hatasız. İki farklı kamera açısından görüntü alındı; etiketler kameraya dönüyor, metin sığıyor.
+- **Commit:** `[Claude] ALAN 2 çatı taşıyıcıları: kameraya dönen tava yükseklik etiketleri`
 
 ### 2026-10-21 13:00 — Claude — ALAN 2 sağ taşıyıcı: ölçülen V, traverssiz 300 x 250 tava, 3 ara destek
 - **Kullanıcı isteği:** "sağ makası da yap. Onda da tavayı 300mm'ye düşür ve ona uygun yükseklikte travers kullanmadan yap. ara bağlantı 3'er tane olsun tava yüksekliği 25cm olsun"
