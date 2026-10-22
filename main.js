@@ -7974,14 +7974,16 @@ function createAlan4Structure() {
     const trayLift = photoTraversY - 0.38;
     // Kullanıcı İsteği (2026-10-22): "köşede olan 50cm'lik tava var ya onu tüm hat boyunca 250cm yükseklikten götür,
     // diğer ikisine dokunma" → sol taşıyıcı (X = -18) tavası taşıyıcı boru üstünden sabit 250 cm (rampa yok).
-    // Sağ taşıyıcı da (askılı) "burada tavaları 250cm'de tek ölçüde yap" (2026-10-22) → iki yan taşıyıcı sabit 250 cm
-    const trayBottomYNormal = xOffset !== 0 ? spineR + 2.50 : 0.45 + trayLift; // Normal seyir kotu
+    // Sağ taşıyıcı (askılı): "burada tavaları 250cm'de tek ölçüde yap", ardından "tavayı burada 230'a indir"
+    // (2026-10-22) → sağ sabit 230 cm, sol sabit 250 cm; orta normalde 153 cm
+    const trayBottomYNormal = xOffset > 0 ? spineR + 2.30 : (xOffset < 0 ? spineR + 2.50 : 0.45 + trayLift); // Normal seyir kotu
 
     // Kedi yolu üstünden geçiş profili (Kullanıcı İsteği 2026-10-22: sarı çizim + "daha düz ... simetrik olsun").
     // Kedi yolu üstünde ±0.80m düz bölüm taşıyıcı boru üstünden 250 cm'de; iki yanda eşit 5.70m (bir aks) rampa.
     // Rampa V istasyonlarının üstünden geçebilir; oradaki travers tavanın o noktadaki kotuna çıkar.
     const cwFlatHalf = 0.80, cwRampL = 5.70;
-    const trayBottomYOverCw = spineR + 2.50;
+    // Yan taşıyıcılarda tava tek ölçüde (kedi yolu üstünde de normal kotta, rampa yok)
+    const trayBottomYOverCw = xOffset !== 0 ? trayBottomYNormal : spineR + 2.50;
     const trayBottomAtProfile = (s) => {
       for (const c of SB_INTERMEDIATE_CW_S) {
         const d = Math.abs(s - c);

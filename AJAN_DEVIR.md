@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tüm hat boyunca 250 cm`
+- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tek ölçüde 230 cm`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 17:50 — Claude — Sağ taşıyıcı tavası 230 cm
+- **Kullanıcı isteği:** "tavayı burada 230'a indir". Bağlamdan sağ (askılı) taşıyıcı.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `trayBottomYNormal`: sağ `spineR + 2.30`, sol `spineR + 2.50`, orta `0.45 + trayLift`.
+    - `trayBottomYOverCw` yan taşıyıcılarda normal kota eşit. Böylece yan tavalar kedi yolu üstünde de tek ölçüde; 230'a indirince kedi yolu üstünde 250'ye çıkan rampa oluşmasın diye.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Sağ 230/230, sol 250/250, orta 153–250 cm.
+  - Çakışma ve temas yok.
+  - Sağ tava kedi yolu üstünde döşemeden yaklaşık 2.06 m yüksekte.
+- **Commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tek ölçüde 230 cm`
 
 ### 2026-10-22 17:40 — Claude — Sağ taşıyıcı tavası tüm hat boyunca 250 cm
 - **Kullanıcı isteği:** "burada tavaları 250cm de tek ölçüde yap". Bağlamdan sağ (askılı) taşıyıcı olarak alındı.
