@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: üçgen kiriş iç yüksekliği 300 cm`
+- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: gerçek uzay kafes örgüsü (orta düğüm çaprazları, üst zikzak)`
+- **Açık sorun (2026-10-22):** Orta ve sol taşıyıcıda kedi yolu rampaları (s ≈ 29.2 ve 42.1) yeni yan çaprazların içinden geçiyor; sağdaki 300 mm alçak tavada sorun yok. Tavanın kedi yollarını nasıl geçtiği kullanıcıya soruldu.
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +70,31 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 10:00 — Claude — ALAN 2 taşıyıcıları: gerçek uzay kafes örgüsü
+- **Kullanıcı isteği:** Fotoğraf: "taşıyıcının gerçek fotosu bu şekilde, gerçeğine göre çizebilir misin ortadaki dikmelerimizi referans alarak". Ek: "dikeyde çapraz çıkanlar direkler bizim travers koyacağımız dikeylerin tam orta noktasında buluşuyor ve onun 22 katı çapa sahip".
+- **Okuma:**
+  - DXF'teki gri çubuklardan düzen çıkarıldı. Her V istasyonundan sonra bir ara üst düğüm var; omurga düğümünden ileriye ve bir sonraki omurga düğümünden geriye bu düğüme çapraz iniyor; her üst düğümde enine eleman; üst düzlemde zikzak.
+  - Kullanıcı ara düğümün tam orta noktada olduğunu söyledi. DXF'te 0.7–0.9 m sapma vardı; kullanıcının söylediği uygulandı.
+  - "22 katı" belirsiz. V kolu çapının yarısı (Ø70) olarak yorumlandı ve kullanıcıya bildirildi.
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan4Structure()`: YENİ `SB_TRUSS_TOP_MID_NODES`: istasyon orta noktaları; son istasyondan sonra ortalama yarım aks.
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - Eski istasyonlar arası üst X gergileri kaldırıldı.
+    - YENİ "9.2.A. UZAY KAFES ÖRGÜSÜ": iki yanda ileri ve geri örgü çaprazları (Ø70, `webRadius = vStrutRadius / 2`), ara üst düğüm enine gergisi ve aşıklar arası zikzak (Ø70).
+    - V kolları ve travers yerinde kaldı.
+    - `webSegments` ara destek fonksiyonuna `obstacles` olarak veriliyor.
+  - `main.js` → `addTrayIntermediateSupports()`:
+    - YENİ `obstacles` seçeneği: bir desteğin 70 cm tablası veya kolları örgü çaprazına değerse o destekte tabla tava + 3 cm'e, kollar tava altına daraltılır.
+    - Daraltılan destek sayısı `group.userData.narrowedCount`'ta. Mevcut geometride hiçbiri daraltılmadı.
+  - Etiket: gösterge çizgisi üst düğüm gergisine veya zikzak kesişimine denk gelirse etiket 35 cm kaydırılıyor.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Örgü çubukları eksen boyunca örneklenerek tava, destekler, kedi yolları, platformlar ve diğer yapılarla kontrol edildi. Sağ taşıyıcı temiz.
+  - Orta ve solda kedi yolu rampaları (s ≈ 29.2 çıkış ve 42.1 iniş) çaprazların içinden geçiyor (bkz. Güncel Durum → Açık sorun).
+  - Etiket çizgileri temiz. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 çatı taşıyıcıları: gerçek uzay kafes örgüsü (orta düğüm çaprazları, üst zikzak)`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_uzay_kafes_20261022.js`.
 
 ### 2026-10-22 09:00 — Claude — ALAN 2 üçgen kiriş iç yüksekliği 300 cm
 - **Kullanıcı isteği:** "alan 2'deki tavaların da olduğu üçgen taşıyıcı kirişin toplam iç yüksekliği 300cm olacak şekilde güncelle"

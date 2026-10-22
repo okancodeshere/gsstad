@@ -1904,7 +1904,16 @@ function buildTrayStations(endS, step = TRAY_SUPPORT_AXIS_STEP, zones = []) {
 function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
   // noSupportZones: [başlangıç, bitiş] s aralıkları; başka bir yapının makasa bağlandığı bölgelerde destek konmaz
   // fractions: açıklık içindeki destek noktaları (varsayılan 1/3 ve 2/3)
-  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [], fractions = [1 / 3, 2 / 3], trayW = 0.50 } = opts;
+  const { carrierR, trayNormalY, mat, clampMat, name = 'trayIntermediateSupports', noSupportZones = [], fractions = [1 / 3, 2 / 3], trayW = 0.50, obstacles = [] } = opts;
+  // obstacles: [{ a, b, r }] makas örgü çaprazları; bir desteğin 70cm tablası / kolları bunlara değiyorsa
+  // o destekte tabla tava genişliği + 3cm'e, kollar tava altına daraltılır (destek yeri ve sayısı değişmez)
+  const segDist = (p, a, b) => {
+    const ab = new THREE.Vector3().subVectors(b, a);
+    const t = Math.max(0, Math.min(1, new THREE.Vector3().subVectors(p, a).dot(ab) / ab.lengthSq()));
+    return p.distanceTo(a.clone().addScaledVector(ab, t));
+  };
+  const isClear = (p, extraR) => obstacles.every(o => segDist(p, o.a, o.b) > o.r + extraR);
+  let narrowedCount = 0;
   const trayEndS = traySegments[traySegments.length - 1].zEnd;
   const trayBottomAt = (s) => {
     for (const seg of traySegments) {
@@ -1945,19 +1954,30 @@ function addTrayIntermediateSupports(parent, stations, traySegments, opts) {
       ring.position.set(0, 0, s);
       group.add(ring);
 
-      const tabla = new THREE.Mesh(tablaGeo, mat);
+      // Varsayılan: 70cm tabla, kollar ±0.30. Örgü çaprazına değiyorsa daralt.
+      let tablaHalf = 0.35, armX = 0.30;
+      const armClear = (ax) => [0.25, 0.5, 0.75, 1.0].every(t => isClear(new THREE.Vector3(
+        ringR * 0.57 + (ax - ringR * 0.57) * t, ringR * 0.82 + (trayY - tablaT - ringR * 0.82) * t, s), 0.022 + 0.02));
+      if (!isClear(new THREE.Vector3(tablaHalf, trayY - tablaT / 2, s), 0.05 + 0.02) || !armClear(armX)) {
+        tablaHalf = trayW / 2 + 0.03;
+        armX = trayW / 2 - 0.04;
+        narrowedCount++;
+      }
+
+      const tabla = new THREE.Mesh(tablaHalf === 0.35 ? tablaGeo : new THREE.BoxGeometry(tablaHalf * 2, tablaT, 0.10), mat);
       tabla.position.set(0, trayY - tablaT / 2, s);
       group.add(tabla);
 
       [-1, 1].forEach(sx => {
         // Çemberin üst omzundan tabla uçlarına (çizimdeki gibi hafif açılan) dikey kol
-        addRod(new THREE.Vector3(sx * ringR * 0.57, ringR * 0.82, s), new THREE.Vector3(sx * 0.30, trayY - tablaT, s), 0.022);
+        addRod(new THREE.Vector3(sx * ringR * 0.57, ringR * 0.82, s), new THREE.Vector3(sx * armX, trayY - tablaT, s), 0.022);
         const c = new THREE.Mesh(clampGeo, clampMat);
         c.position.set(sx * (trayW / 2 + 0.01), trayY - 0.005, s);
         group.add(c);
       });
     });
   }
+  group.userData.narrowedCount = narrowedCount;
   parent.add(group);
   return group;
 }
@@ -7788,6 +7808,10 @@ function createAlan4Structure() {
   // V istasyonları (kolların omurgaya indiği düğüm). Planda kollar ">" şeklinde eğik; kullanıcı kararıyla
   // modelde makasa dik düzlemde (düz) çizilir. Makas uçlarında (s = 0 / 60) V yok.
   const SB_TRUSS_V_STATIONS = [1.55, 7.25, 12.96, 18.57, 24.31, 29.94, 35.72, 41.50, 47.20, 53.02];
+  // Her istasyondan sonraki ara üst düğüm: kullanıcıya göre çaprazlar iki dikmenin (V istasyonu) tam orta noktasında
+  // buluşur. Son istasyondan sonra ortalama yarım aks (≈ 2.83m) ileride.
+  const SB_TRUSS_TOP_MID_NODES = SB_TRUSS_V_STATIONS.map((s, i, a) =>
+    +(i < a.length - 1 ? (s + a[i + 1]) / 2 : s + (a[i] - a[0]) / (a.length - 1) / 2).toFixed(3));
   // Üç makası kesen ara kedi yollarının merkezleri (net 1.2-1.4m genişlik). 3. kedi yolu beton kaide önünde.
   const SB_INTERMEDIATE_CW_S = [27.72, 43.50];
 
@@ -7880,25 +7904,46 @@ function createAlan4Structure() {
       );
       trussGroup.add(topTie);
 
-      // İstasyonlar arası X-çapraz gergi bağları
-      const zNext = stations[stations.indexOf(zSt) + 1];
-      if (zNext !== undefined) {
-        const diag1 = createPipeHelper(
-          new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-          new THREE.Vector3(chordOffsetW, chordHeightH, zNext),
-          0.028,
-          flangeSteelMat
-        );
-        trussGroup.add(diag1);
+    }
 
-        const diag2 = createPipeHelper(
-          new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-          new THREE.Vector3(-chordOffsetW, chordHeightH, zNext),
-          0.028,
-          flangeSteelMat
-        );
-        trussGroup.add(diag2);
-      }
+    // 9.2.A. UZAY KAFES ÖRGÜSÜ (Kullanıcı İsteği 2026-10-22: "taşıyıcının gerçek fotosu ... gerçeğine göre çiz,
+    // ortadaki dikmelerimizi referans alarak"). Saha DXF'indeki düzen: her istasyondan sonra bir ara üst düğüm
+    // (SB_TRUSS_TOP_MID_NODES). Omurga düğümünden ileriye ve bir sonraki omurga düğümünden geriye bu üst düğüme
+    // iki yanda çapraz (yan yüzlerde W örgü); her üst düğümde enine gergi; üst düzlemde aşıklar arası zikzak.
+    // V kolları (istasyon) kullanıcı kararıyla makasa dik düzlemde kalır. Çaprazlar V ile aynı açıklık-yükseklik
+    // doğrusunu izler (omurga üstü ±armBaseX → aşık ±chordOffsetW).
+    const webRadius = vStrutRadius / 2; // Ø70mm örgü çaprazı (V kolu Ø140'ın yarısı, kullanıcı tarifi)
+    const topNodes = [];
+    const webSegments = []; // Ara desteklerin çakışma kontrolü için
+    const addWeb = (a, b) => {
+      trussGroup.add(createPipeHelper(a, b, webRadius, pipeWhiteMat));
+      webSegments.push({ a, b, r: webRadius });
+    };
+    stations.forEach((sSt, i) => {
+      topNodes.push(sSt);
+      const m = SB_TRUSS_TOP_MID_NODES[i];
+      if (m === undefined) return;
+      topNodes.push(m);
+      const sNext = stations[i + 1];
+      [-1, 1].forEach(sx => {
+        addWeb(new THREE.Vector3(sx * armBaseX, 0.175, sSt), new THREE.Vector3(sx * chordOffsetW, chordHeightH, m));
+        if (sNext !== undefined) {
+          addWeb(new THREE.Vector3(sx * armBaseX, 0.175, sNext), new THREE.Vector3(sx * chordOffsetW, chordHeightH, m));
+        }
+      });
+      // Ara üst düğüm enine gergisi
+      trussGroup.add(createPipeHelper(
+        new THREE.Vector3(-chordOffsetW, chordHeightH, m),
+        new THREE.Vector3(chordOffsetW, chordHeightH, m),
+        topTieRadius, pipeWhiteMat));
+    });
+    // Üst düzlem zikzak (aşıklar arası, düğümden düğüme yön değiştirerek)
+    for (let k = 0; k < topNodes.length - 1; k++) {
+      const sx = k % 2 === 0 ? 1 : -1;
+      trussGroup.add(createPipeHelper(
+        new THREE.Vector3(sx * chordOffsetW, chordHeightH, topNodes[k]),
+        new THREE.Vector3(-sx * chordOffsetW, chordHeightH, topNodes[k + 1]),
+        0.035, pipeWhiteMat));
     }
 
     // 9.2.B. 50CM GENİŞLİK, 15CM YÜKSEKLİKTE DELİKLİ KABLO TAVASI VE TAVA TAŞIYICILARI (BATTI-ÇIKTI / KOT DÜŞÜRMELİ)
@@ -8138,7 +8183,7 @@ function createAlan4Structure() {
     const supportGroup = addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
       carrierR: 0.175, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
-      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW,
+      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW, obstacles: webSegments,
       // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
       // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
       noSupportZones: xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]]
@@ -8148,8 +8193,15 @@ function createAlan4Structure() {
     // tavanın yüksekliğini yaz. Label bakılan açıya göre yön değiştirsin"): ilk ara desteğin üstünde, kameraya dönen
     // Sprite. Yükseklik, sahadan ölçümdeki gibi taşıyıcı boru üst yüzünden tava tabanına.
     {
-      const firstSupportS = Math.min(...supportGroup.children
-        .filter(c => c.geometry.parameters && c.geometry.parameters.width === 0.70).map(c => c.position.z));
+      // Gösterge çizgisi üst düğüm gergileri / zikzakla kesişmesin: üst düğüme 0.5m'den uzak ilk ara destek
+      const supportSs = supportGroup.children
+        .filter(c => c.geometry.type === 'BoxGeometry' && c.geometry.parameters.height === 0.03 && c.geometry.parameters.depth === 0.10)
+        .map(c => c.position.z).sort((a, b) => a - b);
+      const zigzagMids = topNodes.slice(1).map((n, k) => (n + topNodes[k]) / 2); // zikzak X = 0'ı burada keser
+      const leaderClear = s => topNodes.every(n => Math.abs(s - n) > 0.3) && zigzagMids.every(z => Math.abs(s - z) > 0.3);
+      // Destek bir üst düğüm / zikzak kesişimine denk geliyorsa etiket 35cm kaydırılır (tava sürekli, çizgi yine tavaya iner)
+      const firstSupportS = supportSs.map(s => leaderClear(s) ? s : (leaderClear(s + 0.35) ? s + 0.35 : null))
+        .find(s => s !== null) ?? supportSs[0];
       const sideLabel = xOffset === 0 ? 'ORTA' : (xOffset < 0 ? 'SOL' : 'SAĞ');
       const heightCm = Math.round((trayBottomYNormal - 0.175) * 100);
       const canvas = document.createElement('canvas');
