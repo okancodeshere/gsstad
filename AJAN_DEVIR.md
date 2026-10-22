@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 taşıyıcıları: saha çevre ölçülerine göre omurga Ø420, dikme Ø111, çapraz Ø223`
-- **Açık sorun (2026-10-22):** Orta ve sol taşıyıcıda kedi yolu rampaları (s ≈ 29.2 ve 42.1) yeni yan çaprazların içinden geçiyor; sağdaki 300 mm alçak tavada sorun yok. Tavanın kedi yollarını nasıl geçtiği kullanıcıya soruldu.
+- **Son commit:** `[Claude] ALAN 2: tava rampaları örgü çaprazlarını geçtikten sonra (gerekirse dik) iniyor`
+- **Durum (2026-10-22 11:15):** Rampalar artık çaprazlara değmiyor. Orta ve solda iki rampa 78–88° (neredeyse düşey). Kullanıcı bunun sahada uygulanamayacağını göstermek için görsel istedi: `Gorseller/09_...`, `10_...`.
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -70,6 +70,25 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 11:15 — Claude — Tava rampaları çaprazları geçtikten sonra iniyor
+- **Kullanıcı isteği:** (Ekran görüntüsü, sarı daire) "tavalar çapraz dikmelerle çakışıyor, inişi bu geçitten sonra yap. Tavalar daha dik inecek biliyorum ama olmayacağını belirtmek için bu görsele de ihtiyacım var."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` "2. Battı-Çıktı":
+    - YENİ `trayHitsWeb(s, yb)`: s kesitindeki tava dikdörtgeni ile örgü çaprazlarının kesiti (eğik kesit elipsi, güvenli taraf) çakışıyor mu.
+    - YENİ `rampClear()`: rampa boyunca 2 cm adımla kontrol.
+    - Her iniş ve çıkış rampası için `rampL`'den 5 cm adımlarla kısaltılarak çaprazlara değmeyen en uzun rampa seçiliyor; en kısa 5 cm.
+    - 30 cm'den kısa rampalar `trayGroup.userData.steepRamps` dizisinde.
+- **Sonuç** (sahneden okunan):
+  - Orta: 25.72–26.92 (52°), 28.52–28.82 (79°), 42.65–42.70 (88°), 44.30–45.50 (52°).
+  - Sol: aynı noktalar, 44° / 78° / 87° / 44°.
+  - Sağ (300 mm tava): 30° / 44° / 57° / 30°, dik rampa yok.
+  - Gerçek mesh örneklemesiyle çaprazlarla çakışma: 0.
+- **Görseller** (`Gorseller/`, git dışı):
+  - `09_alan2_orta_makas_kediyolu2_tava_dik_inis.png`: 2. kedi yolu öncesi neredeyse düşey iniş.
+  - `10_alan2_orta_makas_kediyolu1_tava_dik_cikis.png`: 1. kedi yolu sonrası dik çıkış.
+- **Doğrulama:** `npm run build` hatasız. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2: tava rampaları örgü çaprazlarını geçtikten sonra (gerekirse dik) iniyor`
 
 ### 2026-10-22 10:45 — Claude — ALAN 2 taşıyıcı boru ölçüleri saha çevre ölçülerine göre
 - **Kullanıcı isteği:** "çap değil çember ölçüsü vereyim. alt taşıyıcı 132 cm, dikler 35, çaprazlar 70". 10:20 kaydındaki Ø35 / Ø70 mm yorumu yanlıştı; değerler cm cinsinden çevre ölçüsü.

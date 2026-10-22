@@ -8043,16 +8043,39 @@ function createAlan4Structure() {
     // Her ara kedi yolu altında ±0.80m alçak geçiş. Kot geçiş (rampa) boyu: orta ve sol taşıyıcıda tava daha
     // yüksekten indiği için en fazla 1.20m, sağda 0.60m; rampa komşu V istasyonuna 15cm'den fazla yaklaşmaz
     // (tava V kollarının arasından yalnızca normal kotta geçebilir).
+    // Kullanıcı İsteği (2026-10-22): "tavalar çapraz dikmelerle çakışıyor, inişi bu geçitten sonra yap. Tavalar
+    // daha dik inecek biliyorum ama olmayacağını belirtmek için bu görsele de ihtiyacım var." Her rampa, örgü
+    // çaprazlarına değmeyen en uzun (en yumuşak) boyda seçilir; gerekirse neredeyse düşey iner.
     const rampL = usePhotoV ? 1.20 : 0.60;
     const dipHalf = 0.80, rampVClear = 0.15;
+    // s kesitinde tava dikdörtgeni [±trayW/2] x [yb, yb + trayH] bir örgü çaprazının kesitine değiyor mu
+    const trayHitsWeb = (s, yb) => webSegments.some(({ a, b, r }) => {
+      if ((s - a.z) * (s - b.z) > 0) return false;
+      const t = (s - a.z) / (b.z - a.z);
+      const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
+      const rr = r / Math.max(0.2, Math.abs(b.z - a.z) / a.distanceTo(b)); // eğik kesit elipsi (güvenli taraf)
+      return y > yb - rr && y < yb + trayH + rr && Math.abs(x) < trayW / 2 + rr;
+    });
+    const rampClear = (s0, y0, s1, y1) => {
+      for (let s = s0; s <= s1 + 1e-9; s += 0.02) if (trayHitsWeb(s, y0 + (y1 - y0) * (s - s0) / (s1 - s0))) return false;
+      return true;
+    };
+    const steepRamps = []; // çaprazdan kaçmak için 30 cm'den kısa (çok dik) kalan rampalar
     const traySegments = [];
     let segS = 0.0;
     SB_INTERMEDIATE_CW_S.forEach(cwS => {
       const f0 = cwS - dipHalf, f1 = cwS + dipHalf;
       const prevV = Math.max(...stations.filter(v => v < f0));
       const nextV = Math.min(...stations.filter(v => v > f1));
-      const r0 = Math.min(rampL, f0 - (prevV + rampVClear));
-      const r1 = Math.min(rampL, (nextV - rampVClear) - f1);
+      let r0 = 0.05, r1 = 0.05;
+      for (let L = Math.min(rampL, f0 - (prevV + rampVClear)); L >= 0.05; L -= 0.05) {
+        if (rampClear(f0 - L, trayBottomYNormal, f0, trayBottomYDip)) { r0 = L; break; }
+      }
+      for (let L = Math.min(rampL, (nextV - rampVClear) - f1); L >= 0.05; L -= 0.05) {
+        if (rampClear(f1, trayBottomYDip, f1 + L, trayBottomYNormal)) { r1 = L; break; }
+      }
+      if (r0 < 0.30) steepRamps.push(+(f0 - r0).toFixed(2));
+      if (r1 < 0.30) steepRamps.push(+(f1 + r1).toFixed(2));
       traySegments.push(
         { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: f0 - r0 },
         { yStart: trayBottomYNormal, zStart: f0 - r0, yEnd: trayBottomYDip, zEnd: f0 }, // Battı (kedi yolu inişi)
@@ -8062,6 +8085,7 @@ function createAlan4Structure() {
       segS = f1 + r1;
     });
     traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
+    trayGroup.userData.steepRamps = steepRamps;
 
     traySegments.forEach(seg => {
       const dy = seg.yEnd - seg.yStart;
