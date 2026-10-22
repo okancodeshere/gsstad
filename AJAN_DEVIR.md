@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: kedi yolu üstü tava geçişleri simetrik ve yatık (iki yanda 5.70 m rampa)`
+- **Son commit:** `[Claude] ALAN 2: V dikmeleri kaldırıldı, üç taşıyıcıda tava orta taşıyıcı kotunda (153 cm)`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 15:35 — Claude — V dikmeleri kaldırıldı, tüm tavalar orta kotta
+- **Kullanıcı isteği:** "dikeyde alttaki taşıyıcıdan çıkan V dikmeleri kaldır, tüm tavaları ortadaki tava yüksekliğine çıkar"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - İstasyon döngüsündeki sol/sağ V kolları kaldırıldı. Omurga bileziği ve üst enine gergi istasyonlarda kaldı; örgü çaprazları buraya bağlanıyor. `photoVLegAxisX` aşık ve çapraz konumu için kullanılmaya devam ediyor.
+    - `trayLift = photoTraversY - 0.38` üç taşıyıcı için. Tava tabanı taşıyıcı boru üstünden 153 cm; sol 114 ve sağ 69 cm'den yükseldi. Kedi yolu üstü 250 cm aynı; rampalar her yerde 9.6°.
+    - İstasyon traversleri V kolları arasında olduğu için kaldırıldı (`hasVLegs = false` koşulu). Tavayı kalın çapraz traversleri (her taşıyıcıda 19) ve ara destekler (orta 18, yanlar 26) taşıyor.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Sahnede Ø111 dikme yok. Tava ile çubuklar arasında boşluk: orta ve sol 10 cm, sağ 20 cm; çakışma yok.
+  - Diğer sistemlerle temas yok.
+  - Yan taşıyıcılarda 9'ar ara desteğin tablası çapraza değdiği için daraltıldı. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2: V dikmeleri kaldırıldı, üç taşıyıcıda tava orta taşıyıcı kotunda (153 cm)`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_v_dikme_kaldir_20261022.js`.
 
 ### 2026-10-22 15:15 — Claude — Kedi yolu üstü tava geçişleri simetrik ve yatık
 - **Kullanıcı isteği:** (Ekran görüntüsü) "daha düz bir şekilde yapar mısın, simetrik olsun, biraz böyle yamuk oldu"

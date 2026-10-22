@@ -7880,23 +7880,9 @@ function createAlan4Structure() {
       collar.position.set(0, 0, zSt);
       trussGroup.add(collar);
 
-      // Sol V-Kolu (Alt omurga kenarından sol üst aşığa)
-      const leftV = createPipeHelper(
-        new THREE.Vector3(-armBaseX, spineR, zSt),
-        new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
-        vStrutRadius,
-        pipeWhiteMat
-      );
-      trussGroup.add(leftV);
-
-      // Sağ V-Kolu (Alt omurga kenarından sağ üst aşığa)
-      const rightV = createPipeHelper(
-        new THREE.Vector3(armBaseX, spineR, zSt),
-        new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
-        vStrutRadius,
-        pipeWhiteMat
-      );
-      trussGroup.add(rightV);
+      // V dikmeleri (omurgadan aşıklara düşey düzlemdeki kollar) kullanıcı isteğiyle kaldırıldı (2026-10-22:
+      // "dikeyde alttaki taşıyıcıdan çıkan V dikmeleri kaldır"). İstasyon geometrisi (photoVLegAxisX) örgü
+      // çaprazlarının ve aşıkların konumu için kullanılmaya devam ediyor.
 
       // Üst Yatay Gergi Borusu
       const topTie = createPipeHelper(
@@ -7966,7 +7952,9 @@ function createAlan4Structure() {
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
     const photoTrayClear = 0.02;
     const photoFreeTrayY = spineR + (trayW + 2 * photoTrayClear - photoVGapAt0) / photoVGapSlope;
-    const trayLift = trayMode === 'travers68' ? photoTraversY - 0.38 : (trayMode === 'traverssiz3' ? photoFreeTrayY - 0.45 : 0);
+    // Kullanıcı İsteği (2026-10-22): "tüm tavaları ortadaki tava yüksekliğine çıkar" → üç taşıyıcıda da tava
+    // tabanı ortadaki taşıyıcının kotunda (taşıyıcı boru üstünden ≈ 153 cm). photoFreeTrayY artık kullanılmıyor.
+    const trayLift = photoTraversY - 0.38;
     const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
 
     // Kedi yolu üstünden geçiş profili (Kullanıcı İsteği 2026-10-22: sarı çizim + "daha düz ... simetrik olsun").
@@ -8017,7 +8005,10 @@ function createAlan4Structure() {
 
     for (const zSt of stations) {
       const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
-      if (!isNearDip && trayMode !== 'traverssiz3') {
+      // V dikmeleri kaldırıldığı için istasyon traversi (iki V kolu arası) artık yok; tava kalın çapraz
+      // traversleri (3.D) ve ara desteklerle taşınır.
+      const hasVLegs = false;
+      if (hasVLegs && !isNearDip && trayMode !== 'traverssiz3') {
         // Rampa üstündeki istasyonda tava yüksekte: travers o kota çıkar ve kollar arası net açıklık kadar uzar
         const dLift = trayBottomAtProfile(zSt) - trayBottomYNormal;
         const beamY = 0.38 + trayLift + dLift;
