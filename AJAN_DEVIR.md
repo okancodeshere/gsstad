@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: V dikmeleri geri geldi, V görünümlü ara tava destekleri kaldırıldı`
+- **Son commit:** `[Claude] ALAN 2 yan taşıyıcılar: tava ikinci Matsing anteninden sonra bitiyor`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 16:05 — Claude — Yan taşıyıcılarda tava Matsing antenlerinden sonra bitiyor
+- **Kullanıcı isteği:** "sağ ve soldaki taşıyıcılarda 2'şer adet Matsing anten var ya. Ondan sonraki tavaları kaldır"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - YENİ `sideTrayEndS` (yan taşıyıcılarda 24.60, ortada null). İkinci Matsing montajı taslak-v2'de s ≈ 22.45–24.30'da.
+    - Yan taşıyıcılarda tava tek parça normal kotta s = 0 → 24.60. Kedi yolu üstü geçişler ve beton tarafı iniş dirseği yok.
+    - 6 feeder kablosu tava segmentlerini izlediği için o da 24.60'ta bitiyor.
+    - Kalın çapraz traversleri yalnızca tava olan bölgede: yan taşıyıcılarda 8 adet (2.9 … 22.9).
+    - Orta taşıyıcı değişmedi (0 → 59.8, 19 çapraz traversi, kedi yolu üstü geçişler).
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Sahneden okunan tava ve kablo uçları: yan taşıyıcılarda 0 – 24.60, ortada 0 – 59.8.
+  - Konsoldaki "cwFlatHalf has already been declared" mesajı önceki bir düzenlemenin geçici HMR durumundan kaldı. Dosyada tek tanım var ve sayfa yeniden yüklendiğinde sahne sorunsuz kuruluyor.
+- **Commit:** `[Claude] ALAN 2 yan taşıyıcılar: tava ikinci Matsing anteninden sonra bitiyor`
 
 ### 2026-10-22 15:50 — Claude — Düzeltme: V dikmeleri geri, ara tava destekleri kaldırıldı
 - **Kullanıcı isteği:** "yanlış şeyleri kaldırdın, ben V makas derken tava taşıyıcısını diyordum, binanın kendisine ait olan dikmeleri değil". 15:35 kaydındaki V dikmesi silme işlemi YANLIŞ ANLAMAYDI ve geri alındı.

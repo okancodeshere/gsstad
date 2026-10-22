@@ -8051,9 +8051,15 @@ function createAlan4Structure() {
     }
 
     // 2. Kedi Yolu Üstünden Geçen Tava Segmentleri (profil: trayBottomAtProfile, kedi yoluna göre simetrik)
+    // Kullanıcı İsteği (2026-10-22): "sağ ve soldaki taşıyıcılarda 2'şer adet Matsing anten var, ondan sonraki
+    // tavaları kaldır" → yan taşıyıcılarda tava ikinci Matsing montajının (s ≈ 22.45-24.30) hemen ardında,
+    // s = 24.60'ta biter; kedi yollarına ulaşmadığı için kedi yolu üstü geçişi de yok.
+    const sideTrayEndS = xOffset !== 0 ? 24.60 : null;
     const traySegments = [];
     let segS = 0.0;
-    SB_INTERMEDIATE_CW_S.forEach(cwS => {
+    if (sideTrayEndS !== null) {
+      traySegments.push({ yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: sideTrayEndS });
+    } else SB_INTERMEDIATE_CW_S.forEach(cwS => {
       const f0 = cwS - cwFlatHalf, f1 = cwS + cwFlatHalf;
       traySegments.push(
         { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: f0 - cwRampL },
@@ -8063,7 +8069,7 @@ function createAlan4Structure() {
       );
       segS = f1 + cwRampL;
     });
-    traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
+    if (sideTrayEndS === null) traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
     trayGroup.userData.rampAnglesDeg = traySegments.filter(sg => sg.yStart !== sg.yEnd)
       .map(sg => +(Math.atan2(Math.abs(sg.yEnd - sg.yStart), sg.zEnd - sg.zStart) * 180 / Math.PI).toFixed(1));
 
@@ -8320,7 +8326,7 @@ function createAlan4Structure() {
     elbowGeo.rotateZ(Math.PI / 2);
     const elbowMesh = new THREE.Mesh(elbowGeo, flangeSteelMat);
     elbowMesh.position.set(0, trayBottomYNormal + 0.05, 59.80);
-    trayGroup.add(elbowMesh);
+    if (sideTrayEndS === null) trayGroup.add(elbowMesh); // Yan taşıyıcılarda tava betona ulaşmıyor
 
     trussGroup.add(trayGroup);
 
