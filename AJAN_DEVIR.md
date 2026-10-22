@@ -38,9 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: tava rampaları örgü çaprazlarını geçtikten sonra (gerekirse dik) iniyor`
-- **Durum (2026-10-22 11:15):** Rampalar artık çaprazlara değmiyor. Orta ve solda iki rampa 78–88° (neredeyse düşey). Kullanıcı bunun sahada uygulanamayacağını göstermek için görsel istedi: `Gorseller/09_...`, `10_...`.
-- **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
+- **Son commit:** `[Claude] ALAN 2: tavalar kedi yollarının üstünden 250 cm'den geçiyor, kalın çaprazlara travers`
+- **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
 - **Yarım kalan iş:** Yok. `918b5ba`'ya kadar push edildi; sonraki commit'ler yerelde, push için kullanıcı onayı bekleniyor.
@@ -70,6 +69,24 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 14:50 — Claude — Tavalar kedi yollarının üstünden; kalın çaprazlara travers
+- **Kullanıcı isteği:** (Sarı çizimli ekran görüntüsü) "sarı hatla çizdiğim şekilde tava yolunu değiştir, kedi yollarının üstüne gelen yerler 250cm yükseklikte olsun. Tamamını güncelle, tavaların açısını minimumda tutmak istiyoruz. Sen bir de kalın olan çapraz dikmelere travers at."
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - "2. Kedi Yolu Üstünden Geçen Tava Segmentleri" alçak geçiş ve dik rampa aramasının yerine geçti (`trayHitsWeb`, `rampClear`, `steepRamps`, dip eyerleri ve `trayBottomYDip` kaldırıldı).
+    - Her ara kedi yolunda tava, önceki V istasyonundan kedi yolu ±0.80 bölgesine `trayBottomYOverCw = spineR + 2.50` kotuna çıkıyor, düz geçiyor ve sonraki V istasyonunda normal kota iniyor. Rampa iki V istasyonu arasındaki mesafenin tamamı, yani bu kısıtla mümkün olan en düşük açı.
+    - Açılar `trayGroup.userData.rampAnglesDeg`: orta 20.3 / 34.2 / 38.8 / 18.4°; sol 27.5 / 43.7 / 48.5 / 25.1°; sağ 34.8 / 51.9 / 56.5 / 32.0°.
+    - Ara desteklere kedi yolu ±0.80 bölgeleri `noSupportZones` olarak eklendi; rampalardaki destekler yükselen tavaya uzanıyor.
+    - YENİ "3.D. KALIN ÖRGÜ ÇAPRAZLARINA TRAVERS" (`scoreboardTrussWebTraverses`): tava her çapraz çiftinin arasından geçerken çaprazın tava tabanının 7 cm altına geldiği nokta bisection ile bulunuyor. Orada iki çapraz arasına eksenden eksene kutu travers (50 × 80), tava kaidesi (trayW + 2 cm) ve çaprazı saran 2 kelepçe konuyor. V istasyonuna 0.3 m'den yakın olanlar ve s < 1.2 atlanıyor. Her taşıyıcıda 19 travers (orta: normal kotta 0.93 m, kedi yolu üstünde 1.36 m).
+  - `main.js` → `buildScoreboardIntermediateCatwalk()` F) askı rotları: makas eksenine 0.6 m'den yakın askı konmuyor (sağ makas ekseni X = 18'deki ve ortadaki X = 0.5'teki rot tavayı delerdi).
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tava ile tüm makas çubukları arasında boşluk: orta 9.7, sol 1.3, sağ 1.1 cm; çakışma yok.
+  - Tava, travers ve destekler ile kedi yolları, platformlar ve diğer yapılar arasında köşe örneklemeli kontrol: temas yok.
+  - Sağda 2 ara destek çapraza değdiği için daraltıldı. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2: tavalar kedi yollarının üstünden 250 cm'den geçiyor, kalın çaprazlara travers`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_tava_kediyolu_ustu_20261022.js`. Daha düşük açı istenirse rampalar V istasyonlarının ötesine uzatılabilir; o istasyonlarda tava normal kotun üstünde kalır ve ortadaki 68 cm travers oralarda yükselip uzar.
 
 ### 2026-10-22 14:21 — Claude — "Dik tava" yedeği
 - **Kullanıcı isteği:** "bi backup zip al adına dik tava gibi bir not da ilave et devam edelim"

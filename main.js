@@ -7968,7 +7968,6 @@ function createAlan4Structure() {
     const photoFreeTrayY = spineR + (trayW + 2 * photoTrayClear - photoVGapAt0) / photoVGapSlope;
     const trayLift = trayMode === 'travers68' ? photoTraversY - 0.38 : (trayMode === 'traverssiz3' ? photoFreeTrayY - 0.45 : 0);
     const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
-    const trayBottomYDip = spineR + 0.005; // Kedi yolları altı alçak geçiş: tava omurga üst yüzüne oturur
 
     // Tava Malzemeleri
     const trayPerforatedTex = createCableTrayPerforatedTexture();
@@ -8031,61 +8030,30 @@ function createAlan4Structure() {
       }
     }
 
-    // Kedi yolları altında alçak geçiş havuzu taşıyıcı eyerleri (ara kedi yolu merkezlerinde)
-    const dipSaddleGeo = new THREE.BoxGeometry(trayW + 0.06, 0.04, 0.25);
-    SB_INTERMEDIATE_CW_S.forEach(dipZ => {
-      const dipSaddle = new THREE.Mesh(dipSaddleGeo, flangeSteelMat);
-      dipSaddle.position.set(0, trayBottomYDip - 0.02, dipZ);
-      trayGroup.add(dipSaddle);
-    });
-
-    // 2. Battı-Çıktı (Kot Düşürmeli) Tava Segmentleri
-    // Her ara kedi yolu altında ±0.80m alçak geçiş. Kot geçiş (rampa) boyu: orta ve sol taşıyıcıda tava daha
-    // yüksekten indiği için en fazla 1.20m, sağda 0.60m; rampa komşu V istasyonuna 15cm'den fazla yaklaşmaz
-    // (tava V kollarının arasından yalnızca normal kotta geçebilir).
-    // Kullanıcı İsteği (2026-10-22): "tavalar çapraz dikmelerle çakışıyor, inişi bu geçitten sonra yap. Tavalar
-    // daha dik inecek biliyorum ama olmayacağını belirtmek için bu görsele de ihtiyacım var." Her rampa, örgü
-    // çaprazlarına değmeyen en uzun (en yumuşak) boyda seçilir; gerekirse neredeyse düşey iner.
-    const rampL = usePhotoV ? 1.20 : 0.60;
-    const dipHalf = 0.80, rampVClear = 0.15;
-    // s kesitinde tava dikdörtgeni [±trayW/2] x [yb, yb + trayH] bir örgü çaprazının kesitine değiyor mu
-    const trayHitsWeb = (s, yb) => webSegments.some(({ a, b, r }) => {
-      if ((s - a.z) * (s - b.z) > 0) return false;
-      const t = (s - a.z) / (b.z - a.z);
-      const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t;
-      const rr = r / Math.max(0.2, Math.abs(b.z - a.z) / a.distanceTo(b)); // eğik kesit elipsi (güvenli taraf)
-      return y > yb - rr && y < yb + trayH + rr && Math.abs(x) < trayW / 2 + rr;
-    });
-    const rampClear = (s0, y0, s1, y1) => {
-      for (let s = s0; s <= s1 + 1e-9; s += 0.02) if (trayHitsWeb(s, y0 + (y1 - y0) * (s - s0) / (s1 - s0))) return false;
-      return true;
-    };
-    const steepRamps = []; // çaprazdan kaçmak için 30 cm'den kısa (çok dik) kalan rampalar
+    // 2. Kedi Yolu Üstünden Geçen Tava Segmentleri
+    // Kullanıcı İsteği (2026-10-22, sarı çizim): tava kedi yolunun altından değil üstünden geçer; kedi yolu
+    // üstünde taşıyıcı boru üstünden 250 cm yükseklikte. Açıyı en düşük tutmak için kedi yolunun iki yanındaki
+    // V istasyonları arasındaki mesafenin tamamı rampa; V istasyonlarında tava normal kotta kalır (travers / V
+    // kolları arası açıklık korunur). Kedi yolu üstünde ±0.80m düz bölüm.
+    const cwFlatHalf = 0.80;
+    const trayBottomYOverCw = spineR + 2.50;
     const traySegments = [];
     let segS = 0.0;
     SB_INTERMEDIATE_CW_S.forEach(cwS => {
-      const f0 = cwS - dipHalf, f1 = cwS + dipHalf;
+      const f0 = cwS - cwFlatHalf, f1 = cwS + cwFlatHalf;
       const prevV = Math.max(...stations.filter(v => v < f0));
       const nextV = Math.min(...stations.filter(v => v > f1));
-      let r0 = 0.05, r1 = 0.05;
-      for (let L = Math.min(rampL, f0 - (prevV + rampVClear)); L >= 0.05; L -= 0.05) {
-        if (rampClear(f0 - L, trayBottomYNormal, f0, trayBottomYDip)) { r0 = L; break; }
-      }
-      for (let L = Math.min(rampL, (nextV - rampVClear) - f1); L >= 0.05; L -= 0.05) {
-        if (rampClear(f1, trayBottomYDip, f1 + L, trayBottomYNormal)) { r1 = L; break; }
-      }
-      if (r0 < 0.30) steepRamps.push(+(f0 - r0).toFixed(2));
-      if (r1 < 0.30) steepRamps.push(+(f1 + r1).toFixed(2));
       traySegments.push(
-        { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: f0 - r0 },
-        { yStart: trayBottomYNormal, zStart: f0 - r0, yEnd: trayBottomYDip, zEnd: f0 }, // Battı (kedi yolu inişi)
-        { yStart: trayBottomYDip, zStart: f0, yEnd: trayBottomYDip, zEnd: f1 },          // Kedi yolu altı alçak geçiş
-        { yStart: trayBottomYDip, zStart: f1, yEnd: trayBottomYNormal, zEnd: f1 + r1 }  // Çıktı (normal kota dönüş)
+        { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: prevV },
+        { yStart: trayBottomYNormal, zStart: prevV, yEnd: trayBottomYOverCw, zEnd: f0 },    // Kedi yoluna çıkış
+        { yStart: trayBottomYOverCw, zStart: f0, yEnd: trayBottomYOverCw, zEnd: f1 },       // Kedi yolu üstü (250 cm)
+        { yStart: trayBottomYOverCw, zStart: f1, yEnd: trayBottomYNormal, zEnd: nextV }     // Normal kota iniş
       );
-      segS = f1 + r1;
+      segS = nextV;
     });
     traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
-    trayGroup.userData.steepRamps = steepRamps;
+    trayGroup.userData.rampAnglesDeg = traySegments.filter(sg => sg.yStart !== sg.yEnd)
+      .map(sg => +(Math.atan2(Math.abs(sg.yEnd - sg.yStart), sg.zEnd - sg.zStart) * 180 / Math.PI).toFixed(1));
 
     traySegments.forEach(seg => {
       const dy = seg.yEnd - seg.yStart;
@@ -8217,8 +8185,61 @@ function createAlan4Structure() {
       fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW, obstacles: webSegments,
       // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
       // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
-      noSupportZones: xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]]
+      // Kedi yolu geçişlerinde (±0.80) yürüme yolunu kesmemek için omurgadan tavaya çıkan destek konmaz
+      noSupportZones: (xOffset === 0 ? [[0, 1.2]] : [[0, 1.2], [19.35, 21.40], [22.35, 24.40]])
+        .concat(SB_INTERMEDIATE_CW_S.map(c => [c - cwFlatHalf, c + cwFlatHalf]))
     });
+
+    // 3.D. KALIN ÖRGÜ ÇAPRAZLARINA TRAVERS (Kullanıcı İsteği 2026-10-22: "kalın olan çapraz dikmelere travers at")
+    // Tava bir çapraz çiftinin (sol + sağ) arasından geçerken çaprazların tava tabanının 7cm altına (istasyon
+    // traversiyle aynı ofset) indiği noktada iki çapraz arasına kutu profil travers + kaide + çapraz kelepçeleri.
+    {
+      const trayBottomAtS = (s) => {
+        for (const seg of traySegments) {
+          if (s >= seg.zStart - 1e-6 && s <= seg.zEnd + 1e-6) {
+            return seg.yStart + (seg.yEnd - seg.yStart) * (s - seg.zStart) / Math.max(1e-6, seg.zEnd - seg.zStart);
+          }
+        }
+        return null;
+      };
+      const webTraversGroup = new THREE.Group();
+      webTraversGroup.name = 'scoreboardTrussWebTraverses';
+      const beamDrop = 0.07;
+      webSegments.filter(w => w.a.x < 0).forEach(({ a, b, r }) => {
+        const f = t => {
+          const tb = trayBottomAtS(a.z + (b.z - a.z) * t);
+          return tb === null ? NaN : (a.y + (b.y - a.y) * t) - (tb - beamDrop);
+        };
+        let tHit = null, prev = f(0);
+        for (let k = 1; k <= 200 && tHit === null; k++) {
+          const v = f(k / 200);
+          if (prev <= 0 && v > 0) {
+            let lo = (k - 1) / 200, hi = k / 200;
+            for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (f(mid) > 0) hi = mid; else lo = mid; }
+            tHit = (lo + hi) / 2;
+          }
+          prev = v;
+        }
+        if (tHit === null) return;
+        const p = a.clone().lerp(b, tHit);
+        if (p.z < 1.2 || p.z > 59.5 || stations.some(v => Math.abs(p.z - v) < 0.3)) return;
+        const beamLen = 2 * Math.abs(p.x);
+        const beam = new THREE.Mesh(new THREE.BoxGeometry(beamLen, 0.05, 0.08), flangeSteelMat);
+        beam.position.set(0, p.y, p.z);
+        webTraversGroup.add(beam);
+        const ped = new THREE.Mesh(new THREE.BoxGeometry(trayW + 0.02, 0.03, 0.10), flangeSteelMat);
+        ped.position.set(0, p.y + 0.04, p.z);
+        webTraversGroup.add(ped);
+        const dir = new THREE.Vector3().subVectors(b, a).normalize();
+        [-1, 1].forEach(sx => {
+          const clamp = new THREE.Mesh(new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.10, 20), sbDarkJointMat);
+          clamp.position.set(sx * Math.abs(p.x), p.y, p.z);
+          clamp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(sx * Math.abs(dir.x), dir.y, dir.z));
+          webTraversGroup.add(clamp);
+        });
+      });
+      trayGroup.add(webTraversGroup);
+    }
 
     // 3.C. TAVA YÜKSEKLİK ETİKETİ (Kullanıcı İsteği: "en yakın taşıyıcıya yakın bir yere havada duran bir label ile
     // tavanın yüksekliğini yaz. Label bakılan açıya göre yön değiştirsin"): ilk ara desteğin üstünde, kameraya dönen
@@ -8457,6 +8478,8 @@ function createAlan4Structure() {
     // F) Çatı Askı Rotları (Her 3.5m'de bir çatı strüktürüne yükselen askı çubukları)
     const hangerRodGeo = new THREE.CylinderGeometry(0.014, 0.014, 2.50, 16);
     for (let x = -cwLength / 2 + 2.0; x <= cwLength / 2 - 2.0; x += 3.5) {
+      // Makas eksenine 0.6m'den yakın askı konmaz: tava kedi yolunun üstünden geçer, orayı makas eyeri taşır
+      if (roofCarrierXLocs.some(rx => Math.abs(x - rx) < 0.6)) continue;
       const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, cwWidth + 0.30), darkSteelMat);
       crossBeam.position.set(x, cwWalkY - 0.12, cwCenterZ);
       crossBeam.castShadow = true;
