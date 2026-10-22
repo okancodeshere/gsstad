@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: V dikmeleri kaldırıldı, üç taşıyıcıda tava orta taşıyıcı kotunda (153 cm)`
+- **Son commit:** `[Claude] ALAN 2: V dikmeleri geri geldi, V görünümlü ara tava destekleri kaldırıldı`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,22 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 15:50 — Claude — Düzeltme: V dikmeleri geri, ara tava destekleri kaldırıldı
+- **Kullanıcı isteği:** "yanlış şeyleri kaldırdın, ben V makas derken tava taşıyıcısını diyordum, binanın kendisine ait olan dikmeleri değil". 15:35 kaydındaki V dikmesi silme işlemi YANLIŞ ANLAMAYDI ve geri alındı.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - İstasyon V kolları (Ø111) geri eklendi. Ortadaki taşıyıcının istasyon traversleri geri geldi (`hasVLegs` koşulu kaldırıldı).
+    - Tava kotu, 15:35'teki gibi üç taşıyıcıda 153 cm kaldı (kullanıcının "tüm tavaları ortadaki yüksekliğe çıkar" isteği geçerli).
+    - `addTrayIntermediateSupports` çağrısında `fractions: []`: çember + 2 kol + tabla ara destekleri (V görünümlü tava taşıyıcıları) ALAN 2'de artık yok. Fonksiyon ALAN 1-3 / ALAN 4'te değişmedi.
+    - Tavayı ALAN 2'de taşıyanlar: her taşıyıcıda 19 kalın çapraz traversi ve ortada 10 istasyon traversi. Yan taşıyıcılarda istasyon traversi yok (önceki `traverssiz3` kararı).
+    - Etiket yeri: ara destek olmadığında s = 2.0'dan başlayan 25 cm adımlı adaylardan seçiliyor (şu an s = 2.0).
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Ø111 dikmeler 20 adet; ara destek 0.
+  - Tava ile çubuklar arasında boşluk: orta ve sol 9.7, sağ 19.7 cm; çakışma yok.
+  - Diğer sistemlerle temas yok.
+- **Commit:** `[Claude] ALAN 2: V dikmeleri geri geldi, V görünümlü ara tava destekleri kaldırıldı`
 
 ### 2026-10-22 15:35 — Claude — V dikmeleri kaldırıldı, tüm tavalar orta kotta
 - **Kullanıcı isteği:** "dikeyde alttaki taşıyıcıdan çıkan V dikmeleri kaldır, tüm tavaları ortadaki tava yüksekliğine çıkar"

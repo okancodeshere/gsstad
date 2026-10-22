@@ -7880,9 +7880,23 @@ function createAlan4Structure() {
       collar.position.set(0, 0, zSt);
       trussGroup.add(collar);
 
-      // V dikmeleri (omurgadan aşıklara düşey düzlemdeki kollar) kullanıcı isteğiyle kaldırıldı (2026-10-22:
-      // "dikeyde alttaki taşıyıcıdan çıkan V dikmeleri kaldır"). İstasyon geometrisi (photoVLegAxisX) örgü
-      // çaprazlarının ve aşıkların konumu için kullanılmaya devam ediyor.
+      // Sol V-Kolu (Alt omurga kenarından sol üst aşığa)
+      const leftV = createPipeHelper(
+        new THREE.Vector3(-armBaseX, spineR, zSt),
+        new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
+        vStrutRadius,
+        pipeWhiteMat
+      );
+      trussGroup.add(leftV);
+
+      // Sağ V-Kolu (Alt omurga kenarından sağ üst aşığa)
+      const rightV = createPipeHelper(
+        new THREE.Vector3(armBaseX, spineR, zSt),
+        new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
+        vStrutRadius,
+        pipeWhiteMat
+      );
+      trussGroup.add(rightV);
 
       // Üst Yatay Gergi Borusu
       const topTie = createPipeHelper(
@@ -8005,10 +8019,7 @@ function createAlan4Structure() {
 
     for (const zSt of stations) {
       const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
-      // V dikmeleri kaldırıldığı için istasyon traversi (iki V kolu arası) artık yok; tava kalın çapraz
-      // traversleri (3.D) ve ara desteklerle taşınır.
-      const hasVLegs = false;
-      if (hasVLegs && !isNearDip && trayMode !== 'traverssiz3') {
+      if (!isNearDip && trayMode !== 'traverssiz3') {
         // Rampa üstündeki istasyonda tava yüksekte: travers o kota çıkar ve kollar arası net açıklık kadar uzar
         const dLift = trayBottomAtProfile(zSt) - trayBottomYNormal;
         const beamY = 0.38 + trayLift + dLift;
@@ -8183,7 +8194,10 @@ function createAlan4Structure() {
     const supportGroup = addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
       carrierR: spineR, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
-      fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW, obstacles: webSegments,
+      // Kullanıcı İsteği (2026-10-22): "V makas derken tava taşıyıcısını diyordum" → çember + 2 kol + tabla ara
+      // destekleri (V görünümlü tava taşıyıcıları) kaldırıldı; tava kalın çapraz traversleri (3.D) ve
+      // ortadaki taşıyıcıda istasyon traversleriyle taşınır. Fonksiyon diğer alanlarda kullanılmaya devam ediyor.
+      fractions: [], trayW, obstacles: webSegments,
       // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
       // Matsing ofset montajlarının kelepçe bölgeleri (s ≈ 19.45-21.30 ve 22.45-24.30)
       // Kedi yolu geçişlerinde (±0.80) yürüme yolunu kesmemek için omurgadan tavaya çıkan destek konmaz
@@ -8247,9 +8261,11 @@ function createAlan4Structure() {
     // Sprite. Yükseklik, sahadan ölçümdeki gibi taşıyıcı boru üst yüzünden tava tabanına.
     {
       // Gösterge çizgisi üst düğüm gergileri / zikzakla kesişmesin: üst düğüme 0.5m'den uzak ilk ara destek
-      const supportSs = supportGroup.children
+      // Etiket adayları: ara destekler (varsa); yoksa makas başından itibaren 25cm adımlı noktalar
+      let supportSs = supportGroup.children
         .filter(c => c.geometry.type === 'BoxGeometry' && c.geometry.parameters.height === 0.03 && c.geometry.parameters.depth === 0.10)
         .map(c => c.position.z).sort((a, b) => a - b);
+      if (!supportSs.length) supportSs = Array.from({ length: 40 }, (_, i) => 2.0 + i * 0.25);
       const zigzagMids = topNodes.slice(1).map((n, k) => (n + topNodes[k]) / 2); // zikzak X = 0'ı burada keser
       const leaderClear = s => topNodes.every(n => Math.abs(s - n) > 0.3) && zigzagMids.every(z => Math.abs(s - z) > 0.3);
       // Destek bir üst düğüm / zikzak kesişimine denk geliyorsa etiket 35cm kaydırılır (tava sürekli, çizgi yine tavaya iner)
