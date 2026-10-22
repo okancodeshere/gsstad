@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: tavalar kedi yollarının üstünden 250 cm'den geçiyor, kalın çaprazlara travers`
+- **Son commit:** `[Claude] ALAN 2: kedi yolu üstü tava geçişleri simetrik ve yatık (iki yanda 5.70 m rampa)`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 15:15 — Claude — Kedi yolu üstü tava geçişleri simetrik ve yatık
+- **Kullanıcı isteği:** (Ekran görüntüsü) "daha düz bir şekilde yapar mısın, simetrik olsun, biraz böyle yamuk oldu"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - YENİ `trayBottomAtProfile(s)`, `trayBottomYNormal`'ın hemen altında: kedi yolu merkezinden ±0.80 düz bölüm (`trayBottomYOverCw = spineR + 2.50`); iki yanda eşit `cwRampL = 5.70` m doğrusal rampa; dışında normal kot.
+    - Tava segmentleri bu profile göre üretiliyor. Eskiden rampalar komşu V istasyonlarında bitiyordu (asimetrik).
+    - Rampa V istasyonlarının üstünden geçiyor. Orta taşıyıcıda o istasyonlardaki travers tavanın o noktadaki kotuna çıkıyor ve uzunluğu kollar arası net açıklık oluyor: s 24.31 / 29.94 / 41.50 / 47.20'de 0.91 / 1.00 / 1.01 / 0.89 m. Kaide, çeneler ve V kelepçeleri de aynı kotta.
+- **Sonuç:** Tüm rampalar aynı açıda: orta 9.6°, sol 13.4°, sağ 17.6° (eskiden 18–57°).
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tava ile makas çubukları arasında çakışma yok (boşluk orta 9.7, sol 1.3, sağ 1.1 cm).
+  - Tava, travers ve destekler ile diğer sistemler arasında temas yok.
+  - Daraltılan ara destek: sol 1, sağ 2. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2: kedi yolu üstü tava geçişleri simetrik ve yatık (iki yanda 5.70 m rampa)`
 
 ### 2026-10-22 14:50 — Claude — Tavalar kedi yollarının üstünden; kalın çaprazlara travers
 - **Kullanıcı isteği:** (Sarı çizimli ekran görüntüsü) "sarı hatla çizdiğim şekilde tava yolunu değiştir, kedi yollarının üstüne gelen yerler 250cm yükseklikte olsun. Tamamını güncelle, tavaların açısını minimumda tutmak istiyoruz. Sen bir de kalın olan çapraz dikmelere travers at."
