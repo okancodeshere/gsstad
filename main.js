@@ -8019,25 +8019,29 @@ function createAlan4Structure() {
     const photoLegTilt = Math.atan(photoVGapSlope / 2);
     const legClampGeo = new THREE.CylinderGeometry(photoVLegR + 0.012, photoVLegR + 0.012, 0.09, 16);
 
+    // Yan taşıyıcılarda tava skorbord tarafında yok (bkz. 2. bölüm); travers yalnızca tavanın geçtiği istasyonlarda
+    const sideTrayStartS = xOffset !== 0 ? 19.30 : 0.0;
     for (const zSt of stations) {
       const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
-      if (!isNearDip && trayMode !== 'traverssiz3') {
-        // Rampa üstündeki istasyonda tava yüksekte: travers o kota çıkar ve kollar arası net açıklık kadar uzar
-        const dLift = trayBottomAtProfile(zSt) - trayBottomYNormal;
-        const beamY = 0.38 + trayLift + dLift;
-        const beamLen = dLift > 0.001 ? photoVGapSlope * (beamY - spineR) + photoVGapAt0 : null;
-        const cBeam = new THREE.Mesh(beamLen ? new THREE.BoxGeometry(beamLen, 0.05, 0.08) : crossBeamGeo, flangeSteelMat);
+      // Kullanıcı İsteği (2026-10-22): "orta taşıyıcılara (V dikmeleri) travers ... tekrar tüm hatlarda ekle" →
+      // istasyon traversi üç taşıyıcıda da (eskiden yalnızca ortada; yan taşıyıcılar 'traverssiz3' idi).
+      if (!isNearDip && zSt >= sideTrayStartS) {
+        // Travers tavanın o istasyondaki kotunda; boyu V kolları arası net açıklık (ortada normal kotta 68 cm)
+        const tbSt = trayBottomAtProfile(zSt);
+        const beamY = tbSt - 0.07;
+        const beamLen = photoVGapSlope * (beamY - spineR) + photoVGapAt0;
+        const cBeam = new THREE.Mesh(Math.abs(beamLen - photoTraversLen) < 0.002 ? crossBeamGeo : new THREE.BoxGeometry(beamLen, 0.05, 0.08), flangeSteelMat);
         cBeam.position.set(0, beamY, zSt);
         // cBeam.castShadow = true; // disabled for perf
         trayGroup.add(cBeam);
 
-        const ped = new THREE.Mesh(pedestalGeo, flangeSteelMat);
-        ped.position.set(0, 0.42 + trayLift + dLift, zSt);
+        const ped = new THREE.Mesh(trayW === 0.50 ? pedestalGeo : new THREE.BoxGeometry(trayW + 0.02, 0.03, 0.10), flangeSteelMat);
+        ped.position.set(0, tbSt - 0.03, zSt);
         trayGroup.add(ped);
 
-        [-0.26, 0.26].forEach(hx => {
+        [-1, 1].map(sx => sx * (trayW / 2 + 0.01)).forEach(hx => {
           const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
-          hClamp.position.set(hx, 0.445 + trayLift + dLift, zSt);
+          hClamp.position.set(hx, tbSt - 0.005, zSt);
           trayGroup.add(hClamp);
         });
 
@@ -8055,8 +8059,7 @@ function createAlan4Structure() {
     // 2. Kedi Yolu Üstünden Geçen Tava Segmentleri (profil: trayBottomAtProfile, kedi yoluna göre simetrik)
     // Kullanıcı İsteği (2026-10-22, düzeltilmiş): yan taşıyıcılarda kablolar beton tarafından gelir; beton
     // tarafındaki tava kalır, skorbord tarafındaki silinir. Tava ilk Matsing montajının (taslak-v2'de
-    // s ≈ 19.45-21.30) hemen önünde, s = 19.30'da başlar.
-    const sideTrayStartS = xOffset !== 0 ? 19.30 : 0.0;
+    // s ≈ 19.45-21.30) hemen önünde, s = sideTrayStartS = 19.30'da başlar (istasyon traversi bölümünde tanımlı).
     const traySegments = [];
     let segS = 0.0;
     SB_INTERMEDIATE_CW_S.forEach(cwS => {

@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 sol taşıyıcı: 500 mm tava tüm hat boyunca 250 cm'de`
+- **Son commit:** `[Claude] ALAN 2: V dikmesi istasyon traversleri üç taşıyıcıda`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 16:50 — Claude — V dikmesi traversleri üç taşıyıcıda
+- **Kullanıcı isteği:** "yanlışlıkla sildiğin orta taşıyıcılara neden travers eklemedin, tekrar tüm hatlarda ekle". "Orta taşıyıcılar" = istasyonlardaki V dikmeleri olarak alındı (kullanıcı onları daha önce "ortadaki dikmelerimiz" diye adlandırmıştı). Yan taşıyıcılarda istasyon traversi hiç yoktu (`traverssiz3`).
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` istasyon traversi döngüsü:
+    - `trayMode !== 'traverssiz3'` koşulu kaldırıldı; tavanın geçtiği her istasyonda travers (`zSt >= sideTrayStartS`). `sideTrayStartS` bu döngünün önüne taşındı.
+    - Travers kotu `trayBottomAtProfile(zSt) − 0.07`; boyu o kottaki V kolları arası net açıklık (ortada normal kotta 68 cm).
+    - Kaide `trayW + 0.02` (300 mm tavada 0.32), tava çeneleri ±(trayW/2 + 0.01). V kolu kelepçeleri aynı kotta.
+- **Sonuç:**
+  - Orta: 10 travers (normal kotta 68 cm; rampa üstündekiler 0.89–1.01 m).
+  - Sol: 6 travers (24.31 … 53.02), hepsi 250 cm kotunda, 1.10 m.
+  - Sağ: 6 travers (0.68–1.01 m).
+- **Doğrulama:** `npm run build` hatasız. V dikmeleri 20'şer adet. Tava ve traverslerin diğer sistemlerle teması yok.
+- **Commit:** `[Claude] ALAN 2: V dikmesi istasyon traversleri üç taşıyıcıda`
 
 ### 2026-10-22 16:35 — Claude — Sol taşıyıcı tavası tüm hat boyunca 250 cm
 - **Kullanıcı isteği:** "köşede olan 50cm'lik tava var ya onu tüm hat boyunca 250cm yükseklikten götür, diğer ikisine dokunma". 500 mm tava ortada ve solda var; "köşedeki" sol taşıyıcı (X = −18) olarak alındı ve kullanıcıya bildirildi.
