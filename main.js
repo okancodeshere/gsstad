@@ -7819,8 +7819,10 @@ function createAlan4Structure() {
     const trussGroup = new THREE.Group();
     trussGroup.name = trussName;
 
-    // 9.1. Ana Taşıyıcı Omurga Borusu (Ø350mm / R = 0.175m)
-    const spineGeo = new THREE.CylinderGeometry(0.175, 0.175, trussLen, 36);
+    // 9.1. Ana Taşıyıcı Omurga Borusu. Kullanıcı sahada çevre ölçtü (2026-10-22): alt taşıyıcı 132 cm → Ø420mm
+    // (eskiden Ø350mm). Dikme çevresi 35 cm → Ø111mm, örgü çaprazı çevresi 70 cm → Ø223mm.
+    const spineR = 1.32 / Math.PI / 2; // ≈ 0.210m
+    const spineGeo = new THREE.CylinderGeometry(spineR, spineR, trussLen, 36);
     spineGeo.rotateX(Math.PI / 2);
     const spineMesh = new THREE.Mesh(spineGeo, pipeWhiteMat);
     spineMesh.position.set(0, 0, trussLen / 2);
@@ -7832,8 +7834,8 @@ function createAlan4Structure() {
     // Alan 1-3 Standardı: Tepe yüksekliği Y = 2.73m, Tepe açıklığı ±1.52m (~3.04m toplam tepe genişliği)
     // Böylece kedi yolunun içinden geçen yürüme alanı 2.33m tavan yüksekliğiyle tamamen konforlu ve kullanılabilir olur
     // Kullanıcı İsteği (2026-10-22): üçgen kirişin toplam iç yüksekliği 300 cm = omurga borusu üst yüzünden
-    // (R 0.175) üst aşık alt yüzüne (R 0.08). Aşık ekseni Y = 0.175 + 3.00 + 0.08 = 3.255m (eskiden 2.73m).
-    const chordHeightH = 0.175 + 3.00 + 0.08;
+    // (spineR) üst aşık alt yüzüne (R 0.08). Aşık ekseni Y = spineR + 3.00 + 0.08 (eskiden 2.73m).
+    const chordHeightH = spineR + 3.00 + 0.08;
     // Ortadaki taşıyıcı (X = 0): V kolları sahadan ölçülen açıya göre (Kullanıcı İsteği, 2026-10-21 fotoğrafı).
     // Kollar arası net açıklık / omurga üstünden yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152.
     // Doğrusal uyum: açıklık = 0.438 h + 3.9 cm. 500mm tava + iki yanda 9'ar cm bağlantı payı = 68 cm travers.
@@ -7842,12 +7844,12 @@ function createAlan4Structure() {
     // Sağ taşıyıcı (X = +18): aynı düzen, ancak 300mm genişlik x 250mm yükseklik tava (Kullanıcı İsteği, 2026-10-21).
     const trayMode = xOffset === 0 ? 'travers68' : 'traverssiz3';
     const usePhotoV = trayMode !== 'standart';
-    // Dikme (V kolu) Ø35mm, örgü çaprazları Ø70mm (kullanıcı düzeltmesi 2026-10-22)
-    const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.0175;
+    // Dikme (V kolu) çevresi 35 cm → R ≈ 0.0557m (kullanıcı saha ölçüsü 2026-10-22)
+    const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.35 / Math.PI / 2;
     const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
     const photoTraversLen = 0.68;
-    const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
-    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Ölçülen V: ±0.76m (eski Alan 1 standardı: ±1.52m)
+    const photoTraversY = spineR + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // omurga üstünden ≈ 1.46m
+    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - spineR) : 1.52; // Ölçülen V: ±0.76m (eski Alan 1 standardı: ±1.52m)
     const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
     chordGeo.rotateX(Math.PI / 2);
 
@@ -7865,7 +7867,7 @@ function createAlan4Structure() {
     const vStrutRadius = photoVLegR; // Ø35mm dikme (V kolu); eskiden Ø140mm (Alan 1 standardı)
     const topTieRadius = 0.05; // Ø100mm üst gergi borusu
     const armBaseX = usePhotoV ? photoVLegAxisX(0) : 0.14; // Alt omurga üzerindeki montaj ayrımı (orta ±0.09m, yanlar ±0.14m)
-    const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
+    const collarGeo = new THREE.CylinderGeometry(spineR + 0.015, spineR + 0.015, 0.20, 24);
     collarGeo.rotateX(Math.PI / 2);
 
     // İstasyonlar (V-strut + tava travers): saha DXF'indeki gerçek konumlar (ortalama aks aralığı ≈ 5.72m),
@@ -7880,7 +7882,7 @@ function createAlan4Structure() {
 
       // Sol V-Kolu (Alt omurga kenarından sol üst aşığa)
       const leftV = createPipeHelper(
-        new THREE.Vector3(-armBaseX, 0.175, zSt),
+        new THREE.Vector3(-armBaseX, spineR, zSt),
         new THREE.Vector3(-chordOffsetW, chordHeightH, zSt),
         vStrutRadius,
         pipeWhiteMat
@@ -7889,7 +7891,7 @@ function createAlan4Structure() {
 
       // Sağ V-Kolu (Alt omurga kenarından sağ üst aşığa)
       const rightV = createPipeHelper(
-        new THREE.Vector3(armBaseX, 0.175, zSt),
+        new THREE.Vector3(armBaseX, spineR, zSt),
         new THREE.Vector3(chordOffsetW, chordHeightH, zSt),
         vStrutRadius,
         pipeWhiteMat
@@ -7913,7 +7915,11 @@ function createAlan4Structure() {
     // iki yanda çapraz (yan yüzlerde W örgü); her üst düğümde enine gergi; üst düzlemde aşıklar arası zikzak.
     // V kolları (istasyon) kullanıcı kararıyla makasa dik düzlemde kalır. Çaprazlar V ile aynı açıklık-yükseklik
     // doğrusunu izler (omurga üstü ±armBaseX → aşık ±chordOffsetW).
-    const webRadius = 0.035; // Ø70mm örgü çaprazı (dikmenin 2 katı çap, kullanıcı tarifi)
+    const webRadius = 0.70 / Math.PI / 2; // Örgü çaprazı çevresi 70 cm → R ≈ 0.111m (kullanıcı saha ölçüsü)
+    // Çapraz dikmeden kalın olduğu için ekseni dışa kaydırılır: iç yüzü dikmenin iç yüzüyle aynı doğruda kalır,
+    // böylece ölçülen net açıklık (ve tava boşluğu) çaprazlarda da geçerli olur.
+    // +1.3cm: çapraz makas boyunca da eğik olduğundan yatay kesiti dikmeninkinden geniştir
+    const webOut = (webRadius - photoVLegR) / Math.cos(Math.atan(photoVGapSlope / 2)) + 0.013;
     const topNodes = [];
     const webSegments = []; // Ara desteklerin çakışma kontrolü için
     const addWeb = (a, b) => {
@@ -7927,9 +7933,9 @@ function createAlan4Structure() {
       topNodes.push(m);
       const sNext = stations[i + 1];
       [-1, 1].forEach(sx => {
-        addWeb(new THREE.Vector3(sx * armBaseX, 0.175, sSt), new THREE.Vector3(sx * chordOffsetW, chordHeightH, m));
+        addWeb(new THREE.Vector3(sx * (armBaseX + webOut), spineR, sSt), new THREE.Vector3(sx * (chordOffsetW + webOut), chordHeightH, m));
         if (sNext !== undefined) {
-          addWeb(new THREE.Vector3(sx * armBaseX, 0.175, sNext), new THREE.Vector3(sx * chordOffsetW, chordHeightH, m));
+          addWeb(new THREE.Vector3(sx * (armBaseX + webOut), spineR, sNext), new THREE.Vector3(sx * (chordOffsetW + webOut), chordHeightH, m));
         }
       });
       // Ara üst düğüm enine gergisi
@@ -7959,10 +7965,10 @@ function createAlan4Structure() {
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
     const photoTrayClear = 0.02;
-    const photoFreeTrayY = 0.175 + (trayW + 2 * photoTrayClear - photoVGapAt0) / photoVGapSlope;
+    const photoFreeTrayY = spineR + (trayW + 2 * photoTrayClear - photoVGapAt0) / photoVGapSlope;
     const trayLift = trayMode === 'travers68' ? photoTraversY - 0.38 : (trayMode === 'traverssiz3' ? photoFreeTrayY - 0.45 : 0);
     const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
-    const trayBottomYDip = 0.18;    // Kedi yolları altı kot düşürülmüş alçak havuz kotu (kedi yolunun altından rahatça geçer)
+    const trayBottomYDip = spineR + 0.005; // Kedi yolları altı alçak geçiş: tava omurga üst yüzüne oturur
 
     // Tava Malzemeleri
     const trayPerforatedTex = createCableTrayPerforatedTexture();
@@ -8018,7 +8024,7 @@ function createAlan4Structure() {
           [-1, 1].forEach(sx => {
             const legClamp = new THREE.Mesh(legClampGeo, sbDarkJointMat);
             legClamp.rotation.z = -sx * photoLegTilt;
-            legClamp.position.set(sx * photoVLegAxisX(photoTraversY - 0.175), photoTraversY, zSt);
+            legClamp.position.set(sx * photoVLegAxisX(photoTraversY - spineR), photoTraversY, zSt);
             trayGroup.add(legClamp);
           });
         }
@@ -8182,7 +8188,7 @@ function createAlan4Structure() {
     // Kedi yolları altındaki alçak geçiş (dip) bölgesine destek konmaz; orayı mevcut dip eyerleri taşır.
     // Uçlarda V olmadığından makas başı (s = 0) ve beton tarafı (s = 60) açıklıkları da desteklenir
     const supportGroup = addTrayIntermediateSupports(trayGroup, [0, ...stations, trussLen], traySegments, {
-      carrierR: 0.175, trayNormalY: trayBottomYNormal,
+      carrierR: spineR, trayNormalY: trayBottomYNormal,
       mat: flangeSteelMat, clampMat: sbDarkJointMat, name: 'scoreboardTrussTrayIntermediateSupports',
       fractions: trayMode === 'traverssiz3' ? [1 / 4, 2 / 4, 3 / 4] : [1 / 3, 2 / 3], trayW, obstacles: webSegments,
       // s < 1.2: üst kedi yolu kablo sistemi / taşıyıcı kule. Yan taşıyıcılarda taslak-v2'deki omurgaya asılı
@@ -8204,7 +8210,7 @@ function createAlan4Structure() {
       const firstSupportS = supportSs.map(s => leaderClear(s) ? s : (leaderClear(s + 0.35) ? s + 0.35 : null))
         .find(s => s !== null) ?? supportSs[0];
       const sideLabel = xOffset === 0 ? 'ORTA' : (xOffset < 0 ? 'SOL' : 'SAĞ');
-      const heightCm = Math.round((trayBottomYNormal - 0.175) * 100);
+      const heightCm = Math.round((trayBottomYNormal - spineR) * 100);
       const canvas = document.createElement('canvas');
       canvas.width = 640;
       canvas.height = 260;
@@ -8408,7 +8414,7 @@ function createAlan4Structure() {
       cwGroup.add(saddleBeam);
 
       // Omurgayı (Ø350mm) saran ağır çelik montaj bileziği / flanşı
-      const clampCollarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.25, 24);
+      const clampCollarGeo = new THREE.CylinderGeometry(0.225, 0.225, 0.25, 24); // Ø420 omurgayı saran bilezik
       clampCollarGeo.rotateX(Math.PI / 2);
       const clampCollar = new THREE.Mesh(clampCollarGeo, flangeSteelMat);
       clampCollar.position.set(rx, spineYAtStation, cwCenterZ);
@@ -14266,7 +14272,7 @@ function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, drop
   const slopeAngleRad = (targetArea === 'alan4') ? THREE.MathUtils.degToRad(5.0) : Math.asin(6.0 / 45.0);
 
   // 1. ÇATI TAŞIYICISINA SARAN 2 ADET AĞIR HİZMET KELEPÇESİ (Z = -0.4048m ve Z = +0.4048m)
-  const carrierRadius = (targetArea === 'alan4') ? 0.175 : 0.14;
+  const carrierRadius = (targetArea === 'alan4') ? 0.21 : 0.14; // ALAN 2 omurgası Ø420 (saha çevre ölçüsü 132 cm)
   const carrierClampR = carrierRadius + 0.014;
   const carrierClampW = 0.16;
 

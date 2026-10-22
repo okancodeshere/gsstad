@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 taşıyıcıları: dikme Ø35, örgü çaprazları Ø70 (kullanıcı düzeltmesi)`
+- **Son commit:** `[Claude] ALAN 2 taşıyıcıları: saha çevre ölçülerine göre omurga Ø420, dikme Ø111, çapraz Ø223`
 - **Açık sorun (2026-10-22):** Orta ve sol taşıyıcıda kedi yolu rampaları (s ≈ 29.2 ve 42.1) yeni yan çaprazların içinden geçiyor; sağdaki 300 mm alçak tavada sorun yok. Tavanın kedi yollarını nasıl geçtiği kullanıcıya soruldu.
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
@@ -70,6 +70,26 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 10:45 — Claude — ALAN 2 taşıyıcı boru ölçüleri saha çevre ölçülerine göre
+- **Kullanıcı isteği:** "çap değil çember ölçüsü vereyim. alt taşıyıcı 132 cm, dikler 35, çaprazlar 70". 10:20 kaydındaki Ø35 / Ø70 mm yorumu yanlıştı; değerler cm cinsinden çevre ölçüsü.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - Omurga: YENİ `spineR = 1.32 / π / 2` ≈ 0.210 (Ø420, eskiden Ø350). Kodda omurga yarıçapı olarak kullanılan sabit 0.175 değerlerinin hepsi `spineR` oldu: aşık kotu, travers ve serbest tava kotu, V taban noktası, kelepçe, ara destek `carrierR`, etiket yüksekliği, alçak geçiş kotu (`spineR + 0.005`).
+    - Bilezik `spineR + 0.015`.
+    - Dikme `photoVLegR = 0.35 / π / 2` ≈ 0.0557 (Ø111).
+    - Örgü çaprazı `webRadius = 0.70 / π / 2` ≈ 0.111 (Ø223). Çapraz ekseni `webOut` kadar dışa kaydırıldı, böylece iç yüzü dikmenin iç yüzüyle aynı doğruda kalıyor ve ölçülen net açıklık çaprazlarda da geçerli oluyor.
+    - Üst zikzak Ø70 mm, üst enine gergiler Ø100 mm kaldı (kullanıcı ölçü vermedi).
+  - Ara kedi yolu omurga bileziği (`buildScoreboardIntermediateCatwalk`) R 0.19 → 0.225.
+  - Matsing montaj fonksiyonunda ALAN 2 `carrierRadius` 0.175 → 0.21.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tava kotları omurga üstünden aynı kaldı (153 / 114 / 69 cm); mutlak kot 3.5 cm yükseldi.
+  - Normal kotta tavanın tüm çubuklara boşluğu: orta 9.7 cm, sol 1.3 cm, sağ 1.2 cm, yani temas yok.
+  - Kedi yolu rampalarında çaprazlarla girişim devam ediyor: orta ve sol s ≈ 29.2 ve 42.1; sağda da artık 29.5 ve 41.9.
+  - Daraltılan ara destek yok. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 taşıyıcıları: saha çevre ölçülerine göre omurga Ø420, dikme Ø111, çapraz Ø223`
+- **Yarım kalan / dikkat:** Yedek: `_backups/main_before_cevre_olculeri_20261022.js`.
 
 ### 2026-10-22 10:20 — Claude — Dikme ve çapraz çapları düzeltildi
 - **Kullanıcı isteği:** "dik olanın çapı 35 çaprazlar 70 sen yanlış yaptın". 10:00 kaydında "22 katı" yanlış yorumlanmıştı; doğrusu: çaprazlar dikmenin 2 katı çapta.
