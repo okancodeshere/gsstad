@@ -37,8 +37,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-21
-- **Son commit:** `[Claude] ALAN 2: tava etiketleri aşıkların üstüne alındı, 500mm tavalar 200mm kenar yüksekliği`
+- **Son güncelleyen:** Claude Code, 2026-10-22
+- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: üçgen kiriş iç yüksekliği 300 cm`
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,15 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 09:00 — Claude — ALAN 2 üçgen kiriş iç yüksekliği 300 cm
+- **Kullanıcı isteği:** "alan 2'deki tavaların da olduğu üçgen taşıyıcı kirişin toplam iç yüksekliği 300cm olacak şekilde güncelle"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` (~satır 7810): `chordHeightH = 0.175 + 3.00 + 0.08 = 3.255` (eskiden 2.73). İç yükseklik, omurga borusu üst yüzünden üst aşık alt yüzüne kadar olan net mesafe olarak yorumlandı.
+  - Ölçülen V açısı korunduğu için aşıklar ±0.65'ten ±0.766'ya açıldı (`photoVLegAxisX`). V kolları, üst gergiler ve X gergiler aşıklara bağlı olduğu için kendiliğinden uzadı. Tava etiketleri aşıkla birlikte yükseldi.
+  - Tava kotları ve V kolu boşlukları değişmedi.
+- **Doğrulama:** `npm run build` hatasız. Sahnede üç taşıyıcının iç yüksekliği 3.000 m ölçüldü. Y > 2.4 bölgesinde (yükselen aşık, kol ve gergiler) diğer sistemlerle çakışma kontrolü yapıldı; çakışma yok.
+- **Commit:** `[Claude] ALAN 2 çatı taşıyıcıları: üçgen kiriş iç yüksekliği 300 cm`
 
 ### 2026-10-21 13:40 — Claude — Etiketler yukarı alındı, 500 mm tavalar 200 mm yükseklik
 - **Kullanıcı isteği:** "biraz yukarı al. diğer sistemlerle kesişmesin ayrıca tava yüksekliklerini 50cm olan için 20cm yükseklik ver."

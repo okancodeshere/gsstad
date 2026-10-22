@@ -7807,7 +7807,9 @@ function createAlan4Structure() {
     // 9.2. Üst İki Boyuna Aşık Borusu (Ø160mm / R = 0.08m) ve V-Kafes Strutlar
     // Alan 1-3 Standardı: Tepe yüksekliği Y = 2.73m, Tepe açıklığı ±1.52m (~3.04m toplam tepe genişliği)
     // Böylece kedi yolunun içinden geçen yürüme alanı 2.33m tavan yüksekliğiyle tamamen konforlu ve kullanılabilir olur
-    const chordHeightH = 2.73; // Omurganın 2.73m üzerinde (Alan 1 standardı: armTopY = 2.73m)
+    // Kullanıcı İsteği (2026-10-22): üçgen kirişin toplam iç yüksekliği 300 cm = omurga borusu üst yüzünden
+    // (R 0.175) üst aşık alt yüzüne (R 0.08). Aşık ekseni Y = 0.175 + 3.00 + 0.08 = 3.255m (eskiden 2.73m).
+    const chordHeightH = 0.175 + 3.00 + 0.08;
     // Ortadaki taşıyıcı (X = 0): V kolları sahadan ölçülen açıya göre (Kullanıcı İsteği, 2026-10-21 fotoğrafı).
     // Kollar arası net açıklık / omurga üstünden yükseklik (cm): 30/60, 40/82, 50/106, 60/126, 70/152.
     // Doğrusal uyum: açıklık = 0.438 h + 3.9 cm. 500mm tava + iki yanda 9'ar cm bağlantı payı = 68 cm travers.
@@ -7820,7 +7822,7 @@ function createAlan4Structure() {
     const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
     const photoTraversLen = 0.68;
     const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
-    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Ölçülen V: ±0.65m (eski Alan 1 standardı: ±1.52m)
+    const chordOffsetW = usePhotoV ? photoVLegAxisX(chordHeightH - 0.175) : 1.52; // Ölçülen V: ±0.76m (eski Alan 1 standardı: ±1.52m)
     const chordGeo = new THREE.CylinderGeometry(0.08, 0.08, trussLen, 24);
     chordGeo.rotateX(Math.PI / 2);
 
