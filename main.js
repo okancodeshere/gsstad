@@ -7969,7 +7969,9 @@ function createAlan4Structure() {
     // Kullanıcı İsteği (2026-10-22): "tüm tavaları ortadaki tava yüksekliğine çıkar" → üç taşıyıcıda da tava
     // tabanı ortadaki taşıyıcının kotunda (taşıyıcı boru üstünden ≈ 153 cm). photoFreeTrayY artık kullanılmıyor.
     const trayLift = photoTraversY - 0.38;
-    const trayBottomYNormal = 0.45 + trayLift; // Normal seyir kotu (travers kaidesi üzerinde)
+    // Kullanıcı İsteği (2026-10-22): "köşede olan 50cm'lik tava var ya onu tüm hat boyunca 250cm yükseklikten götür,
+    // diğer ikisine dokunma" → sol taşıyıcı (X = -18) tavası taşıyıcı boru üstünden sabit 250 cm (rampa yok).
+    const trayBottomYNormal = xOffset < 0 ? spineR + 2.50 : 0.45 + trayLift; // Normal seyir kotu
 
     // Kedi yolu üstünden geçiş profili (Kullanıcı İsteği 2026-10-22: sarı çizim + "daha düz ... simetrik olsun").
     // Kedi yolu üstünde ±0.80m düz bölüm taşıyıcı boru üstünden 250 cm'de; iki yanda eşit 5.70m (bir aks) rampa.
