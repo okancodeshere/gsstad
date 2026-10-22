@@ -8051,15 +8051,13 @@ function createAlan4Structure() {
     }
 
     // 2. Kedi Yolu Üstünden Geçen Tava Segmentleri (profil: trayBottomAtProfile, kedi yoluna göre simetrik)
-    // Kullanıcı İsteği (2026-10-22): "sağ ve soldaki taşıyıcılarda 2'şer adet Matsing anten var, ondan sonraki
-    // tavaları kaldır" → yan taşıyıcılarda tava ikinci Matsing montajının (s ≈ 22.45-24.30) hemen ardında,
-    // s = 24.60'ta biter; kedi yollarına ulaşmadığı için kedi yolu üstü geçişi de yok.
-    const sideTrayEndS = xOffset !== 0 ? 24.60 : null;
+    // Kullanıcı İsteği (2026-10-22, düzeltilmiş): yan taşıyıcılarda kablolar beton tarafından gelir; beton
+    // tarafındaki tava kalır, skorbord tarafındaki silinir. Tava ilk Matsing montajının (taslak-v2'de
+    // s ≈ 19.45-21.30) hemen önünde, s = 19.30'da başlar.
+    const sideTrayStartS = xOffset !== 0 ? 19.30 : 0.0;
     const traySegments = [];
     let segS = 0.0;
-    if (sideTrayEndS !== null) {
-      traySegments.push({ yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: sideTrayEndS });
-    } else SB_INTERMEDIATE_CW_S.forEach(cwS => {
+    SB_INTERMEDIATE_CW_S.forEach(cwS => {
       const f0 = cwS - cwFlatHalf, f1 = cwS + cwFlatHalf;
       traySegments.push(
         { yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: f0 - cwRampL },
@@ -8069,7 +8067,17 @@ function createAlan4Structure() {
       );
       segS = f1 + cwRampL;
     });
-    if (sideTrayEndS === null) traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
+    traySegments.push({ yStart: trayBottomYNormal, zStart: segS, yEnd: trayBottomYNormal, zEnd: 59.80 }); // Beton kaideye kadar normal seyir
+    // Yan taşıyıcılarda tavayı sideTrayStartS'den başlat (öncesini kes, kesilen segmenti ara kotta böl)
+    if (sideTrayStartS > 0) {
+      const kept = traySegments.filter(sg => sg.zEnd > sideTrayStartS + 1e-6).map(sg => {
+        if (sg.zStart >= sideTrayStartS) return sg;
+        const y = sg.yStart + (sg.yEnd - sg.yStart) * (sideTrayStartS - sg.zStart) / (sg.zEnd - sg.zStart);
+        return { yStart: y, zStart: sideTrayStartS, yEnd: sg.yEnd, zEnd: sg.zEnd };
+      });
+      traySegments.length = 0;
+      traySegments.push(...kept);
+    }
     trayGroup.userData.rampAnglesDeg = traySegments.filter(sg => sg.yStart !== sg.yEnd)
       .map(sg => +(Math.atan2(Math.abs(sg.yEnd - sg.yStart), sg.zEnd - sg.zStart) * 180 / Math.PI).toFixed(1));
 
@@ -8271,7 +8279,7 @@ function createAlan4Structure() {
       let supportSs = supportGroup.children
         .filter(c => c.geometry.type === 'BoxGeometry' && c.geometry.parameters.height === 0.03 && c.geometry.parameters.depth === 0.10)
         .map(c => c.position.z).sort((a, b) => a - b);
-      if (!supportSs.length) supportSs = Array.from({ length: 40 }, (_, i) => 2.0 + i * 0.25);
+      if (!supportSs.length) supportSs = Array.from({ length: 40 }, (_, i) => Math.max(2.0, sideTrayStartS + 0.5) + i * 0.25);
       const zigzagMids = topNodes.slice(1).map((n, k) => (n + topNodes[k]) / 2); // zikzak X = 0'ı burada keser
       const leaderClear = s => topNodes.every(n => Math.abs(s - n) > 0.3) && zigzagMids.every(z => Math.abs(s - z) > 0.3);
       // Destek bir üst düğüm / zikzak kesişimine denk geliyorsa etiket 35cm kaydırılır (tava sürekli, çizgi yine tavaya iner)
@@ -8326,7 +8334,7 @@ function createAlan4Structure() {
     elbowGeo.rotateZ(Math.PI / 2);
     const elbowMesh = new THREE.Mesh(elbowGeo, flangeSteelMat);
     elbowMesh.position.set(0, trayBottomYNormal + 0.05, 59.80);
-    if (sideTrayEndS === null) trayGroup.add(elbowMesh); // Yan taşıyıcılarda tava betona ulaşmıyor
+    trayGroup.add(elbowMesh);
 
     trussGroup.add(trayGroup);
 

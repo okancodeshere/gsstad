@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 yan taşıyıcılar: tava ikinci Matsing anteninden sonra bitiyor`
+- **Son commit:** `[Claude] ALAN 2 yan taşıyıcılar: tava beton tarafında kaldı, skorbord tarafı silindi (Matsing'den başlıyor)`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 16:20 — Claude — Düzeltme: yan taşıyıcılarda beton tarafındaki tava kaldı, skorbord tarafı silindi
+- **Kullanıcı isteği:** "Diğer taraftan gelecek ya kablolar, beton tarafından; oradaki tavalar kalsın. Skorbord tarafındakileri sil. Bir dahakine de böyle anlamadığın bir yer olursa bana sor." 16:05 kaydındaki kesme yanlış uçtan yapılmıştı ve geri çevrildi.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `sideTrayEndS` yerine YENİ `sideTrayStartS` (yan taşıyıcılarda 19.30, ortada 0). Tam profil (iki kedi yolu üstü geçiş + betona kadar) üretiliyor, yan taşıyıcılarda s < 19.30 kısmı kesiliyor.
+    - Beton tarafı iniş dirseği yeniden üç taşıyıcıda.
+    - Etiket adayları tava başlangıcından başlıyor (yan taşıyıcılarda s = 20.4).
+- **Sonuç:** Yan taşıyıcılarda tava ve 6 feeder s = 19.30 → 59.80, kalın çapraz traversi 13 adet. Orta taşıyıcı değişmedi.
+- **Doğrulama:** `npm run build` hatasız. Tava-çubuk çakışması 0. Matsing montajları dahil diğer sistemlerle temas yok.
+- **Kalıcı karar eklendi** (3. bölüm): yön, parça ya da birim belirsizse koda geçmeden önce sor.
+- **Commit:** `[Claude] ALAN 2 yan taşıyıcılar: tava beton tarafında kaldı, skorbord tarafı silindi (Matsing'den başlıyor)`
 
 ### 2026-10-22 16:05 — Claude — Yan taşıyıcılarda tava Matsing antenlerinden sonra bitiyor
 - **Kullanıcı isteği:** "sağ ve soldaki taşıyıcılarda 2'şer adet Matsing anten var ya. Ondan sonraki tavaları kaldır"
@@ -546,6 +558,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Erişilebilirlik:** Kedi yolundaki ekipman (RRU vb.) kedi yolundan elle erişilebilir olmalı. Üst üste yüksek dizilim yapılmaz. RRU'lar korkuluğun biraz üstünde, tek kotta, kısa kenarlarından yan yana ve paralel (kitap gibi) takılır.
 - **Kedi yolu korkuluk altı:** Korkuluk seviyesinin altına ekipman konmaz; çizimlerde olmayan aydınlatma vb. cihazlar var.
 - **Belirsiz tarifte:** Kullanıcının tarifi birden fazla şekilde okunabiliyorsa önce sor; tahminle büyük yerleşim değişikliği yapma.
+  - Kullanıcı 2026-10-22'de üç yanlış yorumdan sonra bunu açıkça tekrarladı: "böyle anlamadığın bir yer olursa bana sor".
+  - Özellikle yön ("sonraki", "bu taraf"), birden fazla parçaya uyan adlar ("V", "dikme", "taşıyıcı") ve ölçünün birimi / çap mı çevre mi olduğu konusunda önce sor.
 
 
 ### Bağımlılıklar
