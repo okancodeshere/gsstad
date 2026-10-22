@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 askı kelepçeleri: 50 mm lama bant`
+- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tüm hat boyunca 250 cm`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 17:40 — Claude — Sağ taşıyıcı tavası tüm hat boyunca 250 cm
+- **Kullanıcı isteği:** "burada tavaları 250cm de tek ölçüde yap". Bağlamdan sağ (askılı) taşıyıcı olarak alındı.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`: `trayBottomYNormal = xOffset !== 0 ? spineR + 2.50 : 0.45 + trayLift`. İki yan taşıyıcı sabit 250 cm, rampa yok. Orta taşıyıcı değişmedi (153 / 250).
+  - Askılar yeni kota kendiliğinden uydu: tij boyu 0.53–0.55 m.
+- **Doğrulama:** `npm run build` hatasız. Sağ ve sol 250/250 cm. Çubuk çakışması 0; diğer sistemlerle temas yok.
+- **Commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tüm hat boyunca 250 cm`
 
 ### 2026-10-22 17:30 — Claude — Askı kelepçe çemberleri lamadan (50 mm)
 - **Kullanıcı isteği:** "çemberleri de lamadan yap 5cm genişliği olsun"
