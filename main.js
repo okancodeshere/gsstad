@@ -7959,8 +7959,11 @@ function createAlan4Structure() {
     const trayGroup = new THREE.Group();
     trayGroup.name = `scoreboardTruss50cmTray_${xOffset === 0 ? 'center' : (xOffset < 0 ? 'left' : 'right')}`;
 
-    const trayW = xOffset > 0 ? 0.30 : 0.50; // 500mm genişlik (sağ taşıyıcı 300mm)
-    const trayH = xOffset > 0 ? 0.25 : 0.20; // 500mm tava 200mm, sağ taşıyıcıdaki 300mm tava 250mm kenar yüksekliği
+    // Kullanıcı İsteği (2026-10-22): "30'luk tava olan hattı da diğerleri gibi 50'lik tava yap" → üç taşıyıcıda 500 x 200
+    const trayW = 0.50;
+    const trayH = 0.20;
+    // Sağ taşıyıcı (X = +18): travers yerine üstten asılı tava askısı (her üst düğüm + araları, iki kol + tabla)
+    const useTopHangers = xOffset > 0;
     const trayWallThick = 0.003;
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
@@ -8025,7 +8028,7 @@ function createAlan4Structure() {
       const isNearDip = SB_INTERMEDIATE_CW_S.some(c => Math.abs(zSt - c) < 1.1);
       // Kullanıcı İsteği (2026-10-22): "orta taşıyıcılara (V dikmeleri) travers ... tekrar tüm hatlarda ekle" →
       // istasyon traversi üç taşıyıcıda da (eskiden yalnızca ortada; yan taşıyıcılar 'traverssiz3' idi).
-      if (!isNearDip && zSt >= sideTrayStartS) {
+      if (!isNearDip && zSt >= sideTrayStartS && !useTopHangers) {
         // Travers tavanın o istasyondaki kotunda; boyu V kolları arası net açıklık (ortada normal kotta 68 cm)
         const tbSt = trayBottomAtProfile(zSt);
         const beamY = tbSt - 0.07;
@@ -8239,7 +8242,7 @@ function createAlan4Structure() {
       const webTraversGroup = new THREE.Group();
       webTraversGroup.name = 'scoreboardTrussWebTraverses';
       const beamDrop = 0.07;
-      webSegments.filter(w => w.a.x < 0).forEach(({ a, b, r }) => {
+      webSegments.filter(w => w.a.x < 0 && !useTopHangers).forEach(({ a, b, r }) => {
         const f = t => {
           const tb = trayBottomAtS(a.z + (b.z - a.z) * t);
           return tb === null ? NaN : (a.y + (b.y - a.y) * t) - (tb - beamDrop);
@@ -8273,6 +8276,91 @@ function createAlan4Structure() {
         });
       });
       trayGroup.add(webTraversGroup);
+
+      // 3.E. ÜSTTEN ASILI TAVA ASKISI (yalnızca sağ taşıyıcı). Kullanıcı İsteği (2026-10-22, sarı işaretli üstten
+      // görünüş): "travers değil de üstten dikey tava askısı yapalım ... aşağı sarkan 2 kol yap ve bunları alttan
+      // bir tabla ile birleştir tavayı taşısın". Konumlar: her üst düğüm (V istasyonu ve orta düğüm) ve aralarının
+      // ortası (≈ 1.43m). Düğümde kollar üst enine gergiden, ara noktada üst zikzaktan düşey iner; x = ±(tava/2 + 4cm).
+      if (useTopHangers) {
+        const hangerGroup = new THREE.Group();
+        hangerGroup.name = 'scoreboardTrussTrayHangers';
+        const armX = trayW / 2 + 0.04, armR = 0.02, tablaT = 0.03;
+        const hangerPts = [];
+        topNodes.forEach((n, k) => {
+          hangerPts.push({ s: n, k: null });
+          if (k < topNodes.length - 1) hangerPts.push({ s: (n + topNodes[k + 1]) / 2, k });
+        });
+        // Bağlantı (kullanıcı çizimi 2026-10-22): "üstlere delme ya da kaynak yok" → üst boruyu saran iki parçalı
+        // boru kelepçesi (iki yanda kulak + vida/somun), altında konik boyun ve somun, oradan düşey dişli tij (M16);
+        // tij tablayı deler, tablanın altında ve üstünde somun. Ara noktada zikzak eğik geçtiği için iki tij farklı
+        // s'de asılır; tabla iki tiji birleştirecek şekilde hafif çapraz durur.
+        const tijR = 0.008, nutGeo = new THREE.CylinderGeometry(0.014, 0.014, 0.012, 6);
+        const up = new THREE.Vector3(0, 1, 0);
+        const addNut = (x, y, z) => { const n = new THREE.Mesh(nutGeo, sbDarkJointMat); n.position.set(x, y, z); hangerGroup.add(n); };
+        const addPipeClamp = (center, memberDir, memberR) => {
+          const ringR = memberR + 0.008;
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(ringR, 0.006, 8, 28), flangeSteelMat);
+          ring.position.copy(center);
+          ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), memberDir);
+          hangerGroup.add(ring);
+          const perp = new THREE.Vector3().crossVectors(memberDir, up).normalize();
+          [-1, 1].forEach(e => {
+            const earPos = center.clone().addScaledVector(perp, e * (ringR + 0.014));
+            const ear = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.04), flangeSteelMat);
+            ear.position.copy(earPos);
+            ear.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), perp);
+            hangerGroup.add(ear);
+            const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.045, 8), sbDarkJointMat);
+            bolt.position.copy(earPos);
+            hangerGroup.add(bolt);
+            addNut(earPos.x, earPos.y - 0.014, earPos.z);
+          });
+          // Konik boyun (kelepçe altından tije)
+          const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.009, 0.05, 12), flangeSteelMat);
+          neck.position.set(center.x, center.y - ringR - 0.025, center.z);
+          hangerGroup.add(neck);
+          addNut(center.x, center.y - ringR - 0.058, center.z);
+          return center.y - ringR - 0.05; // tij üst ucu
+        };
+        hangerPts.forEach(({ s, k }) => {
+          if (s < sideTrayStartS + 0.1 || s > 59.6) return;
+          const tb = trayBottomAtS(s);
+          if (tb === null) return;
+          const rodFoot = [];
+          [-1, 1].forEach(sx => {
+            const xa = sx * armX;
+            let topS = s, memberDir = new THREE.Vector3(1, 0, 0), memberR = topTieRadius;
+            if (k !== null) {
+              // Üst zikzak k: (zx·W, n0) → (−zx·W, n1); tijin x'inde zikzağın geçtiği s
+              const zx = k % 2 === 0 ? 1 : -1, n0 = topNodes[k], n1 = topNodes[k + 1];
+              const u = (1 - xa / (zx * chordOffsetW)) / 2;
+              topS = n0 + u * (n1 - n0);
+              memberDir = new THREE.Vector3(-2 * zx * chordOffsetW, 0, n1 - n0).normalize();
+              memberR = 0.035;
+            }
+            const rodTopY = addPipeClamp(new THREE.Vector3(xa, chordHeightH, topS), memberDir, memberR);
+            const tbRod = trayBottomAtS(topS) ?? tb;
+            const rodBotY = tbRod - tablaT - 0.03;
+            hangerGroup.add(createPipeHelper(new THREE.Vector3(xa, rodTopY, topS), new THREE.Vector3(xa, rodBotY, topS), tijR, sbDarkJointMat));
+            addNut(xa, tbRod + 0.004, topS);            // tabla üstü somun
+            addNut(xa, tbRod - tablaT - 0.008, topS);   // tabla altı somun
+            rodFoot.push(new THREE.Vector3(xa, tbRod, topS));
+          });
+          // Tabla iki tij ayağını birleştirir (tava altında)
+          const mid = rodFoot[0].clone().add(rodFoot[1]).multiplyScalar(0.5);
+          const span = rodFoot[1].clone().sub(rodFoot[0]);
+          const tabla = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(span.x, span.z) + 0.08, tablaT, 0.08), flangeSteelMat);
+          tabla.position.set(mid.x, mid.y - tablaT / 2, mid.z);
+          tabla.rotation.y = -Math.atan2(span.z, span.x);
+          hangerGroup.add(tabla);
+          [-1, 1].forEach(sx => {
+            const hClamp = new THREE.Mesh(holdClampGeo, sbDarkJointMat);
+            hClamp.position.set(sx * (trayW / 2 + 0.01), tb - 0.005, s);
+            hangerGroup.add(hClamp);
+          });
+        });
+        trayGroup.add(hangerGroup);
+      }
     }
 
     // 3.C. TAVA YÜKSEKLİK ETİKETİ (Kullanıcı İsteği: "en yakın taşıyıcıya yakın bir yere havada duran bir label ile

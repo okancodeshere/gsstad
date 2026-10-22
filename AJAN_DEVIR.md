@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2: V dikmesi istasyon traversleri üç taşıyıcıda`
+- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: 500 mm tava, üstten kelepçeli tij askıları (delme/kaynak yok)`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,28 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 17:20 — Claude — Sağ taşıyıcı: 500 mm tava + üstten kelepçeli tij askıları
+- **Kullanıcı isteği:**
+  - (Sarı işaretli üstten görünüş) "30'luk tava olan hattı da diğerleri gibi 50'lik tava yap. Ama burada travers değil de üstten dikey tava askısı yapalım ... aşağı sarkan 2 kol yap ve bunları alttan bir tabla ile birleştir tavayı taşısın."
+  - Sorulara yanıt: aralık "her üst düğüm + araları (~1.43 m)"; askı "iki üst borudan, kot aynı".
+  - El çizimi: "bu attığın taşıyıcıları çember ile bağlayacağız, üstlere delme ya da kaynak yok, bağlantı noktasını da bu şekilde yap". Çizimde: boruyu saran çember, iki yanda vida+somun, altında konik boyun + somun, dişli tij.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `trayW = 0.50`, `trayH = 0.20` üç taşıyıcı için. Sağ taşıyıcı 300 × 250 → 500 × 200.
+    - YENİ `useTopHangers = xOffset > 0`. Sağ taşıyıcıda istasyon traversi ve kalın çapraz traversi yok.
+    - YENİ "3.E. ÜSTTEN ASILI TAVA ASKISI" (`scoreboardTrussTrayHangers`): her üst düğümde (V istasyonu ve orta düğüm) ve aralarının ortasında, tavanın olduğu bölgede (s ≥ 19.4). Toplam 26 askı.
+    - Her askıda iki düşey M16 tij, x = ±(tava/2 + 4 cm). Düğümde tijler üst enine gergiden (Ø100) asılı. Ara noktada üst zikzaktan (Ø70) asılı, tijin x'inde zikzağın geçtiği s'de; bu yüzden iki tij farklı s'de ve tabla iki tij ayağını birleştirecek şekilde hafif çapraz.
+    - `addPipeClamp()`: üye eksenine dik halka (torus, R = üye + 8 mm), iki yanda kulak + cıvata + somun, konik boyun ve somun. Delme ve kaynak yok.
+    - Tij tablayı geçiyor; tablanın üstünde ve altında somun. Tabla 30 × 80 mm. Tava kenarında çeneler.
+    - Tava profili aynı: 153 cm, kedi yolları üstünde 250 cm, 19.30 → 59.80.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - 52 tij, 26 tabla. Tij ile makas çubukları arasında segment mesafesi kontrolü: temas yok.
+  - Tava ve askılarda diğer sistemlerle temas yok.
+  - Yakın plan ve genel görüntü alındı; çizimle uyumlu.
+- **Commit:** `[Claude] ALAN 2 sağ taşıyıcı: 500 mm tava, üstten kelepçeli tij askıları (delme/kaynak yok)`
+- **Kalıcı karar eklendi** (3. bölüm): Çatı strüktürüne bağlantılar delme veya kaynak olmadan, kelepçeyle yapılır.
 
 ### 2026-10-22 16:50 — Claude — V dikmesi traversleri üç taşıyıcıda
 - **Kullanıcı isteği:** "yanlışlıkla sildiğin orta taşıyıcılara neden travers eklemedin, tekrar tüm hatlarda ekle". "Orta taşıyıcılar" = istasyonlardaki V dikmeleri olarak alındı (kullanıcı onları daha önce "ortadaki dikmelerimiz" diye adlandırmıştı). Yan taşıyıcılarda istasyon traversi hiç yoktu (`traverssiz3`).
@@ -582,6 +604,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **`alan4` cam korkuluk dikmeleri** 1.5 m sabit ızgarada, X=0 merkezli kalır (`frontRailingSpans`).
 - **Varsayılan yerleşim:** `main.js` içindeki `PRESET_DRAFTS['taslak-v2']`.
 - **Erişilebilirlik:** Kedi yolundaki ekipman (RRU vb.) kedi yolundan elle erişilebilir olmalı. Üst üste yüksek dizilim yapılmaz. RRU'lar korkuluğun biraz üstünde, tek kotta, kısa kenarlarından yan yana ve paralel (kitap gibi) takılır.
+- **Strüktüre bağlantı:** Çatı strüktürüne (makas boruları vb.) delme veya kaynak yapılmaz. Bağlantılar boruyu saran çember kelepçe (vida + somun) ile yapılır; askılarda kelepçe → konik boyun → dişli tij (kullanıcı çizimi, 2026-10-22).
 - **Kedi yolu korkuluk altı:** Korkuluk seviyesinin altına ekipman konmaz; çizimlerde olmayan aydınlatma vb. cihazlar var.
 - **Belirsiz tarifte:** Kullanıcının tarifi birden fazla şekilde okunabiliyorsa önce sor; tahminle büyük yerleşim değişikliği yapma.
   - Kullanıcı 2026-10-22'de üç yanlış yorumdan sonra bunu açıkça tekrarladı: "böyle anlamadığın bir yer olursa bana sor".
