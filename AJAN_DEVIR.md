@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: 500 mm tava, üstten kelepçeli tij askıları (delme/kaynak yok)`
+- **Son commit:** `[Claude] ALAN 2 askı kelepçeleri: 50 mm lama bant`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -69,6 +69,15 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 17:30 — Claude — Askı kelepçe çemberleri lamadan (50 mm)
+- **Kullanıcı isteği:** "çemberleri de lamadan yap 5cm genişliği olsun"
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()` 3.E `addPipeClamp()`:
+    - Torus halka yerine lama bant: 50 mm genişlik, 5 mm et kalınlığında halka (`ExtrudeGeometry`, iç yarıçap = boru + 2 mm). Üye eksenine hizalı.
+    - Kulaklar dışa kıvrılmış iki kat lama (30 × 12 × 50 mm). `makeBasis` ile bant düzlemine hizalı; cıvata ve somun aynı.
+- **Doğrulama:** `npm run build` hatasız. 52 bant oluştu. Yakın plan görüntüyle kontrol edildi.
+- **Commit:** `[Claude] ALAN 2 askı kelepçeleri: 50 mm lama bant`
 
 ### 2026-10-22 17:20 — Claude — Sağ taşıyıcı: 500 mm tava + üstten kelepçeli tij askıları
 - **Kullanıcı isteği:**

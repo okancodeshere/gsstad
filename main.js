@@ -8298,17 +8298,29 @@ function createAlan4Structure() {
         const up = new THREE.Vector3(0, 1, 0);
         const addNut = (x, y, z) => { const n = new THREE.Mesh(nutGeo, sbDarkJointMat); n.position.set(x, y, z); hangerGroup.add(n); };
         const addPipeClamp = (center, memberDir, memberR) => {
-          const ringR = memberR + 0.008;
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(ringR, 0.006, 8, 28), flangeSteelMat);
+          // Kelepçe çemberi lamadan (Kullanıcı İsteği 2026-10-22: "çemberleri de lamadan yap 5cm genişliği olsun"):
+          // 50mm genişlik x 5mm et kalınlığında bant, boruya 2mm boşlukla sarılır
+          const lamaW = 0.05, lamaT = 0.005;
+          const ringIn = memberR + 0.002, ringR = ringIn + lamaT;
+          const bandShape = new THREE.Shape();
+          bandShape.absarc(0, 0, ringR, 0, Math.PI * 2, false);
+          const bandHole = new THREE.Path();
+          bandHole.absarc(0, 0, ringIn, 0, Math.PI * 2, true);
+          bandShape.holes.push(bandHole);
+          const bandGeo = new THREE.ExtrudeGeometry(bandShape, { depth: lamaW, bevelEnabled: false, curveSegments: 32 });
+          bandGeo.translate(0, 0, -lamaW / 2);
+          const ring = new THREE.Mesh(bandGeo, flangeSteelMat);
           ring.position.copy(center);
           ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), memberDir);
           hangerGroup.add(ring);
           const perp = new THREE.Vector3().crossVectors(memberDir, up).normalize();
+          const earBasis = new THREE.Matrix4().makeBasis(perp, new THREE.Vector3().crossVectors(memberDir, perp).normalize(), memberDir);
           [-1, 1].forEach(e => {
+            // Lama uçları dışa kıvrılmış kulak (iki kat lama, 50mm genişlik)
             const earPos = center.clone().addScaledVector(perp, e * (ringR + 0.014));
-            const ear = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.012, 0.04), flangeSteelMat);
+            const ear = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2 * lamaT + 0.002, lamaW), flangeSteelMat);
             ear.position.copy(earPos);
-            ear.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), perp);
+            ear.quaternion.setFromRotationMatrix(earBasis);
             hangerGroup.add(ear);
             const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.045, 8), sbDarkJointMat);
             bolt.position.copy(earPos);
