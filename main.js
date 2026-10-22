@@ -7842,7 +7842,8 @@ function createAlan4Structure() {
     // Sağ taşıyıcı (X = +18): aynı düzen, ancak 300mm genişlik x 250mm yükseklik tava (Kullanıcı İsteği, 2026-10-21).
     const trayMode = xOffset === 0 ? 'travers68' : 'traverssiz3';
     const usePhotoV = trayMode !== 'standart';
-    const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.07;
+    // Dikme (V kolu) Ø35mm, örgü çaprazları Ø70mm (kullanıcı düzeltmesi 2026-10-22)
+    const photoVGapSlope = 0.438, photoVGapAt0 = 0.039, photoVLegR = 0.0175;
     const photoVLegAxisX = (h) => (photoVGapSlope * h + photoVGapAt0) / 2 + photoVLegR / Math.cos(Math.atan(photoVGapSlope / 2));
     const photoTraversLen = 0.68;
     const photoTraversY = 0.175 + (photoTraversLen - photoVGapAt0) / photoVGapSlope; // ≈ 1.64m (omurga üstünden ≈ 1.46m)
@@ -7861,7 +7862,7 @@ function createAlan4Structure() {
     trussGroup.add(rightChord);
 
     // Her 3 metrede bir V-Strut ve Güçlendirme İstasyonları (20 Adet İstasyon)
-    const vStrutRadius = 0.07; // Ø140mm kalın beyaz çelik boru (Alan 1 standardı: diagonalRadius = 0.07m)
+    const vStrutRadius = photoVLegR; // Ø35mm dikme (V kolu); eskiden Ø140mm (Alan 1 standardı)
     const topTieRadius = 0.05; // Ø100mm üst gergi borusu
     const armBaseX = usePhotoV ? photoVLegAxisX(0) : 0.14; // Alt omurga üzerindeki montaj ayrımı (orta ±0.09m, yanlar ±0.14m)
     const collarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.20, 24);
@@ -7912,7 +7913,7 @@ function createAlan4Structure() {
     // iki yanda çapraz (yan yüzlerde W örgü); her üst düğümde enine gergi; üst düzlemde aşıklar arası zikzak.
     // V kolları (istasyon) kullanıcı kararıyla makasa dik düzlemde kalır. Çaprazlar V ile aynı açıklık-yükseklik
     // doğrusunu izler (omurga üstü ±armBaseX → aşık ±chordOffsetW).
-    const webRadius = vStrutRadius / 2; // Ø70mm örgü çaprazı (V kolu Ø140'ın yarısı, kullanıcı tarifi)
+    const webRadius = 0.035; // Ø70mm örgü çaprazı (dikmenin 2 katı çap, kullanıcı tarifi)
     const topNodes = [];
     const webSegments = []; // Ara desteklerin çakışma kontrolü için
     const addWeb = (a, b) => {

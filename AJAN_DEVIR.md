@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 çatı taşıyıcıları: gerçek uzay kafes örgüsü (orta düğüm çaprazları, üst zikzak)`
+- **Son commit:** `[Claude] ALAN 2 taşıyıcıları: dikme Ø35, örgü çaprazları Ø70 (kullanıcı düzeltmesi)`
 - **Açık sorun (2026-10-22):** Orta ve sol taşıyıcıda kedi yolu rampaları (s ≈ 29.2 ve 42.1) yeni yan çaprazların içinden geçiyor; sağdaki 300 mm alçak tavada sorun yok. Tavanın kedi yollarını nasıl geçtiği kullanıcıya soruldu.
 - **Açık konu:** Kedi yolu altı alçak geçişte (tava tabanı Y 0.18) tava, kedi yolu döşemesi ve eyer kirişiyle çakışıyor. Bu çakışma önceden de vardı; sağdaki 250 mm yüksek tavada daha belirgin. Gerçek geçiş şekli kullanıcıya sorulmadı.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
@@ -70,6 +70,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-22 10:20 — Claude — Dikme ve çapraz çapları düzeltildi
+- **Kullanıcı isteği:** "dik olanın çapı 35 çaprazlar 70 sen yanlış yaptın". 10:00 kaydında "22 katı" yanlış yorumlanmıştı; doğrusu: çaprazlar dikmenin 2 katı çapta.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `photoVLegR = 0.0175`; `vStrutRadius = photoVLegR`, yani V dikmeleri Ø35 mm (eskiden Ø140).
+    - `webRadius = 0.035`: örgü çaprazları Ø70 mm.
+  - Ölçülen net açıklık-yükseklik ilişkisi aynı kaldığı için tava ve travers kotları değişmedi. İnce dikme yüzünden aşık ekseni ±0.766'dan ±0.712'ye kaydı.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Sahneden okunan çaplar: dikme Ø35 (20 adet), çapraz ve zikzak Ø70 (57 adet), üst gergiler Ø100.
+  - Tava-dikme boşlukları değişmedi: orta 10.5 cm, sol ve sağ 2.0 cm. Daraltılan ara destek yok.
+- **Commit:** `[Claude] ALAN 2 taşıyıcıları: dikme Ø35, örgü çaprazları Ø70 (kullanıcı düzeltmesi)`
 
 ### 2026-10-22 10:00 — Claude — ALAN 2 taşıyıcıları: gerçek uzay kafes örgüsü
 - **Kullanıcı isteği:** Fotoğraf: "taşıyıcının gerçek fotosu bu şekilde, gerçeğine göre çizebilir misin ortadaki dikmelerimizi referans alarak". Ek: "dikeyde çapraz çıkanlar direkler bizim travers koyacağımız dikeylerin tam orta noktasında buluşuyor ve onun 22 katı çapa sahip".
