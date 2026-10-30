@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı: Eksen 1 azimut mafsalı detaylandırıldı (kanallı flanş, merkez pimi, cıvata takımı)`
+- **Son commit:** `[Claude] Matsing askı aparatı hafifletildi: aparat 166 → 123 kg`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +71,31 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 15:20 — Claude — Matsing askı aparatı hafifletildi
+- **Kullanıcı isteği:** Toplam ağırlık sorusundan sonra (anten 51.5 + aparat 166.1 = 217.6 kg, iniş 1500 mm) "Evet, hafiflet".
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - Kelepçe:
+      - `SADDLE_T` 10 → 8 mm, `SHELL_T` 8 → 5, `SADDLE_L` 500 → 400.
+      - `SHELL_BOLT_Z` ±0.15 / ±0.05.
+      - YENİ `EAR_W` / `EAR_T` (kulak ve kabuk flanşı 70×12 → 60×10), `WEB_T` / `WEB_L` (ağ levhası 12 mm × 460 → 10 mm × 360).
+      - `PLATE_T` 15 → 12 (plaka 300×400×12).
+    - Azimut flanşları: `FLANGE_T` 20 → 15. Cıvata M16×70, burç 15 mm.
+    - Borular: `DROP_PIPE.t` 6 → 5, `MAST_PIPE.t` 4 → 3.2. YENİ `pipeName()`; etiket ve BOM yazıları sabitlerden üretiliyor.
+    - Dil levhası: Ø80 hafifletme deliği (`TONGUE_HOLE`). Ağırlık gerçek şekil alanından (`tongueArea`) hesaplanıyor; önceki BOM 0.3×0.2 kaba alanla 11.8 kg gösteriyordu, gerçek 8.8 kg idi.
+    - BOM satırları ve sahne etiketleri sabitlere bağlandı. Eyer kulakları eskiden listede yoktu; artık "kulak + kabuk flanşı × 4" olarak sayılıyor.
+- **Sonuç** (iniş 1500 mm):
+  - Aparat 166.1 → 123.3 kg, toplam 217.6 → 174.8 kg.
+  - Diğer inişlerde toplam: 1100 → 169.4, 2000 → 181.5, 3000 → 195.0 kg.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Tarama: iniş 1100/1500/3000 × eğim ±15 × tilt −20…70 × azimut 0/90/180/270.
+    - Taşıyıcıya en az 59 mm, iniş borusuna en az 246 mm.
+    - İniş borusu σv en fazla 64 MPa (3000 mm iniş; sınır 156).
+  - Görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı hafifletildi: aparat 166 → 123 kg`
+- **Yarım kalan / dikkat:** İnceltmeler tasarım önerisi; kelepçe sacı, kabuk ve flanş kalınlıkları için statik hesap yapılmadı.
 
 ### 2026-10-30 14:50 — Claude — Matsing askı aparatı: Eksen 1 (azimut) mafsalı detaylı
 - **Kullanıcı isteği:** "Eksen 1'de bağlantı nasıl sağlanıyor ve hareket nasıl oluyor, detaylı çiz; kendi kendine boşlukta dönüyor gibi." Eski çizimde iki düz disk 2 mm boşlukla duruyordu; kanal ve delik görünmüyordu, cıvatalar dolu sacın içinden geçiyordu.

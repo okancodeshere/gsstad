@@ -35,14 +35,17 @@ const ANT = {
   windLat: 930
 };
 
-const SADDLE_T = 0.010;
-const SADDLE_L = 0.50;
+// Hafifletilmiş kelepçe (2026-10-30): eyer 10→8, kabuk 8→5, boy 500→400, plaka 15→12, ağ 12→10 mm
+const SADDLE_T = 0.008;
+const SADDLE_L = 0.40;
 const FELT_T = 0.005;                           // taşıyıcı ile kelepçe arası keçe
 const CLAMP_R = CARRIER_R + FELT_T;             // eyer / kabuk iç yarıçapı
-const SHELL_T = 0.008;                          // üst kabuk sac kalınlığı
-const SHELL_BOLT_Z = [-0.19, -0.065, 0.065, 0.19]; // yan başına 4 x M16
-const PLATE_TOP = -0.305, PLATE_T = 0.015;
-const FLANGE_R = 0.15, FLANGE_T = 0.020;          // azimut flanşları Ø300 × 20
+const SHELL_T = 0.005;                          // üst kabuk sac kalınlığı
+const SHELL_BOLT_Z = [-0.15, -0.05, 0.05, 0.15]; // yan başına 4 x M16
+const EAR_W = 0.06, EAR_T = 0.010;              // eyer kulağı / kabuk yan flanşı lama
+const WEB_T = 0.010, WEB_L = 0.36;              // eyer ağ levhaları
+const PLATE_TOP = -0.305, PLATE_T = 0.012;
+const FLANGE_R = 0.15, FLANGE_T = 0.015;          // azimut flanşları Ø300 × 15
 
 // Eksen 1 (azimut) döner tabla: sabit flanşta 4 yay kanal, döner flanşta 45° arayla 8 delik.
 // 4 M16 cıvata döner flanşa takılır ve sabit flanştaki kanallarda yürür. Kanal ±25°;
@@ -68,8 +71,9 @@ const FIX_FLANGE_TOP = HEAD_PLATE_TOP;                  // pim yerelinde
 const ROT_FLANGE_TOP = -0.337;
 const ROT_FLANGE_BOT = ROT_FLANGE_TOP - FLANGE_T;      // -0.352
 
-const DROP_PIPE = { D: 0.1143, t: 0.006 };   // Ø114.3 x 6.0
-const MAST_PIPE = { D: 0.0761, t: 0.004, L: 1.60 }; // Ø76.1 x 4.0 (Matsing: Ø61–114)
+const DROP_PIPE = { D: 0.1143, t: 0.005 };   // Ø114.3 x 5.0
+const MAST_PIPE = { D: 0.0761, t: 0.0032, L: 1.60 }; // Ø76.1 x 3.2 (Matsing: Ø61–114)
+const pipeName = p => `Ø${(p.D * 1000).toFixed(1)}×${(p.t * 1000).toFixed(1)}`;
 const MAST_X = 0.32;                          // tilt pimi → anten direği ekseni
 const CLEVIS_TOP = 0.0975;                    // pim üstünden çatal üst kenarı
 const TILT_SLOT_R = 0.075;                    // kilit cıvatası yarıçapı
@@ -210,17 +214,17 @@ carrierGroup.add(fixedGroup);
 // Kelepçe boyundan iki uçta 10 mm taşar.
 fixedGroup.add(ringSector(CARRIER_R, CLAMP_R, 0, Math.PI * 2, SADDLE_L + 0.02, M.felt));
 
-// Eyer: borunun alt 140°'sini saran 10 mm sac, 500 mm boy (keçe üstünde)
+// Eyer: borunun alt 140°'sini saran 8 mm sac, 400 mm boy (keçe üstünde)
 fixedGroup.add(ringSector(CLAMP_R, CLAMP_R + SADDLE_T, deg(200), deg(340), SADDLE_L, M.plate));
 
 // Eyer kulakları (iki yanda boyuna flanş, üst kabuk flanşları buraya cıvatalanır)
 const earY = -CLAMP_R * Math.sin(deg(20));
-const earX = CLAMP_R * Math.cos(deg(20)) + 0.045;
+const earX = CLAMP_R * Math.cos(deg(20)) + EAR_W / 2 + 0.01;
 [-1, 1].forEach(s => {
-  fixedGroup.add(box(0.07, 0.012, SADDLE_L, M.plate, s * earX, earY - 0.012, 0));
+  fixedGroup.add(box(EAR_W, EAR_T, SADDLE_L, M.plate, s * earX, earY - EAR_T, 0));
 });
 
-// Üst kabuk: borunun üst 220°'sini eyer boyunca (500 mm) tamamen saran 8 mm sac.
+// Üst kabuk: borunun üst 220°'sini eyer boyunca (400 mm) tamamen saran 5 mm sac.
 // Eyerle birlikte boruyu 360° sarar; iki yandaki boyuna flanşlardan 4'er M16 ile eyer kulaklarına sıkılır.
 const shell = ringSector(CLAMP_R, CLAMP_R + SHELL_T, deg(-20), deg(200), SADDLE_L, M.band);
 fixedGroup.add(shell);
@@ -231,7 +235,7 @@ fixedGroup.add(shell);
   fixedGroup.add(rib);
 });
 [-1, 1].forEach(s => {
-  fixedGroup.add(box(0.07, 0.012, SADDLE_L, M.band, s * earX, earY + 0.006, 0));
+  fixedGroup.add(box(EAR_W, EAR_T, SADDLE_L, M.band, s * earX, earY + EAR_T / 2, 0));
   const bx = s * (earX + 0.012);
   SHELL_BOLT_Z.forEach(bz => {
     fixedGroup.add(rod(0.008, new THREE.Vector3(bx, earY - 0.05, bz), new THREE.Vector3(bx, earY + 0.05, bz), M.dark, 10));
@@ -239,14 +243,14 @@ fixedGroup.add(shell);
     const n2 = nut(0.014, 'y'); n2.position.set(bx, earY - 0.025, bz); fixedGroup.add(n2);
   });
 });
-addLabel(fixedGroup, 'Üst kabuk 8 mm, L=500 (gövdeyi tam sarar) + 8×M16', new THREE.Vector3(0, CARRIER_R + 0.06, 0.15));
+addLabel(fixedGroup, `Üst kabuk ${SHELL_T * 1000} mm, L=${SADDLE_L * 1000} (gövdeyi tam sarar) + 8×M16`, new THREE.Vector3(0, CARRIER_R + 0.06, 0.15));
 
 // Eyer gövdesi: 2 düşey ağ levhası + bağlantı plakası
 [-0.07, 0.07].forEach(x => {
-  fixedGroup.add(box(0.012, 0.10, 0.46, M.plate, x, -0.255, 0));
+  fixedGroup.add(box(WEB_T, 0.10, WEB_L, M.plate, x, -0.255, 0));
 });
 fixedGroup.add(box(0.30, PLATE_T, SADDLE_L, M.plate, 0, PLATE_TOP - PLATE_T / 2, 0));
-addLabel(fixedGroup, 'Eyer 10 mm + bağlantı plakası 300×500×15', new THREE.Vector3(-0.32, -0.26, 0.22));
+addLabel(fixedGroup, `Eyer ${SADDLE_T * 1000} mm + bağlantı plakası 300×${SADDLE_L * 1000}×${PLATE_T * 1000}`, new THREE.Vector3(-0.32, -0.26, 0.22));
 
 // Dış kulaklar (taşıyıcı tarafı, YZ düzleminde 12 mm): üstte plakaya kaynaklı, altta pim
 // merkezli R90 yarım daire; R60'ta ±(SLOPE_MAX+2)° kilit kanalı. Şekil (u = -Z, v = Y) düzleminde.
@@ -371,7 +375,7 @@ for (let a = 0; a < 360; a += 5) {
 const scaleLabels = [0, 90, 180, -90].map(a =>
   addLabel(levelHead, `${a}°`, new THREE.Vector3(Math.cos(deg(a)) * (FLANGE_R + 0.035), FIX_FLANGE_TOP - FLANGE_T / 2, -Math.sin(deg(a)) * (FLANGE_R + 0.035))));
 void scaleLabels;
-addLabel(levelHead, `Sabit flanş Ø300×20 · 4 yay kanal ±${AZ_SLOT_HALF}° · 5° taksimat`, new THREE.Vector3(-0.05, FIX_FLANGE_TOP + 0.01, 0.26), 'ax');
+addLabel(levelHead, `Sabit flanş Ø300×${FLANGE_T * 1000} · 4 yay kanal ±${AZ_SLOT_HALF}° · 5° taksimat`, new THREE.Vector3(-0.05, FIX_FLANGE_TOP + 0.01, 0.26), 'ax');
 
 // ---------------------------------------------------------------------------
 // 3. EKSEN 1 · AZİMUT GRUBU
@@ -434,7 +438,7 @@ for (let i = 0; i < 8; i++) {
   boltSets[i % 2].push(g);
 }
 addLabel(azBolts, '4×M16 8.8 · pul + somun + kontra · kanalda kayar', new THREE.Vector3(0.06, FIX_TOP_AZ + 0.035, 0.20), 'ax');
-addLabel(azGroup, 'EKSEN 1 · Döner flanş Ø300×20 · 8 delik (45°) + bronz burç', new THREE.Vector3(0.18, ROT_FLANGE_BOT - 0.03, -0.22), 'ax');
+addLabel(azGroup, `EKSEN 1 · Döner flanş Ø300×${FLANGE_T * 1000} · 8 delik (45°) + bronz burç`, new THREE.Vector3(0.18, ROT_FLANGE_BOT - 0.03, -0.22), 'ax');
 const pivotLabel = addLabel(azGroup, 'Dönme ekseni: Ø50 merkez pimi ↔ bronz burç', new THREE.Vector3(-0.02, ROT_FLANGE_BOT - 0.09, 0), 'ax');
 void pivotLabel;
 
@@ -500,6 +504,10 @@ tongueShape.lineTo(tongueEnd, 0.15);
 tongueShape.lineTo(0.15, 0.055);
 tongueShape.lineTo(-0.03, 0.055);
 tongueShape.closePath();
+// Hafifletme deliği Ø80 (geniş bölümde)
+const TONGUE_HOLE = { x: 0.215, r: 0.04 };
+tongueShape.holes.push(circlePath(TONGUE_HOLE.x, 0, TONGUE_HOLE.r));
+const tongueArea = Math.abs(THREE.ShapeUtils.area(tongueShape.getPoints())) - Math.PI * TONGUE_HOLE.r ** 2;
 const tongueGeo = new THREE.ExtrudeGeometry(tongueShape, { depth: 0.025, bevelEnabled: false });
 tongueGeo.translate(0, 0, -0.0125);
 tiltGroup.add(new THREE.Mesh(tongueGeo, M.galv));
@@ -532,7 +540,7 @@ tiltGroup.add(rod(mastR, new THREE.Vector3(MAST_X, -MAST_PIPE.L / 2, 0), new THR
   c.position.set(MAST_X, s * (MAST_PIPE.L / 2 + 0.006), 0);
   tiltGroup.add(c);
 });
-addLabel(tiltGroup, `Anten direği Ø76.1×4 · L=${MAST_PIPE.L * 1000} mm`, new THREE.Vector3(MAST_X, MAST_PIPE.L / 2 + 0.06, 0));
+addLabel(tiltGroup, `Anten direği ${pipeName(MAST_PIPE)} · L=${MAST_PIPE.L * 1000} mm`, new THREE.Vector3(MAST_X, MAST_PIPE.L / 2 + 0.06, 0));
 addLabel(tiltGroup, `EKSEN 2 · Tilt mafsalı (Ø30 pim + M16 kanal kilidi, zemine göre öne ${TILT_FRONT}° / arkaya ${TILT_BACK}°)`, new THREE.Vector3(0.0, 0.16, 0.05), 'ax');
 
 // ---------------------------------------------------------------------------
@@ -647,7 +655,7 @@ function rebuildDrop(drop) {
   azDynamic.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), lineMat));
 
   if (dropLabel) { azGroup.remove(dropLabel); labels.splice(labels.indexOf(dropLabel), 1); }
-  dropLabel = addLabel(azGroup, `İniş borusu Ø114.3×6 · eksen→pim ${Math.round(drop * 1000)} mm`, new THREE.Vector3(dx - 0.05, (axisY + pinY) / 2, 0));
+  dropLabel = addLabel(azGroup, `İniş borusu ${pipeName(DROP_PIPE)} · eksen→pim ${Math.round(drop * 1000)} mm`, new THREE.Vector3(dx - 0.05, (axisY + pinY) / 2, 0));
   dropLabel.visible = document.getElementById('t-lbl').checked;
 
   tiltGroup.position.set(0, pinY, 0);
@@ -722,29 +730,29 @@ function bom(drop) {
   void drop;
   const dropLen = ROT_FLANGE_BOT - (pinYLocal + CLEVIS_TOP + 0.015);
   const rows = [
-    [`Keçe ${FELT_T * 1000} mm, ${Math.round((2 * Math.PI * CARRIER_R + 0.02) * 1000)}×${(SADDLE_L + 0.02) * 1000} (taşıyıcı ↔ kelepçe)`, 1, 0],
-    ['Eyer sacı 10 mm, R=215 iç, 140°, L=500', 1, (CLAMP_R + SADDLE_T / 2) * deg(140) * SADDLE_L * SADDLE_T * STEEL_DENSITY],
-    ['Üst kabuk 8 mm, R=215 iç, 220°, L=500', 1, (CLAMP_R + SHELL_T / 2) * deg(220) * SADDLE_L * SHELL_T * STEEL_DENSITY],
-    ['Kabuk yan flanşı 70×12, L=500', 2, 0.07 * 0.012 * SADDLE_L * STEEL_DENSITY],
+    [`Keçe ${FELT_T * 1000} mm, ${Math.round((2 * Math.PI * CARRIER_R + 0.02) * 1000)}×${Math.round((SADDLE_L + 0.02) * 1000)} (taşıyıcı ↔ kelepçe)`, 1, 0],
+    [`Eyer sacı ${SADDLE_T * 1000} mm, R=215 iç, 140°, L=${SADDLE_L * 1000}`, 1, (CLAMP_R + SADDLE_T / 2) * deg(140) * SADDLE_L * SADDLE_T * STEEL_DENSITY],
+    [`Üst kabuk ${SHELL_T * 1000} mm, R=215 iç, 220°, L=${SADDLE_L * 1000}`, 1, (CLAMP_R + SHELL_T / 2) * deg(220) * SADDLE_L * SHELL_T * STEEL_DENSITY],
+    [`Eyer kulağı + kabuk yan flanşı ${EAR_W * 1000}×${EAR_T * 1000}, L=${SADDLE_L * 1000}`, 4, EAR_W * EAR_T * SADDLE_L * STEEL_DENSITY],
     ['Kabuk uç berkitmesi 25×10, 210°', 2, (CARRIER_R + 0.02) * deg(210) * 0.025 * 0.010 * STEEL_DENSITY],
-    ['Eyer ağ levhası 12 mm, 100×460', 2, 0.1 * 0.46 * 0.012 * STEEL_DENSITY],
-    ['Bağlantı plakası 300×500×15', 1, 0.3 * 0.5 * 0.015 * STEEL_DENSITY],
+    [`Eyer ağ levhası ${WEB_T * 1000} mm, 100×${WEB_L * 1000}`, 2, 0.1 * WEB_L * WEB_T * STEEL_DENSITY],
+    [`Bağlantı plakası 300×${SADDLE_L * 1000}×${PLATE_T * 1000}`, 1, 0.3 * SADDLE_L * PLATE_T * STEEL_DENSITY],
     [`Eğim dış kulağı 12 mm, R90 + R60 kanal (±${SLOPE_MAX}°)`, 2, (0.18 * 0.05 + Math.PI * 0.09 ** 2 / 2) * 0.012 * STEEL_DENSITY],
     ['Eğim iç kulağı 12 mm, 90×130 + R45', 2, (0.09 * 0.13 + Math.PI * 0.045 ** 2 / 2) * 0.012 * STEEL_DENSITY],
     ['İç kulak berkitmesi 8 mm üçgen 30×35', 4, 0.5 * 0.03 * 0.035 * 0.008 * STEEL_DENSITY],
     ['Eğim pimi Ø30 + 2 somun', 1, 0.6],
-    [`Sabit flanş Ø300×20 (4 yay kanal ±${AZ_SLOT_HALF}°, 5° taksimat)`, 1, Math.PI * FLANGE_R ** 2 * FLANGE_T * STEEL_DENSITY * 0.93],
+    [`Sabit flanş Ø300×${FLANGE_T * 1000} (4 yay kanal ±${AZ_SLOT_HALF}°, 5° taksimat)`, 1, Math.PI * FLANGE_R ** 2 * FLANGE_T * STEEL_DENSITY * 0.93],
     ['Merkez pimi Ø50, L=38 (sabit flanşa kaynaklı)', 1, Math.PI * AZ_SPIGOT_R ** 2 * 0.038 * STEEL_DENSITY],
-    ['Döner flanş Ø300×20 (8 delik Ø18, 45° ara)', 1, Math.PI * (FLANGE_R ** 2 - AZ_BUSH_R ** 2) * FLANGE_T * STEEL_DENSITY],
-    ['Bronz burç Ø70/Ø50 × 20 (CuSn12)', 1, Math.PI * (AZ_BUSH_R ** 2 - AZ_SPIGOT_R ** 2) * FLANGE_T * 8800],
-    ['Azimut cıvata takımı M16×80 8.8: 2 pul Ø40 + somun + kontra', 4, 0.26],
-    [`İniş borusu Ø114.3×6.0, L=${Math.round(dropLen * 1000)}`, 1, pipeMassPerM(DROP_PIPE.D, DROP_PIPE.t) * dropLen],
+    [`Döner flanş Ø300×${FLANGE_T * 1000} (8 delik Ø18, 45° ara)`, 1, Math.PI * (FLANGE_R ** 2 - AZ_BUSH_R ** 2) * FLANGE_T * STEEL_DENSITY],
+    [`Bronz burç Ø70/Ø50 × ${FLANGE_T * 1000} (CuSn12)`, 1, Math.PI * (AZ_BUSH_R ** 2 - AZ_SPIGOT_R ** 2) * FLANGE_T * 8800],
+    ['Azimut cıvata takımı M16×70 8.8: 2 pul Ø40 + somun + kontra', 4, 0.26],
+    [`İniş borusu ${pipeName(DROP_PIPE)}, L=${Math.round(dropLen * 1000)}`, 1, pipeMassPerM(DROP_PIPE.D, DROP_PIPE.t) * dropLen],
     ['Berkitme 10 mm üçgen', 4, 0.5 * 0.07 * 0.12 * 0.01 * STEEL_DENSITY],
     ['Uç plakası 200×100×15', 1, 0.2 * 0.1 * 0.015 * STEEL_DENSITY],
     [`Çatal levhası 12 mm, R${CLEVIS_R * 1000} alt (pim deliği + ${DOWNTILT_MAX - DOWNTILT_MIN}° tilt kanalı)`, 2, (2 * CLEVIS_R * CLEVIS_TOP + Math.PI * CLEVIS_R ** 2 / 2) * 0.012 * STEEL_DENSITY * 0.9],
-    ['Dil levhası 25 mm', 1, 0.3 * 0.2 * 0.025 * STEEL_DENSITY],
+    [`Dil levhası 25 mm (Ø${TONGUE_HOLE.r * 2000} hafifletme deliği)`, 1, tongueArea * 0.025 * STEEL_DENSITY],
     ['Direk manşonu (yarık) Ø96, L=300 + kulaklar', 1, 3.2],
-    [`Anten direği Ø76.1×4.0, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
+    [`Anten direği ${pipeName(MAST_PIPE)}, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
     ['Pim Ø30 + 2 somun', 1, 0.6],
     ['Cıvata M16 (kabuk 8, tilt kilidi 1, eğim kilidi 1)', 10, 0.15],
     ['Cıvata M12 manşon', 3, 0.08],
