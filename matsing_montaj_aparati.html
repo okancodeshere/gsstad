@@ -33,14 +33,14 @@
   <div id="view"></div>
   <div id="panel">
     <h1>Matsing 4-Beam · Tek Kollu Askı Aparatı</h1>
-    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk) asılır. Eksen 1: azimut (döner flanş). Eksen 2: tilt (çatal mafsal). Ana model (<code>main.js</code>) değişmedi.</div>
+    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk) asılır. Eksen 1: azimut (döner flanş). Eksen 2: tilt (çatal mafsal; zemine göre öne 70°, arkaya 20°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.</div>
 
     <div class="ctl"><label>Taşıyıcı eğimi (eğim mafsalı) <b id="v-slope">5°</b></label><input id="slope" type="range" min="-15" max="15" step="0.1" value="5"></div>
     <div class="row" style="margin-top:0">
       <button data-slope="0">0°</button><button data-slope="5">ALAN 2 · 5°</button><button data-slope="7.7">ALAN 1-3 · 7.7°</button>
     </div>
     <div class="ctl"><label>Eksen 1 · Azimut <b id="v-az">0°</b></label><input id="az" type="range" min="-180" max="180" step="1" value="0"></div>
-    <div class="ctl"><label>Eksen 2 · Mekanik tilt (+ aşağı) <b id="v-tilt">0°</b></label><input id="tilt" type="range" min="-10" max="20" step="0.5" value="0"></div>
+    <div class="ctl"><label>Eksen 2 · Tilt (0° = zemine bakış, + öne, − arkaya) <b id="v-tilt">0°</b></label><input id="tilt" type="range" min="-20" max="70" step="0.5" value="0"></div>
     <div class="ctl"><label>İniş (taşıyıcı ekseni → tilt pimi) <b id="v-drop">1500 mm</b></label><input id="drop" type="range" min="1100" max="3000" step="50" value="1500"></div>
 
     <div class="chk">

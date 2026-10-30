@@ -36,6 +36,8 @@ const ANT = {
 
 const SADDLE_T = 0.010;
 const SADDLE_L = 0.50;
+const FELT_T = 0.005;                           // taşıyıcı ile kelepçe arası keçe
+const CLAMP_R = CARRIER_R + FELT_T;             // eyer / kabuk iç yarıçapı
 const SHELL_T = 0.008;                          // üst kabuk sac kalınlığı
 const SHELL_BOLT_Z = [-0.19, -0.065, 0.065, 0.19]; // yan başına 4 x M16
 const PLATE_TOP = -0.305, PLATE_T = 0.015;
@@ -59,7 +61,11 @@ const MAST_PIPE = { D: 0.0761, t: 0.004, L: 1.60 }; // Ø76.1 x 4.0 (Matsing: Ø
 const MAST_X = 0.32;                          // tilt pimi → anten direği ekseni
 const CLEVIS_TOP = 0.0975;                    // pim üstünden çatal üst kenarı
 const TILT_SLOT_R = 0.075;                    // kilit cıvatası yarıçapı
-const TILT_MIN = -10, TILT_MAX = 20;          // + aşağı (downtilt)
+const CLEVIS_R = 0.10;                        // çatal levhası alt yarım daire (pim merkezli)
+// Tilt arayüzde 0° = anten zemine bakıyor (nadir); + öne (boresight yönü), − arkaya.
+// İçeride downtilt d = 90 − tilt kullanılır (0 = yatay, + aşağı).
+const TILT_BACK = 20, TILT_FRONT = 70;
+const DOWNTILT_MIN = 90 - TILT_FRONT, DOWNTILT_MAX = 90 + TILT_BACK; // 20 … 110
 
 const STEEL_DENSITY = 7850;
 
@@ -108,7 +114,8 @@ const M = {
   axis: new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.2, roughness: 0.5 }),
   radome: new THREE.MeshStandardMaterial({ color: 0xb7b09c, metalness: 0.1, roughness: 0.6 }),
   antPanel: new THREE.MeshStandardMaterial({ color: 0xa3abb3, metalness: 0.7, roughness: 0.4 }),
-  cap: new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: 0.4, roughness: 0.5 })
+  cap: new THREE.MeshStandardMaterial({ color: 0xc9ccd1, metalness: 0.4, roughness: 0.5 }),
+  felt: new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.0, roughness: 0.95 })
 };
 
 // ---------------------------------------------------------------------------
@@ -187,23 +194,27 @@ addLabel(carrier, 'Çatı taşıyıcısı · çevre 132 cm (Ø420)', new THREE.V
 const fixedGroup = new THREE.Group();
 carrierGroup.add(fixedGroup);
 
-// Eyer: borunun alt 140°'sini saran 10 mm sac, 500 mm boy
-fixedGroup.add(ringSector(CARRIER_R, CARRIER_R + SADDLE_T, deg(200), deg(340), SADDLE_L, M.plate));
+// Keçe: taşıyıcı ile eyer/kabuk arasında 360° ara katman (sürtünme yüzeyinde korozyonu önler).
+// Kelepçe boyundan iki uçta 10 mm taşar.
+fixedGroup.add(ringSector(CARRIER_R, CLAMP_R, 0, Math.PI * 2, SADDLE_L + 0.02, M.felt));
+
+// Eyer: borunun alt 140°'sini saran 10 mm sac, 500 mm boy (keçe üstünde)
+fixedGroup.add(ringSector(CLAMP_R, CLAMP_R + SADDLE_T, deg(200), deg(340), SADDLE_L, M.plate));
 
 // Eyer kulakları (iki yanda boyuna flanş, üst kabuk flanşları buraya cıvatalanır)
-const earY = -CARRIER_R * Math.sin(deg(20));
-const earX = CARRIER_R * Math.cos(deg(20)) + 0.045;
+const earY = -CLAMP_R * Math.sin(deg(20));
+const earX = CLAMP_R * Math.cos(deg(20)) + 0.045;
 [-1, 1].forEach(s => {
   fixedGroup.add(box(0.07, 0.012, SADDLE_L, M.plate, s * earX, earY - 0.012, 0));
 });
 
 // Üst kabuk: borunun üst 220°'sini eyer boyunca (500 mm) tamamen saran 8 mm sac.
 // Eyerle birlikte boruyu 360° sarar; iki yandaki boyuna flanşlardan 4'er M16 ile eyer kulaklarına sıkılır.
-const shell = ringSector(CARRIER_R, CARRIER_R + SHELL_T, deg(-20), deg(200), SADDLE_L, M.band);
+const shell = ringSector(CLAMP_R, CLAMP_R + SHELL_T, deg(-20), deg(200), SADDLE_L, M.band);
 fixedGroup.add(shell);
 // Kabuk üstünde 2 enine berkitme halkası (uçlarda, kabuğun ağzı açılmasın)
 [-1, 1].forEach(s => {
-  const rib = ringSector(CARRIER_R + SHELL_T, CARRIER_R + SHELL_T + 0.025, deg(-15), deg(195), 0.010, M.band);
+  const rib = ringSector(CLAMP_R + SHELL_T, CLAMP_R + SHELL_T + 0.025, deg(-15), deg(195), 0.010, M.band);
   rib.position.z = s * (SADDLE_L / 2 - 0.005);
   fixedGroup.add(rib);
 });
@@ -343,18 +354,16 @@ for (let i = 0; i < 4; i++) {
 // Çatal (clevis) plakası: pim deliği + tilt kilit kanalı
 function clevisPlateGeometry() {
   const s = new THREE.Shape();
-  s.moveTo(-0.07, CLEVIS_TOP);
-  s.lineTo(0.11, CLEVIS_TOP);
-  s.lineTo(0.11, -0.045);
-  s.lineTo(0.06, -0.085);
-  s.lineTo(-0.04, -0.085);
-  s.lineTo(-0.07, -0.05);
+  s.moveTo(-CLEVIS_R, CLEVIS_TOP);
+  s.lineTo(CLEVIS_R, CLEVIS_TOP);
+  s.lineTo(CLEVIS_R, 0);
+  s.absarc(0, 0, CLEVIS_R, 0, -Math.PI, true);
   s.closePath();
   const pin = new THREE.Path();
   pin.absarc(0, 0, 0.016, 0, Math.PI * 2, true);
   s.holes.push(pin);
-  // Kilit cıvatası tilt ile birlikte -tilt açısında döner
-  const a0 = deg(-TILT_MAX - 2), a1 = deg(-TILT_MIN + 2), hw = 0.009, r = TILT_SLOT_R;
+  // Kilit cıvatası dil levhasıyla birlikte −downtilt açısında döner (−110° … −20°)
+  const a0 = deg(-DOWNTILT_MAX - 2), a1 = deg(-DOWNTILT_MIN + 2), hw = 0.009, r = TILT_SLOT_R;
   const slot = new THREE.Path();
   slot.absarc(0, 0, r + hw, a0, a1, false);
   slot.absarc(Math.cos(a1) * r, Math.sin(a1) * r, hw, a1, a1 + Math.PI, false);
@@ -416,7 +425,7 @@ tiltGroup.add(rod(mastR, new THREE.Vector3(MAST_X, -MAST_PIPE.L / 2, 0), new THR
   tiltGroup.add(c);
 });
 addLabel(tiltGroup, `Anten direği Ø76.1×4 · L=${MAST_PIPE.L * 1000} mm`, new THREE.Vector3(MAST_X, MAST_PIPE.L / 2 + 0.06, 0));
-addLabel(tiltGroup, 'EKSEN 2 · Tilt mafsalı (Ø30 pim + M16 kanal kilidi)', new THREE.Vector3(0.0, -0.16, 0.05), 'ax');
+addLabel(tiltGroup, `EKSEN 2 · Tilt mafsalı (Ø30 pim + M16 kanal kilidi, zemine göre öne ${TILT_FRONT}° / arkaya ${TILT_BACK}°)`, new THREE.Vector3(0.0, 0.16, 0.05), 'ax');
 
 // ---------------------------------------------------------------------------
 // 5. MATSING ANTEN (çizim ölçüleriyle) + orijinal 2 braket
@@ -605,8 +614,9 @@ function bom(drop) {
   void drop;
   const dropLen = ROT_FLANGE_BOT - (pinYLocal + CLEVIS_TOP + 0.015);
   const rows = [
-    ['Eyer sacı 10 mm, R=210 iç, 140°, L=500', 1, Math.PI * 2 * (CARRIER_R + 0.005) * (140 / 360) * 0.5 * 0.010 * STEEL_DENSITY],
-    ['Üst kabuk 8 mm, R=210 iç, 220°, L=500', 1, (CARRIER_R + SHELL_T / 2) * deg(220) * SADDLE_L * SHELL_T * STEEL_DENSITY],
+    [`Keçe ${FELT_T * 1000} mm, ${Math.round((2 * Math.PI * CARRIER_R + 0.02) * 1000)}×${(SADDLE_L + 0.02) * 1000} (taşıyıcı ↔ kelepçe)`, 1, 0],
+    ['Eyer sacı 10 mm, R=215 iç, 140°, L=500', 1, (CLAMP_R + SADDLE_T / 2) * deg(140) * SADDLE_L * SADDLE_T * STEEL_DENSITY],
+    ['Üst kabuk 8 mm, R=215 iç, 220°, L=500', 1, (CLAMP_R + SHELL_T / 2) * deg(220) * SADDLE_L * SHELL_T * STEEL_DENSITY],
     ['Kabuk yan flanşı 70×12, L=500', 2, 0.07 * 0.012 * SADDLE_L * STEEL_DENSITY],
     ['Kabuk uç berkitmesi 25×10, 210°', 2, (CARRIER_R + 0.02) * deg(210) * 0.025 * 0.010 * STEEL_DENSITY],
     ['Eyer ağ levhası 12 mm, 100×460', 2, 0.1 * 0.46 * 0.012 * STEEL_DENSITY],
@@ -619,7 +629,7 @@ function bom(drop) {
     [`İniş borusu Ø114.3×6.0, L=${Math.round(dropLen * 1000)}`, 1, pipeMassPerM(DROP_PIPE.D, DROP_PIPE.t) * dropLen],
     ['Berkitme 10 mm üçgen', 4, 0.5 * 0.07 * 0.12 * 0.01 * STEEL_DENSITY],
     ['Uç plakası 200×100×15', 1, 0.2 * 0.1 * 0.015 * STEEL_DENSITY],
-    ['Çatal levhası 12 mm (pim deliği + tilt kanalı)', 2, 0.18 * 0.18 * 0.012 * STEEL_DENSITY],
+    [`Çatal levhası 12 mm, R${CLEVIS_R * 1000} alt (pim deliği + ${DOWNTILT_MAX - DOWNTILT_MIN}° tilt kanalı)`, 2, (2 * CLEVIS_R * CLEVIS_TOP + Math.PI * CLEVIS_R ** 2 / 2) * 0.012 * STEEL_DENSITY * 0.9],
     ['Dil levhası 25 mm', 1, 0.3 * 0.2 * 0.025 * STEEL_DENSITY],
     ['Direk manşonu (yarık) Ø96, L=300 + kulaklar', 1, 3.2],
     [`Anten direği Ø76.1×4.0, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
@@ -650,7 +660,7 @@ function update() {
   const key = `${drop}|${slope}`;
   if (key !== lastKey) { placeHead(slope); rebuildDrop(drop); lastKey = key; }
   azGroup.rotation.y = deg(az);
-  tiltGroup.rotation.z = deg(-tilt);
+  tiltGroup.rotation.z = deg(-(90 - tilt)); // tilt: 0 = zemine bakış, + öne
 
   const c = computeChecks(drop);
   const cls = (v, lim) => v >= lim ? 'ok' : 'bad';

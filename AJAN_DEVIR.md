@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı: lama çemberler yerine gövdeyi tam saran üst kabuk`
+- **Son commit:** `[Claude] Matsing askı aparatı: tilt zemine göre öne 70° / arkaya 20°, taşıyıcı keçesi`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +71,29 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 — Claude — Matsing askı aparatı: tilt aralığı (zemine göre) + keçe
+- **Kullanıcı isteği:**
+  - "Eksen 2 de neredeyse −45 +70 civarı ayarlanabilir olmalı."
+  - "Ayrıca taşıyıcı arasına keçe de koyacağız ki sürtünme yüzeyinde korozyon olmasın."
+  - Ardından: "Yanlış anladın, zemine bakarken 0 derece aldığında bu değerleri istemiştim, önceki bağlantı koluna geri dön." Yön sorusuna yanıt: "arkaya 20 olsun öne 70".
+- **Yanlış anlama ve geri alma:**
+  - İlk istek, yatay 0° kabul edilerek −45…+70 olarak okundu ve tilt için boyunduruk (U çatal) tasarlandı.
+  - Kullanıcı düzeltti. Boyunduruk değişikliği commit edilmeden `git checkout` ile geri alındı; tek kollu çatal mafsal korundu.
+  - Keçe yeniden eklendi.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - YENİ `FELT_T = 0.005`, `CLAMP_R`. 360° keçe katmanı (`M.felt`), kelepçe boyundan iki uçta 10 mm taşıyor. Eyer, kabuk ve kulak konumları `CLAMP_R`'ye göre.
+    - Tilt arayüzde 0° = zemine bakış, + öne, − arkaya (`TILT_FRONT = 70`, `TILT_BACK = 20`). İçeride downtilt = 90 − tilt, yani 20…110°. `tiltGroup.rotation.z = −(90 − tilt)`.
+    - `clevisPlateGeometry()`: alt kısım pim merkezli R100 yarım daire (`CLEVIS_R`). Kilit kanalı R75'te −112…−18°.
+    - Parça listesi: keçe satırı, eyer ve kabuk R215.
+  - `matsing_montaj_aparati.html`: tilt kaydırıcısı −20…+70, etiket ve açıklama.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - İniş 1100 / 1300 / 1500 mm × eğim ±15° × tilt −20…+70 taraması yapıldı. Anten artık hep mafsalın altında kalıyor.
+  - Taşıyıcıya en az 389 / 512 / 661 mm; iniş borusuna en az 246 mm.
+  - −20 ve +70'te görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı: tilt zemine göre öne 70° / arkaya 20°, taşıyıcı keçesi`
 
 ### 2026-10-30 — Claude — Matsing askı aparatı: gövdeyi tam saran üst kabuk
 - **Kullanıcı isteği:** "taşıyıcının üst tarafını şeritle değil, komple gövdeyi saracak şekilde ofset yap".
