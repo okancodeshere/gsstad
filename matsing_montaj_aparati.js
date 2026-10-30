@@ -4,7 +4,7 @@
 // Koordinatlar (m): taşıyıcı boru ekseni Z boyunca, Y = 0'da. Azimut 0° iken anten +X'e bakar.
 // Eksen 1 (azimut): bağlantı plakası altındaki döner flanş, düşey eksen.
 // Eksen 2 (tilt):   iniş borusunun ucundaki çatal mafsal, yatay pim (azimut çerçevesinde Z ekseni).
-// Taşıyıcıya delme/kaynak yok: eyer + 50 mm lama çember kelepçe (bkz. AJAN_DEVIR.md Kalıcı Kararlar).
+// Taşıyıcıya delme/kaynak yok: alt eyer + gövdeyi tam saran üst kabuk, cıvatalı (bkz. AJAN_DEVIR.md Kalıcı Kararlar).
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -36,8 +36,8 @@ const ANT = {
 
 const SADDLE_T = 0.010;
 const SADDLE_L = 0.50;
-const BAND_W = 0.050, BAND_T = 0.006;
-const BAND_Z = [-0.18, 0.18];
+const SHELL_T = 0.008;                          // üst kabuk sac kalınlığı
+const SHELL_BOLT_Z = [-0.19, -0.065, 0.065, 0.19]; // yan başına 4 x M16
 const PLATE_TOP = -0.305, PLATE_T = 0.015;
 const FLANGE_R = 0.13, FLANGE_T = 0.015;
 
@@ -182,7 +182,7 @@ carrierGroup.add(carrier);
 addLabel(carrier, 'Çatı taşıyıcısı · çevre 132 cm (Ø420)', new THREE.Vector3(0, CARRIER_R + 0.08, -1.2));
 
 // ---------------------------------------------------------------------------
-// 2. SABİT KISIM: eyer + lama çember kelepçeler + bağlantı plakası + sabit flanş
+// 2. SABİT KISIM: eyer + üst kabuk + bağlantı plakası + eğim kulakları
 // ---------------------------------------------------------------------------
 const fixedGroup = new THREE.Group();
 carrierGroup.add(fixedGroup);
@@ -190,27 +190,33 @@ carrierGroup.add(fixedGroup);
 // Eyer: borunun alt 140°'sini saran 10 mm sac, 500 mm boy
 fixedGroup.add(ringSector(CARRIER_R, CARRIER_R + SADDLE_T, deg(200), deg(340), SADDLE_L, M.plate));
 
-// Eyer kulakları (iki yanda yatay lama, çember uçları buraya cıvatalanır)
+// Eyer kulakları (iki yanda boyuna flanş, üst kabuk flanşları buraya cıvatalanır)
 const earY = -CARRIER_R * Math.sin(deg(20));
 const earX = CARRIER_R * Math.cos(deg(20)) + 0.045;
 [-1, 1].forEach(s => {
   fixedGroup.add(box(0.07, 0.012, SADDLE_L, M.plate, s * earX, earY - 0.012, 0));
 });
 
-// Çemberler: üstten saran 50 x 6 lama; uçları dışa kıvrık çift kat kulak + M16 cıvata
-BAND_Z.forEach(bz => {
-  const band = ringSector(CARRIER_R, CARRIER_R + BAND_T, deg(-20), deg(200), BAND_W, M.band);
-  band.position.z = bz;
-  fixedGroup.add(band);
-  [-1, 1].forEach(s => {
-    fixedGroup.add(box(0.06, 0.012, BAND_W, M.band, s * earX, earY + 0.006, bz));
-    const bx = s * (earX + 0.012);
+// Üst kabuk: borunun üst 220°'sini eyer boyunca (500 mm) tamamen saran 8 mm sac.
+// Eyerle birlikte boruyu 360° sarar; iki yandaki boyuna flanşlardan 4'er M16 ile eyer kulaklarına sıkılır.
+const shell = ringSector(CARRIER_R, CARRIER_R + SHELL_T, deg(-20), deg(200), SADDLE_L, M.band);
+fixedGroup.add(shell);
+// Kabuk üstünde 2 enine berkitme halkası (uçlarda, kabuğun ağzı açılmasın)
+[-1, 1].forEach(s => {
+  const rib = ringSector(CARRIER_R + SHELL_T, CARRIER_R + SHELL_T + 0.025, deg(-15), deg(195), 0.010, M.band);
+  rib.position.z = s * (SADDLE_L / 2 - 0.005);
+  fixedGroup.add(rib);
+});
+[-1, 1].forEach(s => {
+  fixedGroup.add(box(0.07, 0.012, SADDLE_L, M.band, s * earX, earY + 0.006, 0));
+  const bx = s * (earX + 0.012);
+  SHELL_BOLT_Z.forEach(bz => {
     fixedGroup.add(rod(0.008, new THREE.Vector3(bx, earY - 0.05, bz), new THREE.Vector3(bx, earY + 0.05, bz), M.dark, 10));
     const n1 = nut(0.014, 'y'); n1.position.set(bx, earY + 0.019, bz); fixedGroup.add(n1);
     const n2 = nut(0.014, 'y'); n2.position.set(bx, earY - 0.025, bz); fixedGroup.add(n2);
   });
 });
-addLabel(fixedGroup, 'Lama çember kelepçe 50×6 + M16 (2 ad.)', new THREE.Vector3(0, CARRIER_R + 0.05, BAND_Z[1]));
+addLabel(fixedGroup, 'Üst kabuk 8 mm, L=500 (gövdeyi tam sarar) + 8×M16', new THREE.Vector3(0, CARRIER_R + 0.06, 0.15));
 
 // Eyer gövdesi: 2 düşey ağ levhası + bağlantı plakası
 [-0.07, 0.07].forEach(x => {
@@ -600,7 +606,9 @@ function bom(drop) {
   const dropLen = ROT_FLANGE_BOT - (pinYLocal + CLEVIS_TOP + 0.015);
   const rows = [
     ['Eyer sacı 10 mm, R=210 iç, 140°, L=500', 1, Math.PI * 2 * (CARRIER_R + 0.005) * (140 / 360) * 0.5 * 0.010 * STEEL_DENSITY],
-    ['Lama çember 50×6, açınım ≈ ' + Math.round((CARRIER_R + 0.003) * deg(220) * 1000 + 120) + ' mm', 2, 0.05 * 0.006 * ((CARRIER_R + 0.003) * deg(220) + 0.12) * STEEL_DENSITY],
+    ['Üst kabuk 8 mm, R=210 iç, 220°, L=500', 1, (CARRIER_R + SHELL_T / 2) * deg(220) * SADDLE_L * SHELL_T * STEEL_DENSITY],
+    ['Kabuk yan flanşı 70×12, L=500', 2, 0.07 * 0.012 * SADDLE_L * STEEL_DENSITY],
+    ['Kabuk uç berkitmesi 25×10, 210°', 2, (CARRIER_R + 0.02) * deg(210) * 0.025 * 0.010 * STEEL_DENSITY],
     ['Eyer ağ levhası 12 mm, 100×460', 2, 0.1 * 0.46 * 0.012 * STEEL_DENSITY],
     ['Bağlantı plakası 300×500×15', 1, 0.3 * 0.5 * 0.015 * STEEL_DENSITY],
     [`Eğim dış kulağı 12 mm, R90 + R60 kanal (±${SLOPE_MAX}°)`, 2, (0.18 * 0.05 + Math.PI * 0.09 ** 2 / 2) * 0.012 * STEEL_DENSITY],
@@ -616,7 +624,7 @@ function bom(drop) {
     ['Direk manşonu (yarık) Ø96, L=300 + kulaklar', 1, 3.2],
     [`Anten direği Ø76.1×4.0, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
     ['Pim Ø30 + 2 somun', 1, 0.6],
-    ['Cıvata M16 (çember 4, flanş 4, tilt kilidi 1, eğim kilidi 1)', 10, 0.15],
+    ['Cıvata M16 (kabuk 8, flanş 4, tilt kilidi 1, eğim kilidi 1)', 14, 0.15],
     ['Cıvata M12 manşon', 3, 0.08],
     ['Matsing braketi + 2×M12×200 (anten ile gelir)', 2, 0]
   ];

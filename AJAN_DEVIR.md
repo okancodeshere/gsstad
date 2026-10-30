@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı: taşıyıcı eğimine göre ayarlı eğim mafsalı`
+- **Son commit:** `[Claude] Matsing askı aparatı: lama çemberler yerine gövdeyi tam saran üst kabuk`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +71,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 — Claude — Matsing askı aparatı: gövdeyi tam saran üst kabuk
+- **Kullanıcı isteği:** "taşıyıcının üst tarafını şeritle değil, komple gövdeyi saracak şekilde ofset yap".
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js` → "2. SABİT KISIM":
+    - 2 adet 50 × 6 lama çember kaldırıldı (`BAND_*` sabitleri silindi).
+    - YENİ üst kabuk: 8 mm sac, borunun üst 220°'sini eyer boyunca (L 500) saran (`SHELL_T`). Alt eyerle birlikte boruyu 360° sarıyor.
+    - Uçlarda 2 adet 25 × 10 berkitme halkası.
+    - İki yanda 70 × 12 boyuna flanş, yan başına 4 × M16 (`SHELL_BOLT_Z`), eyer kulaklarına sıkılıyor. Delme ve kaynak yok.
+    - Parça listesi güncellendi (M16 sayısı 14).
+  - `matsing_montaj_aparati.html`: açıklama metni.
+- **Doğrulama:**
+  - `npm run build` hatasız. Sayfa yeniden yüklendikten sonra konsol temiz (HMR sırasında bir kez "SHELL_T is not defined" görüldü; düzenlemenin yarım halinden).
+  - Açıklıklar değişmedi: taşıyıcıya en az 72 mm, boruya en az 36 mm. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı: lama çemberler yerine gövdeyi tam saran üst kabuk`
 
 ### 2026-10-30 — Claude — Matsing askı aparatı: eğim ayar mafsalı
 - **Kullanıcı isteği:** "taşıyıcıya sabitlenen tarafa bir revizyon lazım, çünkü o taşıyıcı belirli bir açıyla ilerliyor. Bu nedenle tam zemine dik durması için açı ayarlamalı olmalı."
