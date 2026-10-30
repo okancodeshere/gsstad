@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı hafifletildi: aparat 166 → 123 kg`
+- **Son commit:** `[Claude] Matsing askı aparatı v2: sabit açılı göbek, Ø220 azimut flanşı, lamalı dil (aparat 107 kg); v1 yedeklendi`
+- **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +72,36 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 15:50 — Claude — Matsing askı aparatı v2: sabit göbek, Ø220 flanş, lamalı dil
+- **Kullanıcı isteği:** Aparatın 51.5 kg anten için ağır olduğu konuşuldu. Önerilen 3 madde için: "bunu bir yedek olarak tut ve onu da uygula".
+- **Yedek:** YENİ `matsing_yedekler/v1_ayarli_egim_123kg/` (`.html` + `.js`, `ecee516` hali). Başlığa "YEDEK v1" eklendi; ayrı sayfa olarak açılıyor.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - **Eğim mafsalı kaldırıldı.** Dış/iç kulaklar, eğim pimi, kanal kilidi, berkitmeler ve sabitleri (`SLOPE_PIN_Y`, `SLOPE_SLOT_R`, `*_LUG_*`, `HEAD_PLATE_TOP`) silindi.
+    - YENİ "2.B SABİT AÇILI GÖBEK":
+      - `buildHub(slope)`: Ø114.3×8 boru (`HUB`). Üst ucu `y = hubH − tan(eğim)·z` ile plakanın alt yüzüne oturacak şekilde eğik kesik.
+      - Kısa kenar `HUB_MIN_H = 70 mm` (azimut cıvatalarına anahtar payı).
+      - Alt ucu yatay, sabit flanşa kaynaklı. `FIX_FLANGE_TOP = 0`.
+    - `placeHead()` yeniden yazıldı: plaka altı merkezinden `hubH` aşağıda sabit flanş, onun altında azimut grubu. Eğim kaydırıcısı artık "göbek kesim açısı" (atölyede sabit).
+    - Azimut: `FLANGE_R` 0.15 → 0.11 (Ø220), `AZ_BOLT_R` 0.115 → 0.085. Sürtünme kapasitesi 6.0 kNm.
+    - Dil: dolu levha yerine pim göbeği (25 mm kapsül, pim ve kilit cıvatası delikli) + direk manşonuna giden 2 adet 50×12 lama (`tongueBars`).
+    - BOM satırları güncellendi. Eğim kilidi cıvatası çıktı (M16 sayısı 9). `setView('az')` kamerası alçaltıldı.
+  - `matsing_montaj_aparati.html`: eğim kaydırıcısı etiketi ve "Bağlantı ve hareket" metni.
+- **Sonuç:**
+  - Aparat 123.3 → 107.4 kg, toplam 174.8 → 158.9 kg (iniş 1500).
+  - Yığın kısaldığı için iniş borusu 108 mm uzadı (+1.4 kg).
+  - Toplam: 1100 → 153.5, 2000 → 165.6, 3000 → 179.1 kg.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Tarama: iniş 1100/1500/3000 × eğim −15/0/5/7.7/15 × tilt −20/0/35/70 × azimut 0/90/180/270.
+    - Taşıyıcıya en az 55 mm, iniş borusuna en az 246 mm.
+    - σv en fazla 64 MPa.
+  - 7.7° eğimde yakın plan görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı v2: sabit açılı göbek, Ø220 azimut flanşı, lamalı dil (aparat 107 kg); v1 yedeklendi`
+- **Yarım kalan / dikkat:**
+  - Her alan için göbek ayrı açıyla kesilmeli (ALAN 2: 5°, ALAN 1-3: 7.7°). Montajda eğim ayarı yok.
+  - Statik hesap yapılmadı.
 
 ### 2026-10-30 15:20 — Claude — Matsing askı aparatı hafifletildi
 - **Kullanıcı isteği:** Toplam ağırlık sorusundan sonra (anten 51.5 + aparat 166.1 = 217.6 kg, iniş 1500 mm) "Evet, hafiflet".

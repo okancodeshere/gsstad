@@ -2,7 +2,7 @@
 // Ana uygulamadan (main.js) bağımsız çalışma alanı: matsing_montaj_aparati.html
 //
 // Koordinatlar (m): taşıyıcı boru ekseni Z boyunca, Y = 0'da. Azimut 0° iken anten +X'e bakar.
-// Eksen 1 (azimut): terazi başlığındaki kanallı sabit flanş + altına oturan döner flanş, Ø50 merkez pimi
+// Eksen 1 (azimut): sabit açılı göbeğe kaynaklı kanallı sabit flanş + altına oturan döner flanş, Ø50 merkez pimi
 //                   (bronz burç) etrafında düşey eksende döner; 4×M16 sıkılınca sürtünmeyle kilitlenir.
 // Eksen 2 (tilt):   iniş borusunun ucundaki çatal mafsal, yatay pim (azimut çerçevesinde Z ekseni).
 // Taşıyıcıya delme/kaynak yok: alt eyer + gövdeyi tam saran üst kabuk, cıvatalı (bkz. AJAN_DEVIR.md Kalıcı Kararlar).
@@ -45,13 +45,13 @@ const SHELL_BOLT_Z = [-0.15, -0.05, 0.05, 0.15]; // yan başına 4 x M16
 const EAR_W = 0.06, EAR_T = 0.010;              // eyer kulağı / kabuk yan flanşı lama
 const WEB_T = 0.010, WEB_L = 0.36;              // eyer ağ levhaları
 const PLATE_TOP = -0.305, PLATE_T = 0.012;
-const FLANGE_R = 0.15, FLANGE_T = 0.015;          // azimut flanşları Ø300 × 15
+const FLANGE_R = 0.11, FLANGE_T = 0.015;          // azimut flanşları Ø220 × 15
 
 // Eksen 1 (azimut) döner tabla: sabit flanşta 4 yay kanal, döner flanşta 45° arayla 8 delik.
 // 4 M16 cıvata döner flanşa takılır ve sabit flanştaki kanallarda yürür. Kanal ±25°;
 // iki delik seti (0/90/180/270 veya 45/135/225/315) dönüşümlü kullanılarak 360° kapsanır.
 // Ortada sabit flanşa kaynaklı Ø50 merkez pimi, döner flanştaki bronz burca girer (dönme ekseni).
-const AZ_BOLT_R = 0.115;
+const AZ_BOLT_R = 0.085;
 const AZ_SLOT_HALF = 25;        // derece, kanal merkezinden iki yana
 const AZ_SLOT_W = 0.018;        // M16 için kanal genişliği
 const AZ_SPIGOT_R = 0.025;      // merkez pimi Ø50
@@ -59,14 +59,13 @@ const AZ_BUSH_R = 0.035;        // bronz burç dış Ø70
 const AZ_FRICTION = 0.2;        // galvaniz-galvaniz sürtünme katsayısı (muhafazakâr)
 const M16_PRELOAD = 88e3;       // N, 8.8 sınıfı, 0.7·fub·As
 
-// Eğim ayar mafsalı: taşıyıcı tarafındaki dış kulaklar ile her zaman yatay kalan
-// "terazi başlığı" arasında, taşıyıcıya dik yatay pim (X ekseni). Kanalda M16 ile kilitlenir.
-const SLOPE_PIN_Y = -0.37;      // taşıyıcı yerelinde pim kotu (plaka altı 50 mm)
-const SLOPE_MAX = 15;           // ± derece
-const SLOPE_SLOT_R = 0.06;
-const OUTER_LUG_X = 0.063, INNER_LUG_X = 0.045, LUG_T = 0.012;
-const HEAD_PLATE_TOP = -0.13;   // pim yerelinde; iç kulaklar doğrudan sabit flanşa kaynaklı
-const FIX_FLANGE_TOP = HEAD_PLATE_TOP;                  // pim yerelinde
+// Sabit açılı göbek (eğim takozu): bağlantı plakası ile sabit flanş arasında Ø114.3×8 boru.
+// Üst ucu taşıyıcı eğiminde eğik kesilip plakaya, alt ucu yatay sabit flanşa kaynaklı.
+// En kısa noktada 70 mm: azimut cıvata başlarına yandan anahtar payı.
+const SLOPE_MAX = 15;           // ± derece (göbek kesim açısı aralığı)
+const HUB = { D: 0.1143, t: 0.008 };
+const HUB_MIN_H = 0.07;
+const FIX_FLANGE_TOP = 0;       // yatay çerçevede (levelHead) sabit flanş üst yüzü
 // Azimut grubu yerelinde (eski yığın kotları korunur, grup kaydırılır)
 const ROT_FLANGE_TOP = -0.337;
 const ROT_FLANGE_BOT = ROT_FLANGE_TOP - FLANGE_T;      // -0.352
@@ -252,82 +251,35 @@ addLabel(fixedGroup, `Üst kabuk ${SHELL_T * 1000} mm, L=${SADDLE_L * 1000} (gö
 fixedGroup.add(box(0.30, PLATE_T, SADDLE_L, M.plate, 0, PLATE_TOP - PLATE_T / 2, 0));
 addLabel(fixedGroup, `Eyer ${SADDLE_T * 1000} mm + bağlantı plakası 300×${SADDLE_L * 1000}×${PLATE_T * 1000}`, new THREE.Vector3(-0.32, -0.26, 0.22));
 
-// Dış kulaklar (taşıyıcı tarafı, YZ düzleminde 12 mm): üstte plakaya kaynaklı, altta pim
-// merkezli R90 yarım daire; R60'ta ±(SLOPE_MAX+2)° kilit kanalı. Şekil (u = -Z, v = Y) düzleminde.
-function outerLugGeometry() {
-  const top = PLATE_TOP - PLATE_T - SLOPE_PIN_Y; // pim üstünde plaka altına kadar (0.05)
-  const R = 0.09;
-  const s = new THREE.Shape();
-  s.moveTo(-R, top);
-  s.lineTo(R, top);
-  s.lineTo(R, 0);
-  s.absarc(0, 0, R, 0, -Math.PI, true);
-  s.closePath();
-  const pin = new THREE.Path();
-  pin.absarc(0, 0, 0.016, 0, Math.PI * 2, true);
-  s.holes.push(pin);
-  const a0 = deg(-90 - SLOPE_MAX - 2), a1 = deg(-90 + SLOPE_MAX + 2), hw = 0.008, r = SLOPE_SLOT_R;
-  const slot = new THREE.Path();
-  slot.absarc(0, 0, r + hw, a0, a1, false);
-  slot.absarc(Math.cos(a1) * r, Math.sin(a1) * r, hw, a1, a1 + Math.PI, false);
-  slot.absarc(0, 0, r - hw, a1, a0, true);
-  slot.absarc(Math.cos(a0) * r, Math.sin(a0) * r, hw, a0 + Math.PI, a0 + Math.PI * 2, false);
-  s.holes.push(slot);
-  const g = new THREE.ExtrudeGeometry(s, { depth: LUG_T, bevelEnabled: false, curveSegments: 32 });
-  g.translate(0, 0, -LUG_T / 2);
-  g.rotateY(Math.PI / 2); // şekil düzlemi → YZ, kalınlık X
-  return g;
-}
-const outerLugGeo = outerLugGeometry();
-[-1, 1].forEach(s => {
-  const m = new THREE.Mesh(outerLugGeo, M.plate);
-  m.position.set(s * OUTER_LUG_X, SLOPE_PIN_Y, 0);
-  fixedGroup.add(m);
-});
-
 // ---------------------------------------------------------------------------
-// 2.B TERAZİ BAŞLIĞI: her zaman yatay; iç kulaklar + başlık plakası + sabit flanş
+// 2.B SABİT AÇILI GÖBEK: eğim her alanda belli (ALAN 2: 5°, ALAN 1-3: 7.7°), atölyede o açıyla kesilir.
+// Kelepçe + göbek + sabit flanş tek kaynaklı parça; ayar mafsalı yok.
 // ---------------------------------------------------------------------------
-const levelHead = new THREE.Group();
+const levelHead = new THREE.Group();   // yatay çerçeve: göbek + sabit flanş
 scene.add(levelHead);
-
-// İç kulaklar: pim üstünde R45 (dönerken plakaya değmez), aşağıda başlık plakasına
-const innerLugShape = new THREE.Shape();
-innerLugShape.moveTo(-0.045, HEAD_PLATE_TOP);
-innerLugShape.lineTo(0.045, HEAD_PLATE_TOP);
-innerLugShape.lineTo(0.045, 0);
-innerLugShape.absarc(0, 0, 0.045, 0, Math.PI, false);
-innerLugShape.closePath();
-const innerLugGeo = new THREE.ExtrudeGeometry(innerLugShape, { depth: LUG_T, bevelEnabled: false, curveSegments: 24 });
-innerLugGeo.translate(0, 0, -LUG_T / 2);
-innerLugGeo.rotateY(Math.PI / 2);
-[-1, 1].forEach(s => {
-  const m = new THREE.Mesh(innerLugGeo, M.galv);
-  m.position.x = s * INNER_LUG_X;
-  levelHead.add(m);
-});
-// İç kulak berkitmeleri (kulak ↔ sabit flanş, her kulakta iki yanda)
-[-1, 1].forEach(sx => [-1, 1].forEach(sz => {
-  const gs = new THREE.Shape();
-  gs.moveTo(0, 0); gs.lineTo(0.03, 0); gs.lineTo(0, 0.035); gs.closePath();
-  const g = new THREE.ExtrudeGeometry(gs, { depth: 0.008, bevelEnabled: false });
-  g.translate(0, 0, -0.004);
-  const m = new THREE.Mesh(g, M.galv);
-  m.position.set(sx * (INNER_LUG_X + LUG_T / 2), HEAD_PLATE_TOP, sz * 0.03);
-  if (sx < 0) m.rotation.y = Math.PI;
-  levelHead.add(m);
-}));
-
-// Eğim pimi Ø30 + kilit cıvatası M16 (pim altında R60, dış kulak kanalında kayar)
-levelHead.add(rod(0.015, new THREE.Vector3(-0.09, 0, 0), new THREE.Vector3(0.09, 0, 0), M.dark, 16));
-[-1, 1].forEach(s => { const n = nut(0.025, 'x'); n.position.set(s * 0.08, 0, 0); levelHead.add(n); });
-levelHead.add(rod(0.008, new THREE.Vector3(-0.09, -SLOPE_SLOT_R, 0), new THREE.Vector3(0.09, -SLOPE_SLOT_R, 0), M.accent, 10));
-[-1, 1].forEach(s => { const n = nut(0.014, 'x', M.accent); n.position.set(s * 0.076, -SLOPE_SLOT_R, 0); levelHead.add(n); });
-
-addLabel(levelHead, `EĞİM AYARI · Ø30 pim + M16 kanal kilidi (±${SLOPE_MAX}°), başlık her zaman yatay`, new THREE.Vector3(-0.12, -0.02, -0.15), 'ax');
+let hubMesh = null, hubH = HUB_MIN_H;
+function buildHub(slopeDeg) {
+  const t = Math.tan(deg(slopeDeg));
+  hubH = HUB_MIN_H + HUB.D / 2 * Math.abs(t);
+  const s = new THREE.Shape();
+  s.absarc(0, 0, HUB.D / 2, 0, Math.PI * 2, false);
+  s.holes.push(circlePath(0, 0, HUB.D / 2 - HUB.t));
+  const g = new THREE.ExtrudeGeometry(s, { depth: 1, bevelEnabled: false, curveSegments: 48 });
+  g.rotateX(-Math.PI / 2); // kalınlık y: 0 → 1
+  // Üst uç plakanın alt yüzüne oturur: y = hubH − tan(eğim)·z
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) > 0.5 ? hubH - t * p.getZ(i) : 0);
+  p.needsUpdate = true;
+  g.computeVertexNormals();
+  if (hubMesh) { levelHead.remove(hubMesh); hubMesh.geometry.dispose(); }
+  hubMesh = new THREE.Mesh(g, M.galv);
+  hubMesh.position.y = FIX_FLANGE_TOP;
+  levelHead.add(hubMesh);
+}
+addLabel(levelHead, 'SABİT AÇILI GÖBEK · Ø114.3×8, üstü taşıyıcı eğiminde kesik', new THREE.Vector3(-0.14, FIX_FLANGE_TOP + 0.05, -0.16), 'ax');
 
 // ---------------------------------------------------------------------------
-// 2.C EKSEN 1 · SABİT FLANŞ (terazi başlığının tabanı, dönmez)
+// 2.C EKSEN 1 · SABİT FLANŞ (göbeğin altına kaynaklı, dönmez)
 // ---------------------------------------------------------------------------
 // Halka üzerinde yay kanal (kalınlık yönünde delik), şekil düzleminde
 function arcSlotPath(r, a0, a1, hw) {
@@ -375,7 +327,7 @@ for (let a = 0; a < 360; a += 5) {
 const scaleLabels = [0, 90, 180, -90].map(a =>
   addLabel(levelHead, `${a}°`, new THREE.Vector3(Math.cos(deg(a)) * (FLANGE_R + 0.035), FIX_FLANGE_TOP - FLANGE_T / 2, -Math.sin(deg(a)) * (FLANGE_R + 0.035))));
 void scaleLabels;
-addLabel(levelHead, `Sabit flanş Ø300×${FLANGE_T * 1000} · 4 yay kanal ±${AZ_SLOT_HALF}° · 5° taksimat`, new THREE.Vector3(-0.05, FIX_FLANGE_TOP + 0.01, 0.26), 'ax');
+addLabel(levelHead, `Sabit flanş Ø220×${FLANGE_T * 1000} · 4 yay kanal ±${AZ_SLOT_HALF}° · 5° taksimat`, new THREE.Vector3(-0.05, FIX_FLANGE_TOP + 0.01, 0.26), 'ax');
 
 // ---------------------------------------------------------------------------
 // 3. EKSEN 1 · AZİMUT GRUBU
@@ -438,7 +390,7 @@ for (let i = 0; i < 8; i++) {
   boltSets[i % 2].push(g);
 }
 addLabel(azBolts, '4×M16 8.8 · pul + somun + kontra · kanalda kayar', new THREE.Vector3(0.06, FIX_TOP_AZ + 0.035, 0.20), 'ax');
-addLabel(azGroup, `EKSEN 1 · Döner flanş Ø300×${FLANGE_T * 1000} · 8 delik (45°) + bronz burç`, new THREE.Vector3(0.18, ROT_FLANGE_BOT - 0.03, -0.22), 'ax');
+addLabel(azGroup, `EKSEN 1 · Döner flanş Ø220×${FLANGE_T * 1000} · 8 delik (45°) + bronz burç`, new THREE.Vector3(0.18, ROT_FLANGE_BOT - 0.03, -0.22), 'ax');
 const pivotLabel = addLabel(azGroup, 'Dönme ekseni: Ø50 merkez pimi ↔ bronz burç', new THREE.Vector3(-0.02, ROT_FLANGE_BOT - 0.09, 0), 'ax');
 void pivotLabel;
 
@@ -494,23 +446,25 @@ const clevisGeo = clevisPlateGeometry();
 const tiltGroup = new THREE.Group();
 azGroup.add(tiltGroup);
 
-// Dil levhası: pimden anten direğine
-const tongueShape = new THREE.Shape();
-const tongueEnd = MAST_X - 0.048;
-tongueShape.moveTo(-0.03, -0.055);
-tongueShape.lineTo(0.15, -0.055);
-tongueShape.lineTo(tongueEnd, -0.15);
-tongueShape.lineTo(tongueEnd, 0.15);
-tongueShape.lineTo(0.15, 0.055);
-tongueShape.lineTo(-0.03, 0.055);
-tongueShape.closePath();
-// Hafifletme deliği Ø80 (geniş bölümde)
-const TONGUE_HOLE = { x: 0.215, r: 0.04 };
-tongueShape.holes.push(circlePath(TONGUE_HOLE.x, 0, TONGUE_HOLE.r));
-const tongueArea = Math.abs(THREE.ShapeUtils.area(tongueShape.getPoints())) - Math.PI * TONGUE_HOLE.r ** 2;
-const tongueGeo = new THREE.ExtrudeGeometry(tongueShape, { depth: 0.025, bevelEnabled: false });
-tongueGeo.translate(0, 0, -0.0125);
-tiltGroup.add(new THREE.Mesh(tongueGeo, M.galv));
+// Dil: pim göbeği (25 mm, pim + kilit cıvatası delikli) + direk manşonuna iki lama 50×12
+const tongueHub = new THREE.Shape();
+tongueHub.absarc(0, 0, 0.04, Math.PI / 2, Math.PI * 1.5, false);
+tongueHub.absarc(0.09, 0, 0.04, -Math.PI / 2, Math.PI / 2, false);
+tongueHub.closePath();
+tongueHub.holes.push(circlePath(0, 0, 0.016), circlePath(TILT_SLOT_R, 0, 0.009));
+const tongueHubGeo = new THREE.ExtrudeGeometry(tongueHub, { depth: 0.025, bevelEnabled: false, curveSegments: 24 });
+tongueHubGeo.translate(0, 0, -0.0125);
+tiltGroup.add(new THREE.Mesh(tongueHubGeo, M.galv));
+const tongueHubArea = 0.09 * 0.08 + Math.PI * 0.04 ** 2 - Math.PI * (0.016 ** 2 + 0.009 ** 2);
+const tongueBars = [-1, 1].map(s => [new THREE.Vector3(0.10, s * 0.03, 0), new THREE.Vector3(MAST_X - MAST_PIPE.D / 2 - 0.005, s * 0.13, 0)]);
+tongueBars.forEach(([a, b]) => {
+  const d = new THREE.Vector3().subVectors(b, a);
+  const m = box(d.length(), 0.05, 0.012, M.galv);
+  m.position.copy(a).addScaledVector(d, 0.5);
+  m.rotation.z = Math.atan2(d.y, d.x);
+  tiltGroup.add(m);
+});
+const tongueBarLen = tongueBars[0][1].distanceTo(tongueBars[0][0]);
 
 // Pim Ø30 + somunlar
 tiltGroup.add(rod(0.015, new THREE.Vector3(0, 0, -0.05), new THREE.Vector3(0, 0, 0.05), M.dark, 16));
@@ -616,15 +570,16 @@ addLabel(antenna, 'Matsing MS-MBA-4.4.2-F4-H2-L2 · 51.5 kg', new THREE.Vector3(
 // ---------------------------------------------------------------------------
 // 6. İNİŞ BORUSU, ÇATAL ve ÖLÇÜ ÇİZGİSİ (iniş boyuna bağlı)
 // ---------------------------------------------------------------------------
-// Eğim: taşıyıcı grubu döner, terazi başlığı pim noktasında yatay kalır, azimut grubu başlığın altına oturur.
+// Eğim: taşıyıcı grubu döner; eğik kesimli göbeğin alt ucu ve sabit flanş yatay kalır, azimut grubu altına oturur.
 // İniş ölçüsü her zaman düşey: kelepçe noktasındaki taşıyıcı ekseni → tilt pimi.
 let pinYLocal = 0;   // tilt pimi, azimut yerelinde
 function placeHead(slopeDeg) {
   carrierGroup.rotation.x = deg(slopeDeg);
-  const pinW = new THREE.Vector3(0, SLOPE_PIN_Y, 0).applyEuler(carrierGroup.rotation);
-  levelHead.position.copy(pinW);
-  const fixFlangeBotW = pinW.y + FIX_FLANGE_TOP - FLANGE_T;
-  azGroup.position.set(0, fixFlangeBotW - ROT_FLANGE_TOP, pinW.z);   // flanşlar temas halinde
+  buildHub(slopeDeg);
+  const plateW = new THREE.Vector3(0, PLATE_TOP - PLATE_T, 0).applyEuler(carrierGroup.rotation);
+  levelHead.position.set(0, plateW.y - hubH - FIX_FLANGE_TOP, plateW.z);
+  const fixFlangeBotW = levelHead.position.y + FIX_FLANGE_TOP - FLANGE_T;
+  azGroup.position.set(0, fixFlangeBotW - ROT_FLANGE_TOP, plateW.z);   // flanşlar temas halinde
 }
 
 let dropLabel = null;
@@ -692,7 +647,7 @@ function computeChecks(drop) {
     // Taşıyıcı boru (kendi ekseni boyunca sonsuz, eğimli)
     cl.copy(worldP).applyMatrix4(carInv);
     carrierClear = Math.min(carrierClear, Math.hypot(cl.x, cl.y) - CARRIER_R - SADDLE_T - inflate);
-    // Eyer / eğim mafsalı / flanş yığını (azimut çerçevesinde düşey)
+    // Eyer / göbek / flanş yığını (azimut çerçevesinde düşey)
     tmp.copy(worldP).applyMatrix4(azInv);
     if (Math.abs(tmp.x) < stackHalf && Math.abs(tmp.z) < stackHalf) {
       carrierClear = Math.min(carrierClear, ROT_FLANGE_BOT - tmp.y - inflate);
@@ -737,24 +692,22 @@ function bom(drop) {
     ['Kabuk uç berkitmesi 25×10, 210°', 2, (CARRIER_R + 0.02) * deg(210) * 0.025 * 0.010 * STEEL_DENSITY],
     [`Eyer ağ levhası ${WEB_T * 1000} mm, 100×${WEB_L * 1000}`, 2, 0.1 * WEB_L * WEB_T * STEEL_DENSITY],
     [`Bağlantı plakası 300×${SADDLE_L * 1000}×${PLATE_T * 1000}`, 1, 0.3 * SADDLE_L * PLATE_T * STEEL_DENSITY],
-    [`Eğim dış kulağı 12 mm, R90 + R60 kanal (±${SLOPE_MAX}°)`, 2, (0.18 * 0.05 + Math.PI * 0.09 ** 2 / 2) * 0.012 * STEEL_DENSITY],
-    ['Eğim iç kulağı 12 mm, 90×130 + R45', 2, (0.09 * 0.13 + Math.PI * 0.045 ** 2 / 2) * 0.012 * STEEL_DENSITY],
-    ['İç kulak berkitmesi 8 mm üçgen 30×35', 4, 0.5 * 0.03 * 0.035 * 0.008 * STEEL_DENSITY],
-    ['Eğim pimi Ø30 + 2 somun', 1, 0.6],
-    [`Sabit flanş Ø300×${FLANGE_T * 1000} (4 yay kanal ±${AZ_SLOT_HALF}°, 5° taksimat)`, 1, Math.PI * FLANGE_R ** 2 * FLANGE_T * STEEL_DENSITY * 0.93],
+    [`Sabit açılı göbek Ø114.3×8, kısa kenar ${HUB_MIN_H * 1000} mm (eğik kesim)`, 1, pipeMassPerM(HUB.D, HUB.t) * hubH],
+    [`Sabit flanş Ø220×${FLANGE_T * 1000} (4 yay kanal ±${AZ_SLOT_HALF}°, 5° taksimat)`, 1, Math.PI * FLANGE_R ** 2 * FLANGE_T * STEEL_DENSITY * 0.93],
     ['Merkez pimi Ø50, L=38 (sabit flanşa kaynaklı)', 1, Math.PI * AZ_SPIGOT_R ** 2 * 0.038 * STEEL_DENSITY],
-    [`Döner flanş Ø300×${FLANGE_T * 1000} (8 delik Ø18, 45° ara)`, 1, Math.PI * (FLANGE_R ** 2 - AZ_BUSH_R ** 2) * FLANGE_T * STEEL_DENSITY],
+    [`Döner flanş Ø220×${FLANGE_T * 1000} (8 delik Ø18, 45° ara)`, 1, Math.PI * (FLANGE_R ** 2 - AZ_BUSH_R ** 2) * FLANGE_T * STEEL_DENSITY],
     [`Bronz burç Ø70/Ø50 × ${FLANGE_T * 1000} (CuSn12)`, 1, Math.PI * (AZ_BUSH_R ** 2 - AZ_SPIGOT_R ** 2) * FLANGE_T * 8800],
     ['Azimut cıvata takımı M16×70 8.8: 2 pul Ø40 + somun + kontra', 4, 0.26],
     [`İniş borusu ${pipeName(DROP_PIPE)}, L=${Math.round(dropLen * 1000)}`, 1, pipeMassPerM(DROP_PIPE.D, DROP_PIPE.t) * dropLen],
     ['Berkitme 10 mm üçgen', 4, 0.5 * 0.07 * 0.12 * 0.01 * STEEL_DENSITY],
     ['Uç plakası 200×100×15', 1, 0.2 * 0.1 * 0.015 * STEEL_DENSITY],
     [`Çatal levhası 12 mm, R${CLEVIS_R * 1000} alt (pim deliği + ${DOWNTILT_MAX - DOWNTILT_MIN}° tilt kanalı)`, 2, (2 * CLEVIS_R * CLEVIS_TOP + Math.PI * CLEVIS_R ** 2 / 2) * 0.012 * STEEL_DENSITY * 0.9],
-    [`Dil levhası 25 mm (Ø${TONGUE_HOLE.r * 2000} hafifletme deliği)`, 1, tongueArea * 0.025 * STEEL_DENSITY],
+    ['Dil göbeği 25 mm (pim + kilit deliği)', 1, tongueHubArea * 0.025 * STEEL_DENSITY],
+    [`Dil laması 50×12, L=${Math.round(tongueBarLen * 1000)}`, 2, 0.05 * 0.012 * tongueBarLen * STEEL_DENSITY],
     ['Direk manşonu (yarık) Ø96, L=300 + kulaklar', 1, 3.2],
     [`Anten direği ${pipeName(MAST_PIPE)}, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
     ['Pim Ø30 + 2 somun', 1, 0.6],
-    ['Cıvata M16 (kabuk 8, tilt kilidi 1, eğim kilidi 1)', 10, 0.15],
+    ['Cıvata M16 (kabuk 8, tilt kilidi 1)', 9, 0.15],
     ['Cıvata M12 manşon', 3, 0.08],
     ['Matsing braketi + 2×M12×200 (anten ile gelir)', 2, 0]
   ];
@@ -839,7 +792,7 @@ function setView(name) {
     const exp = document.getElementById('t-exp').checked;
     if (exp) p.y -= 0.08;
     controls.target.copy(p);
-    camera.position.copy(p).add(new THREE.Vector3(0.62, exp ? 0.22 : 0.42, 0.52));
+    camera.position.copy(p).add(new THREE.Vector3(0.62, exp ? 0.12 : 0.08, 0.52));
     controls.update();
     return;
   }

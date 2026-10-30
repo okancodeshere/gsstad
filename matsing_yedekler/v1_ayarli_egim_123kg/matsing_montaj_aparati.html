@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matsing Askı Yedek v1</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    #view { position: absolute; inset: 0; }
+    #panel { position: absolute; top: 12px; left: 12px; width: 330px; max-height: calc(100% - 24px); overflow-y: auto; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; border-radius: 10px; padding: 14px 16px; font-size: 13px; box-sizing: border-box; }
+    #panel h1 { font-size: 15px; margin: 0 0 4px; color: #f8fafc; }
+    #panel .sub { color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
+    .ctl { margin-bottom: 10px; }
+    .ctl label { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .ctl label b { color: #fbbf24; font-variant-numeric: tabular-nums; }
+    .ctl input[type=range] { width: 100%; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+    .row button { flex: 1; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 5px 0; cursor: pointer; font-size: 12px; }
+    .row button:hover { background: #334155; }
+    .chk { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .chk label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+    h2 { font-size: 13px; margin: 14px 0 6px; color: #f8fafc; border-top: 1px solid #334155; padding-top: 10px; }
+    .ok { color: #4ade80; } .bad { color: #f87171; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    td { padding: 3px 2px; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    td.n { text-align: right; white-space: nowrap; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+    .lbl { background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid #fbbf24; border-radius: 4px; padding: 2px 6px; font-size: 11px; white-space: nowrap; pointer-events: none; }
+    .lbl.ax { border-color: #38bdf8; color: #7dd3fc; }
+    @media (max-width: 700px) { #panel { width: calc(100% - 24px); max-height: 45%; } }
+  </style>
+</head>
+<body>
+  <div id="view"></div>
+  <div id="panel">
+    <h1>YEDEK v1 (ayarlı eğim mafsalı, aparat 123 kg) · Matsing Tek Kollu Askı</h1>
+    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk) asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne 70°, arkaya 20°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.</div>
+
+    <div class="ctl"><label>Taşıyıcı eğimi (eğim mafsalı) <b id="v-slope">5°</b></label><input id="slope" type="range" min="-15" max="15" step="0.1" value="5"></div>
+    <div class="row" style="margin-top:0">
+      <button data-slope="0">0°</button><button data-slope="5">ALAN 2 · 5°</button><button data-slope="7.7">ALAN 1-3 · 7.7°</button>
+    </div>
+    <div class="ctl"><label>Eksen 1 · Azimut <b id="v-az">0°</b></label><input id="az" type="range" min="-180" max="180" step="1" value="0"></div>
+    <div class="ctl"><label>Eksen 2 · Tilt (0° = zemine bakış, + öne, − arkaya) <b id="v-tilt">0°</b></label><input id="tilt" type="range" min="-20" max="70" step="0.5" value="0"></div>
+    <div class="ctl"><label>İniş (taşıyıcı ekseni → tilt pimi) <b id="v-drop">1500 mm</b></label><input id="drop" type="range" min="1100" max="3000" step="50" value="1500"></div>
+
+    <div class="chk">
+      <label><input id="t-ant" type="checkbox" checked> Anten</label>
+      <label><input id="t-lbl" type="checkbox" checked> Etiketler</label>
+      <label><input id="t-car" type="checkbox" checked> Taşıyıcı</label>
+      <label><input id="t-exp" type="checkbox"> Eksen 1 patlatılmış</label>
+    </div>
+    <div class="row">
+      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button><button data-view="az">Eksen 1 detay</button>
+    </div>
+
+    <h2>Eksen 1 · Bağlantı ve hareket</h2>
+    <div class="sub" style="margin-bottom:6px">
+      <b>Sabit taraf:</b> eğim mafsalının iç kulakları Ø300×20 sabit flanşa kaynaklı; flanşta 4 yay kanal (±25°) ve altına kaynaklı Ø50 merkez pimi var. Bu flanş hiç dönmez, eğim mafsalı onu hep yatay tutar.<br>
+      <b>Dönen taraf:</b> iniş borusuna kaynaklı Ø300×20 döner flanş, sabit flanşın altına doğrudan oturur. Merkezindeki bronz burç merkez pimine geçer; dönme ekseni budur.<br>
+      <b>Bağlantı:</b> 4×M16 8.8 cıvata döner flanştaki deliklerden geçip sabit flanştaki kanallardan çıkar; üstte Ø40 pul kanalı köprüler. Altta somun + kontra somun. Sıkılınca iki flanş sürtünmeyle kilitlenir.
+    </div>
+    <ol class="sub" style="padding-left:18px;margin-top:0">
+      <li>4 somunu yarım tur gevşet (cıvatalar yerinde kalır, ağırlığı taşımaya devam eder).</li>
+      <li>İniş borusunu elle çevir: döner flanş merkez pimi etrafında döner, cıvatalar kanalda kayar.</li>
+      <li>Açıyı sarı göstergeden, sabit flanş kenarındaki 5° taksimattan oku.</li>
+      <li>Kanal ucuna gelinirse cıvataları tek tek komşu deliğe (45°) aktar; böylece 360° kapsanır.</li>
+      <li>Somunları sık, kontra somunları kilitle.</li>
+    </ol>
+    <div id="az-state" class="sub" style="color:#e2e8f0"></div>
+
+    <h2>Kontroller</h2>
+    <div id="checks"></div>
+
+    <h2>Parça listesi</h2>
+    <table id="bom"></table>
+  </div>
+  <script type="module" src="./matsing_montaj_aparati.js"></script>
+</body>
+</html>
