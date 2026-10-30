@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı v2: sabit açılı göbek, Ø220 azimut flanşı, lamalı dil (aparat 107 kg); v1 yedeklendi`
+- **Son commit:** `[Claude] Matsing askı aparatı: tilt dil levhası v1 haline döndü (aparat 111 kg)`
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
@@ -72,6 +72,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 16:05 — Claude — Matsing askı aparatı: tilt dil levhası eski haline
+- **Kullanıcı isteği:** "tilt mafsalını eski haline al". 15:50 kaydında tilt mafsalında değişen tek parça dildi; v1 haline (25 mm dolu levha, Ø80 hafifletme deliği) döndürüldü. Sabit göbek ve Ø220 azimut flanşı v2'de kaldı.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js` → tilt grubu: dil bloğu `matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.js` dosyasından birebir alındı (`tongueShape`, `TONGUE_HOLE`, `tongueArea`). `tongueHub` / `tongueBars` silindi; BOM satırı v1'deki gibi.
+- **Sonuç:** Aparat 107.4 → 111.1 kg, toplam 162.6 kg (iniş 1500). Diğer inişlerde: 1100 → 157.2, 2000 → 169.3, 3000 → 182.8 kg.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Taşıyıcıya en az 55 mm, iniş borusuna en az 246 mm.
+  - Yan görünüşte görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı: tilt dil levhası v1 haline döndü (aparat 111 kg)`
 
 ### 2026-10-30 15:50 — Claude — Matsing askı aparatı v2: sabit göbek, Ø220 flanş, lamalı dil
 - **Kullanıcı isteği:** Aparatın 51.5 kg anten için ağır olduğu konuşuldu. Önerilen 3 madde için: "bunu bir yedek olarak tut ve onu da uygula".

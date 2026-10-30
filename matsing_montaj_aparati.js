@@ -446,25 +446,23 @@ const clevisGeo = clevisPlateGeometry();
 const tiltGroup = new THREE.Group();
 azGroup.add(tiltGroup);
 
-// Dil: pim göbeği (25 mm, pim + kilit cıvatası delikli) + direk manşonuna iki lama 50×12
-const tongueHub = new THREE.Shape();
-tongueHub.absarc(0, 0, 0.04, Math.PI / 2, Math.PI * 1.5, false);
-tongueHub.absarc(0.09, 0, 0.04, -Math.PI / 2, Math.PI / 2, false);
-tongueHub.closePath();
-tongueHub.holes.push(circlePath(0, 0, 0.016), circlePath(TILT_SLOT_R, 0, 0.009));
-const tongueHubGeo = new THREE.ExtrudeGeometry(tongueHub, { depth: 0.025, bevelEnabled: false, curveSegments: 24 });
-tongueHubGeo.translate(0, 0, -0.0125);
-tiltGroup.add(new THREE.Mesh(tongueHubGeo, M.galv));
-const tongueHubArea = 0.09 * 0.08 + Math.PI * 0.04 ** 2 - Math.PI * (0.016 ** 2 + 0.009 ** 2);
-const tongueBars = [-1, 1].map(s => [new THREE.Vector3(0.10, s * 0.03, 0), new THREE.Vector3(MAST_X - MAST_PIPE.D / 2 - 0.005, s * 0.13, 0)]);
-tongueBars.forEach(([a, b]) => {
-  const d = new THREE.Vector3().subVectors(b, a);
-  const m = box(d.length(), 0.05, 0.012, M.galv);
-  m.position.copy(a).addScaledVector(d, 0.5);
-  m.rotation.z = Math.atan2(d.y, d.x);
-  tiltGroup.add(m);
-});
-const tongueBarLen = tongueBars[0][1].distanceTo(tongueBars[0][0]);
+// Dil levhası: pimden anten direğine
+const tongueShape = new THREE.Shape();
+const tongueEnd = MAST_X - 0.048;
+tongueShape.moveTo(-0.03, -0.055);
+tongueShape.lineTo(0.15, -0.055);
+tongueShape.lineTo(tongueEnd, -0.15);
+tongueShape.lineTo(tongueEnd, 0.15);
+tongueShape.lineTo(0.15, 0.055);
+tongueShape.lineTo(-0.03, 0.055);
+tongueShape.closePath();
+// Hafifletme deliği Ø80 (geniş bölümde)
+const TONGUE_HOLE = { x: 0.215, r: 0.04 };
+tongueShape.holes.push(circlePath(TONGUE_HOLE.x, 0, TONGUE_HOLE.r));
+const tongueArea = Math.abs(THREE.ShapeUtils.area(tongueShape.getPoints())) - Math.PI * TONGUE_HOLE.r ** 2;
+const tongueGeo = new THREE.ExtrudeGeometry(tongueShape, { depth: 0.025, bevelEnabled: false });
+tongueGeo.translate(0, 0, -0.0125);
+tiltGroup.add(new THREE.Mesh(tongueGeo, M.galv));
 
 // Pim Ø30 + somunlar
 tiltGroup.add(rod(0.015, new THREE.Vector3(0, 0, -0.05), new THREE.Vector3(0, 0, 0.05), M.dark, 16));
@@ -702,8 +700,7 @@ function bom(drop) {
     ['Berkitme 10 mm üçgen', 4, 0.5 * 0.07 * 0.12 * 0.01 * STEEL_DENSITY],
     ['Uç plakası 200×100×15', 1, 0.2 * 0.1 * 0.015 * STEEL_DENSITY],
     [`Çatal levhası 12 mm, R${CLEVIS_R * 1000} alt (pim deliği + ${DOWNTILT_MAX - DOWNTILT_MIN}° tilt kanalı)`, 2, (2 * CLEVIS_R * CLEVIS_TOP + Math.PI * CLEVIS_R ** 2 / 2) * 0.012 * STEEL_DENSITY * 0.9],
-    ['Dil göbeği 25 mm (pim + kilit deliği)', 1, tongueHubArea * 0.025 * STEEL_DENSITY],
-    [`Dil laması 50×12, L=${Math.round(tongueBarLen * 1000)}`, 2, 0.05 * 0.012 * tongueBarLen * STEEL_DENSITY],
+    [`Dil levhası 25 mm (Ø${TONGUE_HOLE.r * 2000} hafifletme deliği)`, 1, tongueArea * 0.025 * STEEL_DENSITY],
     ['Direk manşonu (yarık) Ø96, L=300 + kulaklar', 1, 3.2],
     [`Anten direği ${pipeName(MAST_PIPE)}, L=${MAST_PIPE.L * 1000}`, 1, pipeMassPerM(MAST_PIPE.D, MAST_PIPE.t) * MAST_PIPE.L],
     ['Pim Ø30 + 2 somun', 1, 0.6],
