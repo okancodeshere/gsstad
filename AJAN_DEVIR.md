@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı: tilt dil levhası v1 haline döndü (aparat 111 kg)`
+- **Son commit:** `[Claude] Askı aparatı sayfasına Gammanu sekmesi: lama çemberli hafif sistem (aparat 47 kg)`
+- **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
@@ -72,6 +73,54 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 16:40 — Claude — Askı aparatı sayfası: Gammanu sekmesi
+- **Kullanıcı isteği:** "yeni bi sekme ekle ve gammanu antenler için de benzer bir yapı oluştur. Onlar daha hafif olduğundan daha hafif bir sistem olabilir."
+  - Sorulara yanıtlar: aynı sayfada sekme; ALAN 2 taşıyıcısı Ø420; iki lama çember; eksenler Matsing'le aynı.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js` model parametreli olarak baştan yazıldı. `MODEL` URL'deki `?model=` değerinden, `IS_G` Gammanu.
+    - Ölçü nesneleri: `ANT`, `CLAMP` (`type: 'shell' | 'bands'`), `M16` / `M12`, `HUB`, `FLANGE_*`, `AZ_*`, `DROP_PIPE`, `MAST_PIPE`, `CLEVIS_*`, `PIN`, `TONGUE`, `END_PLATE`, `DROP_RANGE`.
+    - Matsing değerleri v2 ile aynı.
+    - Kelepçe: `type === 'bands'` için eyer + 2 lama çember (220°, uçlarda kulak, yan başına 1 M16).
+    - Anten: `buildMatsingBody()` / `buildPanelBody()`.
+    - BOM: `clampBomRows()` + `bom()`, satırların hepsi sabitlerden hesaplanıyor.
+    - Metinler (`#h-title`, `#h-sub`, `#az-desc`) JS'ten dolduruluyor.
+    - Kontrol yazısındaki rüzgar `ANT.windMax` / `ANT.windNote`.
+  - `matsing_montaj_aparati.html`:
+    - `.tabs` sekme çubuğu (Matsing | Gammanu, `?model=` bağlantıları).
+    - Başlık ve açıklama alanları id'li, içerik JS'ten.
+  - Yedek: `_backups/matsing_montaj_aparati_before_gammanu_20261030.js/.html`.
+- **Gammanu ölçüleri:**
+  - **Anten:** Spot Beam 30/30 DOY15X3030MD4TRE, 700×700×170, 16.5 kg (`main.js` katalog yorumundan).
+    - Braket aralığı 450 mm ve sele mesafesi 80 mm varsayım.
+    - Rüzgar 640 N tahmini (150 km/h, 0.49 m², Cd 1.2).
+  - **Kelepçe:**
+    - Eyer 6 mm × 300; 2 lama çember 50×6 (z = ±100), 4×M16.
+    - Ağ levhası 8 mm; plaka 200×300×10.
+  - **Göbek ve azimut:**
+    - Göbek Ø88.9×6.3, en kısa 60 mm.
+    - Flanşlar Ø180×12; 4×M12 (R68); merkez pimi Ø40; burç Ø56.
+  - **İniş ve tilt:**
+    - İniş Ø88.9×4.0, kaydırıcı 800–3000 (varsayılan 1000).
+    - Çatal 10 mm R75; pim Ø24; M12 kilit; dil 20 mm.
+    - Direk Ø60.3×3.2 L=900; manşon L=200.
+- **Sonuç** (Gammanu toplam / aparat):
+  - İniş 1000: 63.7 / 47.2 kg.
+  - 800 → 62.0, 1500 → 67.9, 3000 → 80.4 kg.
+- **Matsing tarafında küçük fark:** 162.6 → 164.0 kg (iniş 1500). Geometri aynı.
+  - Manşon ağırlığı artık sabit 3.2 kg yerine 6 mm et + kulaklardan hesaplanıyor (5.1 kg).
+  - Berkitmeler 10 → 8 mm ve gerçek boydan hesaplanıyor (0.6 kg).
+  - Manşon yarıçapı 3 mm küçüldü (direğe 1 mm boşluk).
+- **Doğrulama:**
+  - `npm run build` hatasız; iki sekmede konsol hatası yok.
+  - Gammanu taraması (eğim −15/0/5/7.7/15 × tilt −20/0/35/70 × azimut 0/90/180/270):
+    - Taşıyıcıya en az 116 mm (iniş 800) / 309 mm (iniş 1000).
+    - İniş borusuna 156 mm.
+    - σv en fazla 89 MPa (iniş 3000).
+  - Matsing: 55 / 246 mm, 64 MPa (değişmedi).
+  - Görsel kontrol yapıldı.
+- **Commit:** `[Claude] Askı aparatı sayfasına Gammanu sekmesi: lama çemberli hafif sistem (aparat 47 kg)`
+- **Yarım kalan / dikkat:** Gammanu braket ölçüleri ve rüzgar yükü varsayım. Üretici çizimi gelirse `ANT` (IS_G) güncellenmeli. Statik hesap yok.
 
 ### 2026-10-30 16:05 — Claude — Matsing askı aparatı: tilt dil levhası eski haline
 - **Kullanıcı isteği:** "tilt mafsalını eski haline al". 15:50 kaydında tilt mafsalında değişen tek parça dildi; v1 haline (25 mm dolu levha, Ø80 hafifletme deliği) döndürüldü. Sabit göbek ve Ø220 azimut flanşı v2'de kaldı.
