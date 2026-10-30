@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Matsing Askı Aparatı</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    #view { position: absolute; inset: 0; }
+    #panel { position: absolute; top: 12px; left: 12px; width: 330px; max-height: calc(100% - 24px); overflow-y: auto; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; border-radius: 10px; padding: 14px 16px; font-size: 13px; box-sizing: border-box; }
+    #panel h1 { font-size: 15px; margin: 0 0 4px; color: #f8fafc; }
+    #panel .sub { color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
+    .ctl { margin-bottom: 10px; }
+    .ctl label { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .ctl label b { color: #fbbf24; font-variant-numeric: tabular-nums; }
+    .ctl input[type=range] { width: 100%; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+    .row button { flex: 1; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 5px 0; cursor: pointer; font-size: 12px; }
+    .row button:hover { background: #334155; }
+    .chk { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .chk label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+    h2 { font-size: 13px; margin: 14px 0 6px; color: #f8fafc; border-top: 1px solid #334155; padding-top: 10px; }
+    .ok { color: #4ade80; } .bad { color: #f87171; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    td { padding: 3px 2px; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    td.n { text-align: right; white-space: nowrap; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+    .lbl { background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid #fbbf24; border-radius: 4px; padding: 2px 6px; font-size: 11px; white-space: nowrap; pointer-events: none; }
+    .lbl.ax { border-color: #38bdf8; color: #7dd3fc; }
+    @media (max-width: 700px) { #panel { width: calc(100% - 24px); max-height: 45%; } }
+  </style>
+</head>
+<body>
+  <div id="view"></div>
+  <div id="panel">
+    <h1>Matsing 4-Beam · Tek Kollu Askı Aparatı</h1>
+    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan kelepçeyle asılır. Eksen 1: azimut (döner flanş). Eksen 2: tilt (çatal mafsal). Ana model (<code>main.js</code>) değişmedi.</div>
+
+    <div class="ctl"><label>Eksen 1 · Azimut <b id="v-az">0°</b></label><input id="az" type="range" min="-180" max="180" step="1" value="0"></div>
+    <div class="ctl"><label>Eksen 2 · Mekanik tilt (+ aşağı) <b id="v-tilt">0°</b></label><input id="tilt" type="range" min="-10" max="20" step="0.5" value="0"></div>
+    <div class="ctl"><label>İniş (taşıyıcı ekseni → tilt pimi) <b id="v-drop">1500 mm</b></label><input id="drop" type="range" min="1100" max="3000" step="50" value="1500"></div>
+
+    <div class="chk">
+      <label><input id="t-ant" type="checkbox" checked> Anten</label>
+      <label><input id="t-lbl" type="checkbox" checked> Etiketler</label>
+      <label><input id="t-car" type="checkbox" checked> Taşıyıcı</label>
+    </div>
+    <div class="row">
+      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button>
+    </div>
+
+    <h2>Kontroller</h2>
+    <div id="checks"></div>
+
+    <h2>Parça listesi</h2>
+    <table id="bom"></table>
+  </div>
+  <script type="module" src="./matsing_montaj_aparati.js"></script>
+</body>
+</html>

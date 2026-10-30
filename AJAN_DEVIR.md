@@ -37,12 +37,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-22
-- **Son commit:** `[Claude] ALAN 2 sağ taşıyıcı: tava tek ölçüde 230 cm`
+- **Son güncelleyen:** Claude Code, 2026-10-30
+- **Son commit:** `[Claude] Matsing tek kollu 2 eksenli askı aparatı: ayrı 3D çalışma alanı`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok. 2026-10-22'de kullanıcı onayıyla `4ee63d9`'a kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
+- **Yarım kalan iş:** Yok.
+- **Ayrı çalışma alanı (2026-10-30):** Tek kollu, 2 eksenli Matsing askı aparatı `matsing_montaj_aparati.html` + `.js` içinde. Dev sunucuda `/matsing_montaj_aparati.html` adresinde açılır. `vite.config.js` girdilerinde yok, bu yüzden build/canlı sitede yayınlanmaz. Kullanıcı bu sayfa üzerinden çalışacak; `main.js` değişmedi.
+- **Önceki:** 2026-10-22'de kullanıcı onayıyla `4ee63d9`'a kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
 - **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
 - **Açık konu:** `scoreboardPoiToAntennaFeederSystem_left/right` (sabit kod, `createAlan4Structure` "5. POI ÇIKIŞI İNİŞ MERDİVENİ" ve "6. 14 ADET 1/2" FEEDER") POI rack'lerin eski Z ≈ −0.92 konumuna göre çizili. Rack'ler Z ≈ −0.50'ye taşındı; feeder başlangıçları güncellenmedi. Kullanıcıya soruldu.
 - **Sıradaki adımlar (öneri, kullanıcı onayı bekliyor):**
@@ -69,6 +71,30 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 — Claude — Matsing tek kollu 2 eksenli askı aparatı (ayrı çalışma alanı)
+- **Kullanıcı isteği:** "stadyumda matsing antenlere göre montaj aparatı çizmemiz gerekiyor".
+  - Sorulara yanıt: çatı taşıyıcısı askısı, ancak tek kolla inilecek, çünkü 2 eksende hareket gerekiyor. "3d modeli harici bir alanda çiz üzerinden çalışayım, mevcuta dokunma". Taşıyıcı çevresi 132 cm. Ölçüler model ve üretici belgelerinden alınacak.
+  - Kullanıcı Matsing çizimi (Rev1.0 mm), kurulum kılavuzu ve datasheet'i paylaştı.
+- **Değişen dosyalar:**
+  - YENİ `matsing_montaj_aparati.html`: panel (azimut, tilt ve iniş kaydırıcıları; görünüş düğmeleri; kontroller; parça listesi).
+  - YENİ `matsing_montaj_aparati.js`: bağımsız Three.js sahnesi, `main.js`'ten bir şey import etmiyor.
+    - Taşıyıcı Ø420 (132 cm çevre). Üzerinde eyer (10 mm, 140°, L 500) ve 2 adet 50 × 6 lama çember + M16. Delme ve kaynak yok.
+    - Eyerin altında ağ levhaları ve 300 × 500 × 15 bağlantı plakası.
+    - Eksen 1: Ø260 sabit ve döner flanş, 4 × M16 kanal, 360° azimut, 15° taksimat.
+    - Tek iniş borusu Ø114.3 × 6.
+    - Eksen 2: 12 mm çatal levhaları, Ø30 pim, M16 kanal kilidi; tilt −10…+20° (+ aşağı).
+    - Dil levhası 25 mm, yarık manşon, Ø76.1 × 4 anten direği (L 1600).
+  - Anten üretici çizimine göre:
+    - Ölçüler 1637 × 619.5 × 641.7 (+ 80 mm braket).
+    - 2 braket, eksenler arası 1397 mm, alt braket tabandan 104 mm. Sele tepesi arka panelden 54 mm geride. 2 × M12 × 200 saplama.
+  - Kontroller: anten ve direğin taşıyıcı/flanşa ve iniş borusuna olan açıklığı (yüzey örnekleme). İniş borusunda ön σv tahmini: 150 km/h yanal rüzgar 930 N + öz ağırlık eksantrikliği.
+- **Doğrulama:**
+  - `npm run build` hatasız. Tarayıcıda konsol hatası yok.
+  - İniş 1500 mm'de: tilt 0 → taşıyıcıya 313, boruya 185 mm; −10 → 267 / 36 mm; +20 → 729 / 246 mm. σv ≈ 30 MPa.
+  - İniş 1100 mm ve −10° tilt'te çakışma var; kontrol kırmızı gösteriyor.
+- **Commit:** `[Claude] Matsing tek kollu 2 eksenli askı aparatı: ayrı 3D çalışma alanı`
+- **Yarım kalan / dikkat:** Aparat ana modele eklenmedi (kullanıcı istemedi). Ölçüler tasarım önerisi; statik hesap yapılmadı.
 
 ### 2026-10-22 17:50 — Claude — Sağ taşıyıcı tavası 230 cm
 - **Kullanıcı isteği:** "tavayı burada 230'a indir". Bağlamdan sağ (askılı) taşıyıcı.
