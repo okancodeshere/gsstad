@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing tek kollu 2 eksenli askı aparatı: ayrı 3D çalışma alanı`
+- **Son commit:** `[Claude] Matsing askı aparatı: taşıyıcı eğimine göre ayarlı eğim mafsalı`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +71,24 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 — Claude — Matsing askı aparatı: eğim ayar mafsalı
+- **Kullanıcı isteği:** "taşıyıcıya sabitlenen tarafa bir revizyon lazım, çünkü o taşıyıcı belirli bir açıyla ilerliyor. Bu nedenle tam zemine dik durması için açı ayarlamalı olmalı."
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - YENİ `carrierGroup`: taşıyıcı ve sabit kısım (eyer, çemberler, plaka) eğimle birlikte X ekseni etrafında dönüyor.
+    - Plaka altına 2 dış kulak (12 mm, R90 alt, R60'ta ±17° kanal), pim kotu taşıyıcı yerelinde −0.37.
+    - YENİ `levelHead` (terazi başlığı): her zaman yatay. 2 iç kulak (R45 üst; dönerken plakaya değmiyor), Ø30 eğim pimi, M16 kanal kilidi, 280×280×15 başlık plakası. Sabit azimut flanşı ve taksimat buraya taşındı.
+    - YENİ `placeHead(slope)`: başlığı pim noktasına, azimut grubunu başlık altına konumlandırıyor; azimut grubu her eğimde tam düşey.
+    - İniş ölçüsü artık kelepçe noktasındaki taşıyıcı ekseninden tilt pimine düşey (`pinYLocal`).
+    - Taşıyıcı açıklık kontrolü eğimli taşıyıcı yerelinde, yığın kontrolü azimut yerelinde. Parça listesine eğim mafsalı parçaları eklendi.
+  - `matsing_montaj_aparati.html`: "Taşıyıcı eğimi" kaydırıcısı (±15°) ve hazır düğmeler: 0°, ALAN 2 5°, ALAN 1-3 7.7° (ana modeldeki eğimler).
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Eğim −15 / 0 / 5 / 7.7 / 15° ve tilt −10 / 0 / 20° için açıklıklar pozitif: taşıyıcıya en az 72 mm, boruya en az 36 mm.
+  - Azimut grubu düşey (matris Y bileşeni 1.0000). 15° eğimde görsel kontrol yapıldı.
+- **Commit:** `[Claude] Matsing askı aparatı: taşıyıcı eğimine göre ayarlı eğim mafsalı`
+- **Yarım kalan / dikkat:** Eğim mafsalı yığını yaklaşık 16 cm uzattı. Aynı iniş ölçüsünde taşıyıcıya açıklık azaldı (tilt 0'da 313 → 120 mm).
 
 ### 2026-10-30 — Claude — Matsing tek kollu 2 eksenli askı aparatı (ayrı çalışma alanı)
 - **Kullanıcı isteği:** "stadyumda matsing antenlere göre montaj aparatı çizmemiz gerekiyor".
