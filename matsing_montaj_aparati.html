@@ -33,7 +33,7 @@
   <div id="view"></div>
   <div id="panel">
     <h1>Matsing 4-Beam · Tek Kollu Askı Aparatı</h1>
-    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk) asılır. Eksen 1: azimut (döner flanş). Eksen 2: tilt (çatal mafsal; zemine göre öne 70°, arkaya 20°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.</div>
+    <div class="sub">Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk) asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne 70°, arkaya 20°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.</div>
 
     <div class="ctl"><label>Taşıyıcı eğimi (eğim mafsalı) <b id="v-slope">5°</b></label><input id="slope" type="range" min="-15" max="15" step="0.1" value="5"></div>
     <div class="row" style="margin-top:0">
@@ -47,10 +47,26 @@
       <label><input id="t-ant" type="checkbox" checked> Anten</label>
       <label><input id="t-lbl" type="checkbox" checked> Etiketler</label>
       <label><input id="t-car" type="checkbox" checked> Taşıyıcı</label>
+      <label><input id="t-exp" type="checkbox"> Eksen 1 patlatılmış</label>
     </div>
     <div class="row">
-      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button>
+      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button><button data-view="az">Eksen 1 detay</button>
     </div>
+
+    <h2>Eksen 1 · Bağlantı ve hareket</h2>
+    <div class="sub" style="margin-bottom:6px">
+      <b>Sabit taraf:</b> eğim mafsalının iç kulakları Ø300×20 sabit flanşa kaynaklı; flanşta 4 yay kanal (±25°) ve altına kaynaklı Ø50 merkez pimi var. Bu flanş hiç dönmez, eğim mafsalı onu hep yatay tutar.<br>
+      <b>Dönen taraf:</b> iniş borusuna kaynaklı Ø300×20 döner flanş, sabit flanşın altına doğrudan oturur. Merkezindeki bronz burç merkez pimine geçer; dönme ekseni budur.<br>
+      <b>Bağlantı:</b> 4×M16 8.8 cıvata döner flanştaki deliklerden geçip sabit flanştaki kanallardan çıkar; üstte Ø40 pul kanalı köprüler. Altta somun + kontra somun. Sıkılınca iki flanş sürtünmeyle kilitlenir.
+    </div>
+    <ol class="sub" style="padding-left:18px;margin-top:0">
+      <li>4 somunu yarım tur gevşet (cıvatalar yerinde kalır, ağırlığı taşımaya devam eder).</li>
+      <li>İniş borusunu elle çevir: döner flanş merkez pimi etrafında döner, cıvatalar kanalda kayar.</li>
+      <li>Açıyı sarı göstergeden, sabit flanş kenarındaki 5° taksimattan oku.</li>
+      <li>Kanal ucuna gelinirse cıvataları tek tek komşu deliğe (45°) aktar; böylece 360° kapsanır.</li>
+      <li>Somunları sık, kontra somunları kilitle.</li>
+    </ol>
+    <div id="az-state" class="sub" style="color:#e2e8f0"></div>
 
     <h2>Kontroller</h2>
     <div id="checks"></div>

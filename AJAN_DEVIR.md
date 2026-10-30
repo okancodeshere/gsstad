@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Matsing askı aparatı: tilt zemine göre öne 70° / arkaya 20°, taşıyıcı keçesi`
+- **Son commit:** `[Claude] Matsing askı aparatı: Eksen 1 azimut mafsalı detaylandırıldı (kanallı flanş, merkez pimi, cıvata takımı)`
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
@@ -71,6 +71,33 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-10-30 14:50 — Claude — Matsing askı aparatı: Eksen 1 (azimut) mafsalı detaylı
+- **Kullanıcı isteği:** "Eksen 1'de bağlantı nasıl sağlanıyor ve hareket nasıl oluyor, detaylı çiz; kendi kendine boşlukta dönüyor gibi." Eski çizimde iki düz disk 2 mm boşlukla duruyordu; kanal ve delik görünmüyordu, cıvatalar dolu sacın içinden geçiyordu.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - Sabitler: `FLANGE_R` 0.15, `FLANGE_T` 0.020 (Ø300 × 20). YENİ `AZ_BOLT_R`, `AZ_SLOT_HALF = 25`, `AZ_SLOT_W`, `AZ_SPIGOT_R`, `AZ_BUSH_R`, `AZ_FRICTION`, `M16_PRELOAD`. `HEAD_PLATE_T` kaldırıldı.
+    - Terazi başlığı (`levelHead`):
+      - 280 × 280 başlık plakası kaldırıldı. İç kulaklar doğrudan sabit flanşa kaynaklı; her kulakta 2 üçgen berkitme var.
+      - YENİ "2.C": sabit flanş `flangeGeometry()` ile çiziliyor. 4 yay kanal (`arcSlotPath`) 0/90/180/270°, ±25°.
+      - Altına kaynaklı Ø50 merkez pimi.
+      - Dış yüzde 5° taksimat (15° ve 90°'de uzun) ve 0/90/180/−90 etiketleri.
+    - Azimut grubu:
+      - Döner flanşta 45° arayla 8 delik ve Ø70/50 bronz burç yuvası. Sabit flanşa doğrudan oturuyor; `placeHead()` içindeki 2 mm boşluk kaldırıldı.
+      - Sarı gösterge dili sabit flanşın taksimatını okuyor.
+      - `azBolts`: 8 M16 takımı (üstte baş ve Ø40 pul, altta pul + somun + sarı kontra somun). Görünen 4'ünü `azBoltState(az)` seçiyor: hangi delik seti cıvatayı kanal ortasına daha yakın tutuyorsa o. Bu sayede ±25° kanalla 360° kapsanıyor.
+      - Flanş altı berkitmeleri cıvatalara değmesin diye 22.5° kaydırıldı.
+    - `update()`: "Eksen 1 patlatılmış" seçeneğiyle döner kısım 160 mm aşağı iniyor, cıvatalar iki flanş arasında gösteriliyor.
+    - `#az-state` gösteriyor: kullanılan delik seti, cıvatanın kanal ortasına göre konumu, sürtünme kapasitesi (4 × 88 kN × 0.2 × 0.115 = 8.1 kNm) ve rüzgar burulması.
+    - `setView('az')`: Eksen 1 yakın plan.
+    - BOM: sabit ve döner flanş, merkez pimi, bronz burç, 4 azimut cıvata takımı. Başlık plakası çıkarıldı.
+  - `matsing_montaj_aparati.html`: "Eksen 1 patlatılmış" kutusu, "Eksen 1 detay" düğmesi, "Eksen 1 · Bağlantı ve hareket" açıklaması ve 5 adımlı ayar sırası.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tarayıcıda normal ve patlatılmış görünüş kontrol edildi.
+  - Eğim −15/0/15 ve azimut −180…135 aralığında delik seti doğru seçiliyor; cıvata kanalda en fazla ±22.5°.
+  - Açıklıklar: taşıyıcı en az 57 mm (yalnızca iniş 1100, eğim −15°, tilt 70°, azimut 90° durumunda; değişiklikten bağımsız, mevcut). İniş borusuna en az 246 mm.
+- **Commit:** `[Claude] Matsing askı aparatı: Eksen 1 azimut mafsalı detaylandırıldı (kanallı flanş, merkez pimi, cıvata takımı)`
 
 ### 2026-10-30 — Claude — Matsing askı aparatı: tilt aralığı (zemine göre) + keçe
 - **Kullanıcı isteği:**
