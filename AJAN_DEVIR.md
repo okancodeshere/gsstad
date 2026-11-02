@@ -38,8 +38,11 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Tava askı sayfası: 70 cm alt lama + M8 delikleri, 80 cm tij, gergi Ø115 / zikzak Ø223`
-- **Tava askı sayfası:** `tava_aski_aparati.html` + `.js` (dev sunucuda `/tava_aski_aparati.html`); `vite.config.js` girdilerinde yok, canlıya çıkmaz.
+- **Son commit:** `[Claude] Ana sayfaya "Aparatlar" butonu: Matsing-1 / Gammanu / Tava Ofset sekmeli sayfa`
+- **Aparatlar sayfası:**
+  - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
+  - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
+  - `vite.config.js` bu sayfaları build girdisi olarak içeriyor, yani bir sonraki push ile canlıya çıkacaklar.
 - **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
@@ -79,6 +82,24 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 14:45 — Claude — Ana sayfaya "Aparatlar" butonu, üç tasarım tek sayfada sekmeli
+- **Kullanıcı isteği:** "ana sayfa projede üst tarafa bir buton ekle ve aparatlar olarak adlandır. Matsing-1, Gammanu ve Tava ofset olarak 3 tane tasarımı tek sayfada sekmeler halinde birleştir. Hepsi bağımsız sol menüden komutalsın." Ardından: "tava ofset default olarak açılan olsun".
+- **Değişen dosyalar:**
+  - YENİ `aparatlar.html`:
+    - Üst çubukta GSSTAD markası, sekmeler (Matsing-1 / Gammanu / Tava Ofset) ve "← Ana proje" bağlantısı.
+    - Her sekme ayrı iframe; sol menüler ve ayarlar bağımsız. İframe ilk açılışta yükleniyor, sekme değişince kapanmıyor (ayarlar korunuyor).
+    - Varsayılan sekme Tava Ofset. Adres çubuğunda `#matsing`, `#gammanu` ve `#tava` ile doğrudan açılabiliyor.
+  - `index.html` → üst çubuk: "Görsel Kaydet"ten önce YENİ `#btn-aparatlar` bağlantısı. Yeni sekmede açılıyor, böylece ana projedeki çalışma kaybolmuyor.
+  - `vite.config.js`: `rollupOptions.input` → `index.html`, `aparatlar.html`, `matsing_montaj_aparati.html`, `tava_aski_aparati.html`.
+  - `matsing_montaj_aparati.js`: `?embed=1` ile açılınca kendi Matsing/Gammanu sekme çubuğu kaldırılıyor.
+  - `matsing_montaj_aparati.html`, `tava_aski_aparati.html`: `#panel` `z-index: 1000`. 3D etiketler sol menünün üstüne biniyordu.
+- **Doğrulama:**
+  - `npm run build` hatasız; `dist/` içinde dört HTML var.
+  - Tarayıcıda ana sayfa butonu görünüyor. Aparatlar sayfası Tava Ofset ile açılıyor.
+  - Üç sekme ayrı iframe'de yükleniyor, konsol hatası yok.
+- **Commit:** `[Claude] Ana sayfaya "Aparatlar" butonu: Matsing-1 / Gammanu / Tava Ofset sekmeli sayfa`
+- **Dikkat:** Push edilince aparat sayfaları canlıda da yayınlanır (önceden yalnızca dev sunucudaydı).
 
 ### 2026-11-02 14:20 — Claude — Tava askı sayfası revizyonu: alt lama, M8 delikleri, tij, boru çapları
 - **Kullanıcı isteği:** "alt lamaların uzunluğu 70 cm olsun ... her 10 cm'de bir vida için delik aç, M8 vida olur. Tij uzunluklarını 75 cm yap."

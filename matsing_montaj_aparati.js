@@ -829,6 +829,8 @@ let lastKey = null;
 
 // Sekme ve modele özgü metinler
 document.querySelectorAll('[data-model]').forEach(a => a.classList.toggle('active', a.dataset.model === MODEL));
+// aparatlar.html içinde gömülüyken sekmeler üst çubukta; sayfanın kendi sekme çubuğu gizlenir
+if (new URLSearchParams(location.search).has('embed')) document.querySelector('.tabs')?.remove();
 document.title = IS_G ? 'Gammanu Askı Aparatı' : 'Matsing Askı Aparatı';
 document.getElementById('h-title').textContent = IS_G ? 'Gammanu Spot Beam 30/30 · Tek Kollu Askı Aparatı' : 'Matsing 4-Beam · Tek Kollu Askı Aparatı';
 document.getElementById('h-sub').innerHTML = `Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, ${CLAMP.type === 'shell'
