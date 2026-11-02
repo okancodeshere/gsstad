@@ -37,8 +37,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-10-30
-- **Son commit:** `[Claude] Askı aparatı sayfasına Gammanu sekmesi: lama çemberli hafif sistem (aparat 47 kg)`
+- **Son güncelleyen:** Claude Code, 2026-11-02
+- **Son commit:** `[Claude] ALAN 2 beton kaide direkleri uzay çatıların altına (6 m ızgara), kablo merdivenleri ve kafes kabinleri uyarlandı`
+- **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
@@ -73,6 +74,31 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 10:30 — Claude — ALAN 2 beton kaide direkleri uzay çatıların altına
+- **Kullanıcı isteği:** "Alan-2'de beton kaide üzerindeki uzay çatıyı taşıyıcı direklerin konumlarını hatalı tarif etmişim. Sen bu taşıyıcıları tam olarak tava attığımız uzay çatıların altına al."
+  - Sorulara yanıt: "6 m ızgara, çatılara hizalı"; kablo merdivenleri "çatının altındaki direğe".
+  - Sonra çıkan kabin çakışması için: "Kabinleri kaydır".
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan4Structure()` "10.2" (~satır 8805): `colXLocs` eskiden [−27, −21, −15, −9, −3, 3, 9, 15, 21, 27] idi. Şimdi [−24, −18, −12, −6, 0, 6, 12, 18, 24], yani 9 direk. Üç uzay çatının (X = −18, 0, +18) mesnet pabuçları artık direk tepesinde. Başlık kirişi 54 m, bilezikler ve flanş halkaları `colXLocs`'tan kendiliğinden geliyor.
+  - `main.js` → "10.4" kablo merdivenleri (~satır 9010): üçü de kendi çatısının altındaki direğin arkasından düz iniyor. Çağrılar (−18, −18), (18, 18), (0, 0), `forceStraightDrop = false`. Eskiden yan merdivenler direksiz serbest iniyor, orta merdiven +3 direğindeydi.
+  - `main.js` → `buildSideStationEnclosureWithEquipment()` `addLouverCage` çağrısı:
+    - `innerColumns` artık `colXLocs` içinden kafes aralığına düşenler (her kafeste ±18 ve ±12).
+    - `sideColumns` yalnızca duvara 0.8 m'den yakın dış direkler; şu an yok, çünkü ±24 / ±6 duvardan 3.4 m uzak.
+  - `main.js` → `PRESET_DRAFTS['taslak-v2']` alan4 kafes kabinleri (±12 direği için 50 cm boşluk, kabin araları 5 cm, en fazla 21 cm kayma):
+    - Eltek: −13.273 → −13.323; −12.435 → −12.585; −11.602 → −11.412; 10.699 → 10.679; 11.552 → 11.412; 12.377 → 12.587; 14.165 → 14.055.
+    - MTS9304A: −10.752 → −10.672; −9.854 → −9.934; 9.894 → 9.944; 13.290 → 13.320.
+    - Sol 11 borulu RRU bloğu −18.960 → −19.02 (direk ve kablo merdiveninden 4–5 cm boşluk).
+  - Yorumlar güncellendi. Yedek: `_backups/main_before_kaide_direk_izgara_20261102.js`.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Tarayıcıda 9 direk X = −24 … 24'te.
+  - Direk ve kablo merdivenleriyle ekipman arası en dar boşluk 38 mm (RRU bloğu ↔ sol merdiven). Kabinler direklerden 45–48 mm uzakta.
+  - Beton odağında görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 2 beton kaide direkleri uzay çatıların altına (6 m ızgara), kablo merdivenleri ve kafes kabinleri uyarlandı`
+- **Yarım kalan / dikkat:**
+  - Her kafeste artık 2 direk var (önceki "kolonları kafes dışına al" kararıyla tek direk vardı). Kafes sınırları değişmedi.
+  - DXF çıktıları (pafta 08/11 vb.) eski direk konumlarını gösterebilir; güncellenmedi.
 
 ### 2026-10-30 16:40 — Claude — Askı aparatı sayfası: Gammanu sekmesi
 - **Kullanıcı isteği:** "yeni bi sekme ekle ve gammanu antenler için de benzer bir yapı oluştur. Onlar daha hafif olduğundan daha hafif bir sistem olabilir."

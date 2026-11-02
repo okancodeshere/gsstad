@@ -8802,7 +8802,8 @@ function createAlan4Structure() {
   const colRad = colDia / 2;
   const colH = 4.00; // 4 metre boy
 
-  const colXLocs = [-27, -21, -15, -9, -3, 3, 9, 15, 21, 27];
+  // 2026-11-02: Direkler uzay çatıların (X = -18, 0, +18) tam altına gelecek şekilde X = 0 merkezli 6 m ızgaraya alındı
+  const colXLocs = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
   const steelPlatMat = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, roughness: 0.35, metalness: 0.75 });
   const colMatWhite = new THREE.MeshStandardMaterial({ color: 0xebedf0, roughness: 0.40, metalness: 0.35 });
   const boltHardwareMat = new THREE.MeshStandardMaterial({ color: 0x222426, roughness: 0.4, metalness: 0.8 });
@@ -8903,10 +8904,10 @@ function createAlan4Structure() {
   // Kullanıcı İsteği:
   // - "kablo merdivenini diregin yanına degil arkasına al"
   // - "ortadan kaldırdıgımız kafeste bir kablo merdiveni var ya onu da bi yandaki direkten indir"
-  // 3 Adet Dikey Kablo Merdiveni:
-  //   1. Sol Uzay Çatı (X = -18.0m) -> X = -15.0m Direği Arkası
-  //   2. Sağ Uzay Çatı (X = +18.0m) -> X = +15.0m Direği Arkası
-  //   3. Merkez Uzay Çatı (X = 0.0m) -> Bi Yandaki X = +3.0m Direği Arkası
+  // 3 Adet Dikey Kablo Merdiveni (2026-11-02: direkler uzay çatıların altına alındı):
+  //   1. Sol Uzay Çatı (X = -18.0m) -> X = -18.0m Direği Arkası
+  //   2. Sağ Uzay Çatı (X = +18.0m) -> X = +18.0m Direği Arkası
+  //   3. Merkez Uzay Çatı (X = 0.0m) -> X = 0.0m Direği Arkası
   // =========================================================================
   const cLadderGalvMat = new THREE.MeshStandardMaterial({
     color: 0xa4b0be,
@@ -9007,16 +9008,17 @@ function createAlan4Structure() {
     return vLadderGroup;
   }
 
-  // 1. Sol Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = -18.0m uzay çatıdan DOĞRUDAN aşağı)
-  const leftCarrierLadder = buildScoreboardCarrierVerticalLadder(-15.00, -18.00, 'scoreboardLeftCarrierCableLadder', true);
+  // Üç kablo merdiveni de kendi uzay çatısının tam altındaki direğin arkasından düz iner (2026-11-02)
+  // 1. Sol Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = -18.0m direği arkası)
+  const leftCarrierLadder = buildScoreboardCarrierVerticalLadder(-18.00, -18.00, 'scoreboardLeftCarrierCableLadder', false);
   concreteGroup.add(leftCarrierLadder);
 
-  // 2. Sağ Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = +18.0m uzay çatıdan DOĞRUDAN aşağı)
-  const rightCarrierLadder = buildScoreboardCarrierVerticalLadder(15.00, 18.00, 'scoreboardRightCarrierCableLadder', true);
+  // 2. Sağ Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = +18.0m direği arkası)
+  const rightCarrierLadder = buildScoreboardCarrierVerticalLadder(18.00, 18.00, 'scoreboardRightCarrierCableLadder', false);
   concreteGroup.add(rightCarrierLadder);
 
-  // 3. Merkez Çatı Taşıyıcısı Dikey Kablo Merdiveni (ESKİ HALİ: bi yandaki direğin arkasından)
-  const centerCarrierLadder = buildScoreboardCarrierVerticalLadder(3.00, 0.00, 'scoreboardCenterCarrierCableLadder', false);
+  // 3. Merkez Çatı Taşıyıcısı Dikey Kablo Merdiveni (X = 0.0m direği arkası)
+  const centerCarrierLadder = buildScoreboardCarrierVerticalLadder(0.00, 0.00, 'scoreboardCenterCarrierCableLadder', false);
   concreteGroup.add(centerCarrierLadder);
 
   // =========================================================================
@@ -9234,8 +9236,9 @@ function createAlan4Structure() {
       minX, maxX, frontZ: encFrontZ, backZ: encBackZ,
       baseY: baseGroundY, cageHeight: 3.80,
       doorsArray: alan4SlidingDoors,
-      innerColumns: [{ x: isLeftSide ? -15 : 15, z: baseZ }],
-      sideColumns: isLeftSide ? [{ x: -21, z: baseZ }, { x: -9, z: baseZ }] : [{ x: 9, z: baseZ }, { x: 21, z: baseZ }],
+      // 6 m ızgarada kafes içinde ±18 ve ±12 direkleri kalır; dıştaki ±24 / ±6 duvardan 3.4 m uzak, yan braket yok
+      innerColumns: colXLocs.filter(cx => cx > minX && cx < maxX).map(cx => ({ x: cx, z: baseZ })),
+      sideColumns: colXLocs.filter(cx => (cx <= minX && minX - cx < 0.8) || (cx >= maxX && cx - maxX < 0.8)).map(cx => ({ x: cx, z: baseZ })),
       bannerName: `reklam_brandasi_alan4_${sideName}`
     });
   }
@@ -9250,7 +9253,7 @@ function createAlan4Structure() {
   // 10.6. STANDART ÖN VE YAN CAM KORUMA KORKULUKLARI (54M BETON KAİDE BOYUNCA)
   // Ortadaki kafes tamamen kaldırıldı; merkezde 18.80m kesintisiz açık yürüme yolu ve
   // standart 1.10m cam korkuluk yer alır.
-  // Kolon -27, -21, -9, -3, 0, +3, +9, +21, +27 olmak üzere 8 kolon kafes dışındadır.
+  // 6 m ızgarada (2026-11-02) Kolon -24, -6, 0, +6, +24 kafes dışında; ±18 ve ±12 kafeslerin içinde.
   // =========================================================================
   const frontRailingSpans = [
     { startX: -floorLength / 2, endX: -20.60 }, // [-27.00, -20.60] (L = 6.40m, Kolon -27 ve Kolon -21 açıkta)
@@ -19116,7 +19119,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -13.27332624896956,
+          "x": -13.323,
           "y": 18.121,
           "z": 59.92760781677324
         },
@@ -19142,7 +19145,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -12.435316293723163,
+          "x": -12.585,
           "y": 18.121,
           "z": 59.946156104057025
         },
@@ -19246,7 +19249,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -18.960056807452453,
+          "x": -19.02,
           "y": 18.121,
           "z": 59.67
         },
@@ -19376,7 +19379,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 13.290148614486716,
+          "x": 13.320,
           "y": 18.121,
           "z": 59.9
         },
@@ -19402,7 +19405,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 12.376634166483527,
+          "x": 12.587,
           "y": 18.121,
           "z": 59.9
         },
@@ -19428,7 +19431,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 14.165435274376803,
+          "x": 14.055,
           "y": 18.121,
           "z": 59.9
         },
@@ -19454,7 +19457,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 9.89387316938797,
+          "x": 9.944,
           "y": 18.121,
           "z": 59.9
         },
@@ -19480,7 +19483,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 10.69936876136525,
+          "x": 10.679,
           "y": 18.121,
           "z": 59.9
         },
@@ -19506,7 +19509,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": 11.552471490273222,
+          "x": 11.412,
           "y": 18.121,
           "z": 59.9
         },
@@ -19636,7 +19639,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -11.601613000165928,
+          "x": -11.412,
           "y": 18.121,
           "z": 59.9
         },
@@ -19662,7 +19665,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -9.853927977354337,
+          "x": -9.934,
           "y": 18.121,
           "z": 59.9
         },
@@ -19688,7 +19691,7 @@ const PRESET_DRAFTS = {
         "isOffsetCarrier": false,
         "isInclinedPipe": false,
         "position": {
-          "x": -10.752347263272256,
+          "x": -10.672,
           "y": 18.121,
           "z": 59.9
         },
