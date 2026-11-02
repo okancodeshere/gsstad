@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] ALAN 1-3 ve ALAN 4: reklam kaplaması ve ön üst cephe açılışta kapalı`
+- **Son commit:** `[Claude] Devir defteri: tava askı sayfası güncel durum`
+- **Tava askı sayfası:** `tava_aski_aparati.html` + `.js` (dev sunucuda `/tava_aski_aparati.html`); `vite.config.js` girdilerinde yok, canlıya çıkmaz.
 - **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
