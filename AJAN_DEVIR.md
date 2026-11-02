@@ -79,6 +79,44 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ---
 
+### 2026-11-02 12:20 — Claude — ALAN 1-3 makası referans makasın kopyası, tava 230 cm tij askılı (adım 2/3)
+- **Kullanıcı isteği:** Adım 1'deki istek. Kullanıcı bağımlı parçaların taşınması planını onayladı ("Evet, planla devam").
+- **Değişen dosyalar:**
+  - `main.js` → YENİ üst düzey yardımcılar (`createAlan2RoofTrussAndCableTray` hemen önünde):
+    - `REF_TRUSS`: referans ölçüler. Omurga Ø420, aşık Y = R + 3.08, ölçülen V formülü, örgü Ø223, tava kotu R + 2.30, `vStep` 5.72.
+    - `createRefTrussPipe()`.
+    - `buildRefTrussStations(len, cwCenterS)`: kedi yolu iki V'nin tam ortasında kalacak şekilde 5.72 m ızgara.
+    - `buildRefTrussFrame()`: bilezikler, V kolları, enine gergiler, aşıklar, örgü çaprazları, ara düğüm gergileri, zikzak. Dönüş değeri `{ topNodes, webSegments }`.
+    - `addRefTrussTrayHangers()`: ALAN 2 3.E ile aynı lama kelepçe + konik boyun + M16 tij + tabla.
+  - `main.js` → `createAlan2RoofTrussAndCableTray()` (ALAN 1-3):
+    - **Makas:**
+      - `carrierRadius` 0.14 → `REF_TRUSS.spineR` (Ø420).
+      - Eski geniş V (±1.52, Ø140), 60 cm travers kaideleri, Y 2.73'teki aşıklar ve X gergiler kalktı. Yerine `buildRefTrussFrame` geldi.
+      - İstasyonlar 3.50, 9.22 … 43.54. Ara kedi yolu (s ≈ 29.24) 26.38 ile 32.10 arasının tam ortasında.
+    - **Tava:**
+      - 500×150 → 500×200, `trayBottomYNormal = R + 2.30`.
+      - Kedi yolu altı alçak geçiş, dip eyeri, ara destekler kalktı. Yerine `addRefTrussTrayHangers` (`alan2RoofTrayHangers`).
+      - `trayBottomYDip = trayBottomYNormal`; kablo yolları düz.
+    - **RRU ofset boruları** (`midTrussParallelOffsetPipes`):
+      - `stZ_midTruss` 30.00 → kedi yolunun çatı ucu tarafındaki ilk V (32.10).
+      - Boru 2.90 → 2.30 m, 15 cm yukarı (`pipeCenter`). RRU sıraları −0.65 / 0 / 0.65 → −0.40 / 0.25 / 0.90 (alt sıra örgü çaprazına değiyordu).
+    - **60 POI feeder'ı:**
+      - Köprüler tava kotunda, V ile boru arasında (s = stZ + 0.10).
+      - Kablo başlangıçları yeni boru boyunca, tava girişi stZ + 0.40.
+      - Tava ucunda s = 40.93'te sağa yan çıkış tavası. İniş tavası makas aksı yerine X = −2.00'den (makasın 1 m yanından) kedi yolu silindiri arkasındaki dağıtım tavasına iniyor. Eskisi omurganın içinden geçiyordu.
+    - **Diğer uyarlamalar:**
+      - Enerji çıkış oluğu s 28.00 → 28.10 (tij tablasından uzak).
+      - Ara kedi yolu askı rotları makas aksına 0.6 m'den yakınsa konmuyor.
+      - Çatı ucu kedi yolu 45° kolunun üst pimi omurgadan R + 0.08.
+  - `main.js` → `buildMatsingTrussMidOffsetAssembly()`: `carrierRadius` ALAN 1-3 için de 0.21. Ø280 yalnızca `alan3`'te, o da adım 3'te değişecek.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Örnekleme ile çakışma taraması. Kalan temaslar yalnızca kasıtlı bağlantılar: askı kelepçeleri ve RRU boru kelepçeleri (eleman sarıyor), köprü boru kelepçesi, omurga ile 45° kol bileziği, makas başı eyeri, PDU ile kedi yolu kirişi.
+  - Matsing Ara Bölge 1/2 kelepçeleri V istasyonlarına değmiyor (s 39.24–40.04 ve 36.51–37.31; istasyonlar 37.82 ve 43.54).
+  - Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 1-3 çatı makası referans makas kopyası, tava 230 cm tij askılı`
+- **Dikkat:** 40 anten feeder'ının tavadan antenlere iniş eğrileri ve eklem bölgesindeki kılavuz sacları (`ladderToSlopedTrayJoint`, artık ~2.66 m) eski mantıkla, yeni kota göre otomatik uzadı. Görsel olarak kaba kalabilir.
+
 ### 2026-11-02 11:10 — Claude — ALAN 2: üç makasta tava 230 cm'de tij askılı (adım 1/3)
 - **Kullanıcı isteği:** "tüm alanlardaki uzay çatıya takılı olan tavaları alan-2'deki sağ makas gibi yap, hepsi tij ile askıda olacak, kotunu da aynı burası gibi yap". Kararlar Güncel Durum → Yarım kalan iş'te.
 - **Değişen dosyalar:**
