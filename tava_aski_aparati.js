@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { enableWasd } from './aparat_wasd.js';
 
 // ---------------------------------------------------------------------------
 // ÖLÇÜLER (main.js REF_TRUSS ile aynı; askının asıldığı üst borular sahadan, 2026-11-02)
@@ -472,11 +473,15 @@ window.addEventListener('resize', () => {
 
 setView('iso');
 sync();
+// WASD serbest gezinme (aparat_wasd.js): kamera ve dönme merkezi birlikte kayar
+const wasdUpdate = enableWasd(camera, controls);
+const wasdClock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
+  wasdUpdate(wasdClock.getDelta());
   controls.update();
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
 });
 
 // Tarayıcı konsolundan inceleme için
-window.tavaAski = { scene, trussGroup, dynGroup, state, info: () => lastInfo };
+window.tavaAski = { scene, camera, controls, trussGroup, dynGroup, state, info: () => lastInfo };

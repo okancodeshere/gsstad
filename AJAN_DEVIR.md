@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Tava Ofset: askı kelepçelerinde boru ile lama arasına 5 mm keçe`
-- **Push:** 2026-11-02'de kullanıcı onayıyla `dc3c18a`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda.
+- **Son commit:** `[Claude] Aparat sayfalarına WASD serbest gezinme`
+- **Push:** 2026-11-02'de kullanıcı onayıyla `b55ce85`'e kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda. Sonrası (WASD) push edilmedi.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
   - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
@@ -83,6 +83,24 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 15:55 — Claude — Aparat sayfalarına WASD serbest gezinme
+- **Kullanıcı isteği:** "anten aparatları, tava aparatları sayfalarında da wasd hareketi ekle".
+- **Değişen dosyalar:**
+  - YENİ `aparat_wasd.js`: `enableWasd(camera, controls, opts)`, her karede çağrılacak `update(dt)` döndürüyor.
+    - Tuşlar: W/S bakış yönünde ileri-geri, A/D yana, Space/E yukarı, C/Q aşağı, Shift 4 kat hızlı. Temel hız 1.5 m/s.
+    - Kamera ve OrbitControls dönme merkezi birlikte kayıyor; fareyle döndürme bozulmuyor.
+    - Metin kutularında tuşlar yok sayılıyor; kaydırıcı ve kutularda çalışıyor.
+    - Ana uygulamadaki Alt+Tab hatasından ders alındı (2026-10-09 kaydı): Shift her olayda `e.shiftKey`'den okunuyor; `blur` ve `visibilitychange` olaylarında tüm tuşlar bırakılıyor.
+  - `matsing_montaj_aparati.js`, `tava_aski_aparati.js`:
+    - `enableWasd` import edildi; animasyon döngüsünde `wasdUpdate(wasdClock.getDelta())`.
+    - `window.matsingAparat` ve `window.tavaAski` artık `camera` ve `controls` da içeriyor (konsoldan inceleme için).
+  - `matsing_montaj_aparati.html`, `tava_aski_aparati.html`: görünüm düğmelerinin altına tuş ipucu satırı.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tarayıcı paneli arka planda olduğu için rAF çalışmadı. Modül sayfa içinde doğrudan test edildi: W 0.1 s'de 0.15 m, Shift+D 0.05 s'de 0.30 m, `blur` sonrası hareket 0, dönme merkezi kamerayla aynı miktarda kayıyor.
+  - Üç sekmede ipucu satırı görünüyor.
+- **Commit:** `[Claude] Aparat sayfalarına WASD serbest gezinme`
 
 ### 2026-11-02 15:35 — Claude — Tava Ofset: askı kelepçelerine keçe
 - **Kullanıcı isteği:** "keçeyi de unutma askılarda".
