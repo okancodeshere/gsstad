@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Devir defteri: tava askı sayfası güncel durum`
+- **Son commit:** `[Claude] Tava askı sayfası: 70 cm alt lama + M8 delikleri, 80 cm tij, gergi Ø115 / zikzak Ø223`
 - **Tava askı sayfası:** `tava_aski_aparati.html` + `.js` (dev sunucuda `/tava_aski_aparati.html`); `vite.config.js` girdilerinde yok, canlıya çıkmaz.
 - **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
@@ -79,6 +79,25 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 14:20 — Claude — Tava askı sayfası revizyonu: alt lama, M8 delikleri, tij, boru çapları
+- **Kullanıcı isteği:** "alt lamaların uzunluğu 70 cm olsun ... her 10 cm'de bir vida için delik aç, M8 vida olur. Tij uzunluklarını 75 cm yap."
+  - Sorulara yanıtlar: "sadece düz olanlarda bunu yap, çapraz olanlarda ölçüyü sen ver"; tij "80 cm olsun"; "şimdilik sadece askı sayfasında".
+  - Ek saha ölçüsü: "düz olanların çevresi 36 cm, çaprazlar 70 cm" (askının asıldığı enine gergi ve üst zikzak).
+- **Değişen dosyalar:**
+  - `tava_aski_aparati.js`:
+    - `T.tieR = 0.36/2π` (Ø115, eskiden Ø100), `T.zigR = 0.70/2π` (Ø223, eskiden Ø70). Kelepçeler bu çaplara göre: düz bant L 448, çapraz L 788.
+    - YENİ `TIJ_LEN = 0.80`. Tij boyu sabit; üst ucu boyun somununda, fazlası lamanın altından taşıyor. Kontrolde gereken boy ve taşma gösteriliyor (230 cm'de düz 104 mm, çapraz 158 mm taşar).
+    - `TABLA`: U80×30×3 yerine 80×8 alt lama. Düz askıda 700 mm. Çapraz askıda iki tij ayağını kapsayan 10 cm katı boy (230 cm'de 1400 mm).
+    - `buildTabla()`: lama `ExtrudeGeometry` ile, her 10 cm'de Ø9 (M8) delik ve tij geçişlerinde Ø18 delik. Tij deliğine 3 cm'den yakın M8 deliği açılmıyor (düz 5, çapraz 12 delik).
+    - `updatePanel()`: düz ve çapraz askı parça listeleri ayrı (düz ≈ 9.0 kg, çapraz ≈ 13.9 kg, M8 cıvatalar dahil). Adet özetinde 700 / 1400 mm lama sayıları ve M8 toplamı ("İkisi" seçiliyken 1183).
+    - "Alt lama" yakın plan görünümü eklendi. Etiketlerin yeniden kurulunca listeden düşmemesi düzeltildi.
+  - `tava_aski_aparati.html`: düğme adları "Düz (gergi Ø115)" / "Çapraz (zikzak Ø223)", açıklamalar ve "Alt lama" görünüm düğmesi.
+- **Doğrulama:** `npm run build` hatasız; konsol hatası yok. İki tip ve alt lama yakın planı görsel kontrol edildi (5 M8 deliği, 2 tij deliği).
+- **Commit:** `[Claude] Tava askı sayfası: 70 cm alt lama + M8 delikleri, 80 cm tij, gergi Ø115 / zikzak Ø223`
+- **Dikkat:**
+  - Ana model (`main.js`) değişmedi; kullanıcı "şimdilik sadece askı sayfasında" dedi. Modelde gergi Ø100, zikzak Ø70, tabla 30×80 duruyor.
+  - Alt lama kalınlığı 8 mm varsayım.
 
 ### 2026-11-02 13:50 — Claude — Tava tij askısı için ayrı 3D çalışma sayfası
 - **Kullanıcı isteği:** "şu anda askı aparatlarımız var ya, onu da antene tasarladığımız askı aparatları gibi bir sayfa oluştur". Tava tij askısı olarak alındı.

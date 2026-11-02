@@ -35,11 +35,11 @@
   <div id="view"></div>
   <div id="panel">
     <h1>Çatı Makası · Tava Tij Askısı</h1>
-    <div class="sub">Uzay çatı makasının üst borularına delme/kaynak olmadan asılan kablo tavası askısı (ana modeldeki üç alanın askısıyla aynı ölçüler). Üst boruyu saran 50 mm lama kelepçe → konik boyun → M16 dişli tij → U profil tabla; tava kenarında çeneler. Ana model (<code>main.js</code>) değişmedi.</div>
+    <div class="sub">Uzay çatı makasının üst borularına delme/kaynak olmadan asılan kablo tavası askısı (ana modeldeki üç alanın askısıyla aynı ölçüler). Üst boruyu saran 50 mm lama kelepçe → konik boyun → 80 cm M16 dişli tij → 80×8 alt lama (her 10 cm’de M8 deliği); tava kenarında çeneler. Ana model (<code>main.js</code>) değişmedi.</div>
 
     <div class="ctl"><label>Askı tipi</label></div>
     <div class="row" style="margin-top:-6px" id="variant">
-      <button data-v="node" class="on">Düğüm (gergi Ø100)</button><button data-v="mid">Ara (zikzak Ø70)</button><button data-v="both">İkisi</button>
+      <button data-v="node" class="on">Düz (gergi Ø115)</button><button data-v="mid">Çapraz (zikzak Ø223)</button><button data-v="both">İkisi</button>
     </div>
     <div class="ctl"><label>Tava kotu (taşıyıcı boru üstü → tava tabanı) <b id="v-h">230 cm</b></label><input id="h" type="range" min="150" max="265" step="5" value="230"></div>
     <div class="ctl"><label>Tava</label></div>
@@ -55,20 +55,20 @@
       <label><input id="t-exp" type="checkbox"> Patlatılmış</label>
     </div>
     <div class="row">
-      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button><button data-view="clamp">Kelepçe</button>
+      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button><button data-view="clamp">Kelepçe</button><button data-view="lama">Alt lama</button>
     </div>
 
     <h2>Bağlantı</h2>
     <div class="sub" style="margin-bottom:6px">
-      <b>Düğüm askısı:</b> V istasyonlarında ve ara üst düğümlerde, iki aşık arasındaki Ø100 enine gergiye asılır. İki tij aynı kesitte; tabla tavaya dik.<br>
-      <b>Ara askı:</b> iki düğümün ortasında, üst düzlemdeki Ø70 zikzaktan asılır. Zikzak eğik geçtiği için iki tij farklı noktada asılır; tabla iki tij ayağını birleştirecek şekilde çapraz durur.<br>
-      <b>Kelepçe:</b> boruya 2 mm boşlukla saran 50×5 lama bant, iki ucu dışa kıvrık kulak, M10 cıvata + somun. Altında konik boyun ve somun; M16 tij tablayı geçer, tablanın altında ve üstünde somun.
+      <b>Düz askı:</b> V istasyonlarında ve ara üst düğümlerde, iki aşık arasındaki Ø115 (36 cm çevre) enine gergiye asılır. İki tij aynı kesitte; 70 cm alt lama tavaya dik.<br>
+      <b>Çapraz askı:</b> iki düğümün ortasında, üst düzlemdeki Ø223 (70 cm çevre) zikzaktan asılır. Zikzak eğik geçtiği için iki tij farklı noktada asılır; alt lama iki tij ayağını birleştirecek şekilde çapraz durur, boyu ayakları kapsayan 10 cm katı.<br>
+      <b>Kelepçe:</b> boruya 2 mm boşlukla saran 50×5 lama bant, iki ucu dışa kıvrık kulak, M10 cıvata + somun. Altında konik boyun ve somun; 80 cm M16 tij alt lamayı geçer, lamanın altında ve üstünde somun, fazlası aşağı taşar. Alt lamada her 10 cm’de Ø9 (M8) delik.
     </div>
 
     <h2>Kontroller</h2>
     <div id="checks"></div>
 
-    <h2>Parça listesi (bir askı)</h2>
+    <h2>Parça listesi</h2>
     <table id="bom"></table>
 
     <h2>Modeldeki askı adetleri</h2>

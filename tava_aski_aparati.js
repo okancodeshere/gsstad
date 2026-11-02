@@ -12,7 +12,7 @@ import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRe
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 // ---------------------------------------------------------------------------
-// ÖLÇÜLER (main.js REF_TRUSS ile aynı)
+// ÖLÇÜLER (main.js REF_TRUSS ile aynı; askının asıldığı üst borular sahadan, 2026-11-02)
 // ---------------------------------------------------------------------------
 const T = (() => {
   const spineR = 1.32 / Math.PI / 2;                       // Ø420 (132 cm çevre)
@@ -21,14 +21,21 @@ const T = (() => {
   const chordY = spineR + 3.00 + 0.08;                     // 300 cm iç yükseklik
   return {
     spineR, gapSlope, gapAt0, legR, legAxisX, chordY, chordR: 0.08, chordX: legAxisX(chordY - spineR),
-    baseX: legAxisX(0), webR: 0.70 / Math.PI / 2, tieR: 0.05, zigR: 0.035, vStep: 5.72
+    baseX: legAxisX(0), webR: 0.70 / Math.PI / 2, vStep: 5.72,
+    // Kullanıcı saha ölçüsü (çevre): düz enine gergi 36 cm → Ø115, çapraz (üst zikzak) 70 cm → Ø223
+    tieR: 0.36 / Math.PI / 2, zigR: 0.70 / Math.PI / 2
   };
 })();
 const MID_NODE = T.vStep / 2;          // ara üst düğüm (2.86)
 const MID_HANGER_S = MID_NODE / 2;     // ara askı (1.43)
 const HANGER_SPACING = T.vStep / 4;    // askı aralığı ≈ 1.43 m
 const LAMA = { w: 0.05, t: 0.005, gap: 0.002 };
-const TIJ_R = 0.008, TABLA = { h: 0.03, d: 0.08, t: 0.003 };
+const TIJ_R = 0.008;
+const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (fazlası tablanın altından taşar)
+const NUT_H = 0.014 * 0.9;
+// Alt lama (tabla): 80×8 lama; düz askıda 70 cm (kullanıcı isteği), çapraz askıda iki tij ayağını kapsayan
+// 10 cm katı boy. Her 10 cm'de M8 deliği (Ø9), tij geçişlerinde Ø18 delik.
+const TABLA = { w: 0.08, t: 0.008, nodeLen: 0.70, pitch: 0.10, m8D: 0.009, tijD: 0.018 };
 const STEEL = 7850, G = 9.81;
 const TRAYS = {
   500: { w: 0.50, h: 0.20, kgm: 9.0 },   // tava öz ağırlığı (galvaniz delikli, kapaksız, tahmini)
@@ -158,8 +165,8 @@ scene.add(trussGroup);
   trussGroup.add(pipe(new V(T.chordX, T.chordY, -MID_NODE), new V(-T.chordX, T.chordY, 0), T.zigR, M.pipe));
   trussGroup.add(pipe(new V(-T.chordX, T.chordY, 0), new V(T.chordX, T.chordY, MID_NODE), T.zigR, M.pipe));
   addLabel(trussGroup, 'Omurga Ø420', new V(0, -0.35, -2.4));
-  addLabel(trussGroup, 'Enine gergi Ø100', new V(-0.2, T.chordY + 0.18, -MID_NODE), 'ax');
-  addLabel(trussGroup, 'Üst zikzak Ø70', new V(0.25, T.chordY + 0.18, 2.2), 'ax');
+  addLabel(trussGroup, 'Enine gergi Ø115 (36 cm çevre)', new V(-0.2, T.chordY + 0.18, -MID_NODE), 'ax');
+  addLabel(trussGroup, 'Üst zikzak Ø223 (70 cm çevre)', new V(0.25, T.chordY + 0.18, 2.2), 'ax');
   addLabel(trussGroup, 'V kolu Ø111', new V(-0.55, 1.2, 0));
 }
 
@@ -204,17 +211,36 @@ function buildClamp(parent, center, memberDir, memberR) {
   return { rodTop: center.y - ringR - 0.05, bandLen: 2 * Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
 }
 
-// U profil tabla 80×30×3 (gövde üstte, tava tabanına oturur; kanatlar aşağı)
-function buildTabla(parent, a, b) {
-  const g = new THREE.Group();
+// Alt lama (tabla) 80×8: üst yüzü tava tabanında. Boy: verilen sabit boy (düz askı 70 cm) ya da iki tij ayağını
+// kapsayan 10 cm katı (çapraz askı). Her 10 cm'de Ø9 (M8) delik, tij geçişlerinde Ø18 delik; tij deliğine 3 cm'den
+// yakın M8 deliği açılmaz. Dönen: { len, m8 (delik sayısı) }
+function buildTabla(parent, a, b, fixedLen) {
   const span = new V().subVectors(b, a);
-  const len = Math.hypot(span.x, span.z) + 0.08;
-  g.add(box(len, TABLA.t, TABLA.d, M.steel, 0, -TABLA.t / 2, 0));
-  [-1, 1].forEach(sz => g.add(box(len, TABLA.h, TABLA.t, M.steel, 0, -TABLA.h / 2, sz * (TABLA.d / 2 - TABLA.t / 2))));
-  g.position.set((a.x + b.x) / 2, a.y, (a.z + b.z) / 2);
-  g.rotation.y = -Math.atan2(span.z, span.x);
-  parent.add(g);
-  return len;
+  const footDist = Math.hypot(span.x, span.z);
+  const len = fixedLen || Math.ceil((footDist + 0.10) / TABLA.pitch - 1e-6) * TABLA.pitch;
+  const shape = new THREE.Shape();
+  shape.moveTo(-len / 2, -TABLA.w / 2);
+  shape.lineTo(len / 2, -TABLA.w / 2);
+  shape.lineTo(len / 2, TABLA.w / 2);
+  shape.lineTo(-len / 2, TABLA.w / 2);
+  shape.closePath();
+  const tijX = [-footDist / 2, footDist / 2];
+  tijX.forEach(x => { const h = new THREE.Path(); h.absarc(x, 0, TABLA.tijD / 2, 0, Math.PI * 2, true); shape.holes.push(h); });
+  let m8 = 0;
+  const nHoles = Math.round(len / TABLA.pitch);
+  for (let i = 0; i < nHoles; i++) {
+    const x = -len / 2 + TABLA.pitch / 2 + i * TABLA.pitch;
+    if (tijX.some(t => Math.abs(t - x) < 0.03)) continue;
+    const h = new THREE.Path(); h.absarc(x, 0, TABLA.m8D / 2, 0, Math.PI * 2, true); shape.holes.push(h);
+    m8++;
+  }
+  const g = new THREE.ExtrudeGeometry(shape, { depth: TABLA.t, bevelEnabled: false, curveSegments: 16 });
+  g.rotateX(Math.PI / 2); // kalınlık aşağı: y 0 → −t
+  const m = new THREE.Mesh(g, M.steel);
+  m.position.set((a.x + b.x) / 2, a.y, (a.z + b.z) / 2);
+  m.rotation.y = -Math.atan2(span.z, span.x);
+  parent.add(m);
+  return { len, m8 };
 }
 
 function buildHanger(s, k, trayBottom, tray) {
@@ -223,7 +249,7 @@ function buildHanger(s, k, trayBottom, tray) {
   grp.add(clampG, rodG, tablaG);
   const armX = tray.w / 2 + 0.04;
   const feet = [];
-  let rodLen = 0, bandLen = 0;
+  let need = 0, bandLen = 0;
   [-1, 1].forEach(sx => {
     const xa = sx * armX;
     let topS = s, memberDir = new V(1, 0, 0), memberR = T.tieR;
@@ -236,24 +262,26 @@ function buildHanger(s, k, trayBottom, tray) {
       memberR = T.zigR;
     }
     const c = buildClamp(clampG, new V(xa, T.chordY, topS), memberDir, memberR);
-    bandLen = c.bandLen;
-    const rodBot = trayBottom - TABLA.h - 0.03;
-    rodG.add(pipe(new V(xa, c.rodTop, topS), new V(xa, rodBot, topS), TIJ_R, M.dark, 12));
-    rodLen = c.rodTop - rodBot;
-    tablaG.add(nut(xa, trayBottom + 0.004, topS));
-    tablaG.add(nut(xa, trayBottom - TABLA.h - 0.008, topS));
+    bandLen = Math.max(bandLen, c.bandLen);
+    // 80 cm tij: üst ucu boyun somununda; tabla altı somun + 1 cm diş payı gerekli, fazlası aşağı taşar
+    const nutBelowY = trayBottom - TABLA.t - NUT_H / 2;
+    need = Math.max(need, c.rodTop - (nutBelowY - NUT_H / 2 - 0.01));
+    rodG.add(pipe(new V(xa, c.rodTop, topS), new V(xa, c.rodTop - TIJ_LEN, topS), TIJ_R, M.dark, 12));
+    tablaG.add(nut(xa, trayBottom + NUT_H / 2, topS));
+    tablaG.add(nut(xa, nutBelowY, topS));
     feet.push(new V(xa, trayBottom, topS));
   });
-  const tablaLen = buildTabla(tablaG, feet[0], feet[1]);
-  [-1, 1].forEach(sx => tablaG.add(box(0.04, 0.03, 0.06, M.dark, sx * (tray.w / 2 + 0.01), trayBottom - 0.005 + 0.015 + 0.01, s)));
+  const tb = buildTabla(tablaG, feet[0], feet[1], k === null ? TABLA.nodeLen : null);
+  [-1, 1].forEach(sx => tablaG.add(box(0.04, 0.03, 0.06, M.dark, sx * (tray.w / 2 + 0.01), trayBottom + 0.015, s)));
   if (state.explode) { clampG.position.y += 0.22; tablaG.position.y -= 0.22; }
   dynGroup.add(grp);
-  return { rodLen, tablaLen, bandLen, rodTopS: feet.map(f => f.z), feet };
+  return { need, tablaLen: tb.len, m8: tb.m8, bandLen, memberR: k === null ? T.tieR : T.zigR, feet };
 }
 
 function rebuild() {
+  // Önceki etiketleri listeden çıkar (dynGroup temizlenince ebeveynleri kaybolur)
+  dynGroup.traverse(o => { const i = labels.indexOf(o); if (i >= 0) labels.splice(i, 1); });
   dynGroup.clear();
-  labels.filter(l => l.parent === dynGroup).forEach(l => labels.splice(labels.indexOf(l), 1));
   const tray = TRAYS[state.trayW];
   const tb = T.spineR + state.h;
 
@@ -279,19 +307,19 @@ function rebuild() {
 
   // Etiketler
   const lx = tray.w / 2 + 0.04;
+  addLabel(dynGroup, `M16 tij · L=${mm(TIJ_LEN)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, info.node ? 0 : MID_HANGER_S));
   if (info.node) {
-    addLabel(dynGroup, 'Lama kelepçe 50×5 + M10', new V(lx + 0.12, T.chordY + 0.05, 0), 'ax');
-    addLabel(dynGroup, `M16 tij · L=${mm(info.node.rodLen)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, 0));
-    addLabel(dynGroup, `U80×30×3 tabla · L=${mm(info.node.tablaLen)} mm`, new V(0, tb - 0.12, 0.05));
+    addLabel(dynGroup, 'Lama kelepçe 50×5 + M10 (Ø115 gergi)', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
+    addLabel(dynGroup, `Alt lama 80×8 · L=${mm(info.node.tablaLen)} mm · ${info.node.m8}×Ø9 (M8)`, new V(0, tb - 0.12, 0.05));
   }
   if (info.mid) {
-    addLabel(dynGroup, `Ara askı · tabla L=${mm(info.mid.tablaLen)} mm (çapraz)`, new V(0, tb - 0.12, MID_HANGER_S + 0.1));
+    addLabel(dynGroup, `Çapraz askı · alt lama L=${mm(info.mid.tablaLen)} mm · ${info.mid.m8}×Ø9 (M8)`, new V(0, tb - 0.12, MID_HANGER_S + 0.1));
   }
   addLabel(dynGroup, `Tava ${state.trayW}×${mm(tray.h)} · taban taşıyıcı üstünden ${Math.round(state.h * 100)} cm`, new V(-tray.w / 2 - 0.05, tb + tray.h + 0.08, -2.2));
   // Ölçü çizgisi: taşıyıcı üstü → tava tabanı
   const pts = [new V(-0.9, T.spineR, -1.2), new V(-0.9, tb, -1.2), new V(-0.98, T.spineR, -1.2), new V(-0.82, T.spineR, -1.2), new V(-0.98, tb, -1.2), new V(-0.82, tb, -1.2)];
   dynGroup.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xfbbf24 })));
-  labels.filter(l => l.parent === dynGroup).forEach(l => { l.visible = document.getElementById('t-lbl').checked; });
+  dynGroup.traverse(o => { if (labels.includes(o)) o.visible = document.getElementById('t-lbl').checked; });
   updatePanel();
 }
 
@@ -303,18 +331,17 @@ function updatePanel() {
   const tb = T.spineR + state.h;
   const cls = (ok) => ok ? 'ok' : 'bad';
   const lines = [];
-  const any = lastInfo.node || lastInfo.mid;
-  // Tij boyu (kelepçe boynu ile tabla arası serbest boy)
-  const freeLen = any.rodLen - TABLA.h - 0.06;
-  lines.push(`<div>M16 tij boyu: <b>${mm(any.rodLen)} mm</b> (serbest ${mm(freeLen)} mm) <b class="${cls(freeLen > 0.05)}">${freeLen > 0.05 ? '' : '· tava gergiye çok yakın'}</b></div>`);
-  // Tava üstü ↔ gergi altı
+  // 80 cm tij yetiyor mu; tablanın altından ne kadar taşıyor
+  [['Düz', lastInfo.node], ['Çapraz', lastInfo.mid]].filter(x => x[1]).forEach(([n, h]) => {
+    const extra = TIJ_LEN - h.need;
+    lines.push(`<div>${n} askı: 800 mm tij ${extra >= 0 ? `tabla altı somundan <b>${mm(extra)} mm</b> taşar` : `<b class="bad">${mm(-extra)} mm kısa</b>`} (gereken ${mm(h.need)} mm)</div>`);
+  });
   const topGap = (T.chordY - T.tieR) - (tb + tray.h);
   lines.push(`<div>Tava üst kenarı ↔ enine gergi alt yüzü: <b class="${cls(topGap > 0.12)}">${mm(topGap)} mm</b></div>`);
-  // Düğüm askısında tabla ucu ↔ V kolu iç yüzü (aynı kesitte)
-  const tablaEnd = tray.w / 2 + 0.04 + 0.04;
-  const legInner = T.legAxisX(tb - TABLA.h - T.spineR) - T.legR / Math.cos(Math.atan(T.gapSlope / 2));
-  lines.push(`<div>Düğüm askısı tabla ucu ↔ V kolu iç yüzü: <b class="${cls(legInner - tablaEnd > 0.03)}">${mm(legInner - tablaEnd)} mm</b></div>`);
-  // Yük
+  // Düz askı (V istasyonunda): 70 cm lama ucu ↔ V kolu iç yüzü
+  const tablaEnd = TABLA.nodeLen / 2;
+  const legInner = T.legAxisX(tb - TABLA.t - T.spineR) - T.legR / Math.cos(Math.atan(T.gapSlope / 2));
+  lines.push(`<div>Düz askı alt lama ucu ↔ V kolu iç yüzü: <b class="${cls(legInner - tablaEnd > 0.03)}">${mm(legInner - tablaEnd)} mm</b></div>`);
   const w = tray.kgm + state.cable;                       // kg/m
   const Fh = w * HANGER_SPACING * G;                      // N / askı
   const Ft = Fh / 2;                                      // N / tij
@@ -324,33 +351,41 @@ function updatePanel() {
   lines.push(`<div style="color:#94a3b8;margin-top:4px">Ön tahmin; tava öz ağırlığı tahmini, rüzgar ve dinamik etki yok. Statik hesabın yerine geçmez.</div>`);
   document.getElementById('checks').innerHTML = lines.join('');
 
-  // Parça listesi (bir askı): seçili tip; "İkisi"nde düğüm askısı
-  const h = lastInfo.node || lastInfo.mid;
-  const tijLen = Math.ceil(h.rodLen * 100) / 100;
-  const bandKg = h.bandLen * LAMA.w * LAMA.t * STEEL;
+  // Parça listesi: düz ve çapraz askı ayrı
   const neckKg = Math.PI * 0.05 / 3 * (0.018 ** 2 + 0.018 * 0.009 + 0.009 ** 2) * STEEL;
-  const tablaKg = h.tablaLen * (TABLA.d + 2 * TABLA.h) * TABLA.t * STEEL;
-  const rows = [
-    [`Lama kelepçe 50×5, L=${mm(h.bandLen)} (kıvrık kulaklı)`, 2, bandKg],
-    ['Cıvata M10×45 8.8 + somun (kulak)', 4, 0.045],
-    ['Konik boyun Ø36/Ø18, h=50', 2, neckKg],
-    [`M16 dişli tij 8.8, L=${mm(tijLen)}`, 2, 1.58 * tijLen],
-    ['M16 somun (boyun altı + tabla üstü/altı)', 6, 0.034],
-    ['M16 pul', 4, 0.011],
-    [`U profil tabla 80×30×3, L=${mm(h.tablaLen)}${lastInfo.node ? '' : ' (çapraz)'}`, 1, tablaKg],
-    ['Tava tespit çenesi', 2, 0.08]
-  ];
-  let tot = 0;
-  document.getElementById('bom').innerHTML = rows.map(([n, q, kg]) => { tot += q * kg; return `<tr><td>${n}</td><td class="n">${q} ad.</td><td class="n">${(q * kg).toFixed(2)} kg</td></tr>`; }).join('')
-    + `<tr><td><b>Bir askı</b></td><td></td><td class="n"><b>${tot.toFixed(1)} kg</b></td></tr>`;
+  const kitRows = (h, name) => {
+    const bandKg = h.bandLen * LAMA.w * LAMA.t * STEEL;
+    return [
+      [`Lama kelepçe 50×5, L=${mm(h.bandLen)} (Ø${mm(h.memberR * 2)} boru, kıvrık kulaklı)`, 2, bandKg],
+      ['Cıvata M10×45 8.8 + somun (kulak)', 4, 0.045],
+      ['Konik boyun Ø36/Ø18, h=50', 2, neckKg],
+      [`M16 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 1.58 * TIJ_LEN],
+      ['M16 somun (boyun altı + lama üstü/altı)', 6, 0.034],
+      ['M16 pul', 4, 0.011],
+      [`Alt lama 80×8, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø18 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * TABLA.w * TABLA.t * STEEL],
+      [`M8 cıvata + somun (alt lama delikleri)`, h.m8, 0.02],
+      ['Tava tespit çenesi', 2, 0.08]
+    ];
+  };
+  const kits = [];
+  if (lastInfo.node) kits.push(['Düz askı (enine gergiden)', lastInfo.node, 'Düz']);
+  if (lastInfo.mid) kits.push(['Çapraz askı (zikzaktan)', lastInfo.mid, 'Çapraz']);
+  const kitKg = {};
+  document.getElementById('bom').innerHTML = kits.map(([title, h, name]) => {
+    let tot = 0;
+    const body = kitRows(h, name).map(([n, q, kg]) => { tot += q * kg; return `<tr><td>${n}</td><td class="n">${q} ad.</td><td class="n">${(q * kg).toFixed(2)} kg</td></tr>`; }).join('');
+    kitKg[name] = tot;
+    return `<tr><th colspan="3">${title}</th></tr>${body}<tr><td><b>Bir askı</b></td><td></td><td class="n"><b>${tot.toFixed(1)} kg</b></td></tr>`;
+  }).join('');
 
   // Adetler
   let sN = 0, sM = 0;
   const qRows = QTY.map(([a, n, m]) => { sN += n; sM += m; return `<tr><td>${a}</td><td class="n">${n}</td><td class="n">${m}</td><td class="n">${n + m}</td></tr>`; }).join('');
   const all = sN + sM;
-  document.getElementById('qty').innerHTML = `<tr><th>Alan</th><th class="n">Düğüm</th><th class="n">Ara</th><th class="n">Toplam</th></tr>${qRows}`
+  const m8Tot = (lastInfo.node ? lastInfo.node.m8 * sN : 0) + (lastInfo.mid ? lastInfo.mid.m8 * sM : 0);
+  document.getElementById('qty').innerHTML = `<tr><th>Alan</th><th class="n">Düz</th><th class="n">Çapraz</th><th class="n">Toplam</th></tr>${qRows}`
     + `<tr><td><b>Toplam</b></td><td class="n"><b>${sN}</b></td><td class="n"><b>${sM}</b></td><td class="n"><b>${all}</b></td></tr>`
-    + `<tr><td colspan="4" style="color:#94a3b8">${all * 2} tij, ${all * 2} lama kelepçe, ${all * 4} M10, ${all * 6} M16 somun, ${all} tabla. Kot ${Math.round(state.h * 100)} cm'de toplam tij ≈ ${(all * 2 * tijLen).toFixed(0)} m.</td></tr>`;
+    + `<tr><td colspan="4" style="color:#94a3b8">${all * 2} tij (800 mm, toplam ${(all * 2 * TIJ_LEN).toFixed(0)} m), ${all * 2} lama kelepçe, ${all * 4} M10, ${all * 6} M16 somun, ${sN} adet 700 mm ve ${sM} adet ${lastInfo.mid ? mm(lastInfo.mid.tablaLen) : '–'} mm alt lama${state.variant === 'both' ? `, ${m8Tot} M8` : ''}.${state.variant !== 'both' ? ' M8 toplamı için "İkisi"ni seçin.' : ''}</td></tr>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -390,6 +425,14 @@ const VIEWS = {
   top: new V(0, 9.0, 0.601)
 };
 function setView(name) {
+  if (name === 'lama') {
+    // Düz askının alt laması: alttan-yandan bakış (M8 delikleri ve tij geçişleri)
+    const p = new V(0, T.spineR + state.h - (state.explode ? 0.22 : 0), 0);
+    controls.target.copy(p);
+    camera.position.copy(p).add(new V(0.35, 0.55, 0.75));
+    controls.update();
+    return;
+  }
   if (name === 'clamp') {
     // Düğüm askısının sağ kelepçesi: aşıklar arasından, makas boyunca bakış
     const p = new V(0.29, T.chordY - 0.08 + (state.explode ? 0.11 : 0), 0);
