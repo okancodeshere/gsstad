@@ -45,7 +45,11 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş:** Yok.
+- **Yarım kalan iş (2026-11-02, kullanıcı isteği):** "Tüm alanlardaki uzay çatıya takılı tavaları ALAN 2 sağ makas gibi yap, hepsi tij ile askıda, kotu da aynı." Kararlar (sorulara yanıt):
+  - ALAN 1-3 ve ALAN 4 makasları referans makasın (ALAN 2 sağ) **tam kopyası** olacak: Ø420 omurga, 300 cm iç yükseklik, ölçülen V (Ø111), Ø223 örgü çaprazları, üst zikzak.
+  - Tava 500×150 olanlar 500×200 olacak; 300'lük tava varsa ölçüsü kalacak.
+  - Tava kotu taşıyıcı üstünden 230 cm, üst aşıklardan kelepçeli tijlerle asılı (`buildScoreboardRoofTruss60m` 3.E).
+  - Sıra: (1) ALAN 2 sol + orta makas → commit, (2) ALAN 1-3 `createAlan2RoofTrussAndCableTray` → commit, (3) ALAN 4 `createAlan3RoofTrussAndCableTray` → commit. Bağımlı parçalar (kedi yolları, antenler, RRU boruları, kablolar) yeni makasa uyarlanacak.
 - **Ayrı çalışma alanı (2026-10-30):** Tek kollu, 2 eksenli Matsing askı aparatı `matsing_montaj_aparati.html` + `.js` içinde. Dev sunucuda `/matsing_montaj_aparati.html` adresinde açılır. `vite.config.js` girdilerinde yok, bu yüzden build/canlı sitede yayınlanmaz. Kullanıcı bu sayfa üzerinden çalışacak; `main.js` değişmedi.
 - **Önceki:** 2026-10-22'de kullanıcı onayıyla `4ee63d9`'a kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
 - **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
@@ -74,6 +78,22 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 11:10 — Claude — ALAN 2: üç makasta tava 230 cm'de tij askılı (adım 1/3)
+- **Kullanıcı isteği:** "tüm alanlardaki uzay çatıya takılı olan tavaları alan-2'deki sağ makas gibi yap, hepsi tij ile askıda olacak, kotunu da aynı burası gibi yap". Kararlar Güncel Durum → Yarım kalan iş'te.
+- **Değişen dosyalar:**
+  - `main.js` → `buildScoreboardRoofTruss60m()`:
+    - `useTopHangers = true` (eskiden yalnızca sağ).
+    - `trayBottomYNormal = spineR + 2.30` üç taşıyıcıda (eskiden sol 250, orta 153).
+    - `trayBottomYOverCw = trayBottomYNormal`: kedi yolu üstü rampası yok.
+    - Sonuç olarak sol ve ortada istasyon traversleri ve kalın çapraz traversleri kalktı (`!useTopHangers` koşulu). Tava 3.E askılarıyla taşınıyor: sol 52 tij, orta 78 tij (s = 1.55'ten başlıyor), sağ 52 tij.
+  - Yedek: `_backups/main_before_tum_tava_askili_20261102.js`.
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - Tava kutusu ve tijler örnek noktalarla diğer tüm mesh'lerin yerel kutularına karşı test edildi; çakışma yok.
+- **Dikkat:**
+  - Ortadaki DC kablo sisteminde (`alan2CatwalkCableSystem`, üst kedi yolu X = 0 kolonu) kabloların tavadan çıkış kotu sabit Y = 7.80. Tava eskiden de bu kotta değildi (≈ 9.09, şimdi ≈ 9.86). Bu uyumsuzluk eskiden de vardı, düzeltilmedi.
+- **Commit:** `[Claude] ALAN 2: üç çatı makasında tava 230 cm'de tij askılı`
 
 ### 2026-11-02 10:30 — Claude — ALAN 2 beton kaide direkleri uzay çatıların altına
 - **Kullanıcı isteği:** "Alan-2'de beton kaide üzerindeki uzay çatıyı taşıyıcı direklerin konumlarını hatalı tarif etmişim. Sen bu taşıyıcıları tam olarak tava attığımız uzay çatıların altına al."

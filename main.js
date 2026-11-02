@@ -7963,7 +7963,9 @@ function createAlan4Structure() {
     const trayW = 0.50;
     const trayH = 0.20;
     // Sağ taşıyıcı (X = +18): travers yerine üstten asılı tava askısı (her üst düğüm + araları, iki kol + tabla)
-    const useTopHangers = xOffset > 0;
+    // Kullanıcı İsteği (2026-11-02): "tüm alanlardaki uzay çatıya takılı tavaları sağ makas gibi yap, hepsi tij ile
+    // askıda olacak" → üç taşıyıcıda da üstten asılı
+    const useTopHangers = true;
     const trayWallThick = 0.003;
     // Orta taşıyıcıda travers, kolların 68 cm açıldığı kota (≈ 1.64m) çıkar; tava ve kaide onunla birlikte yükselir
     // Sol taşıyıcıda tava tabanı, kollar arası net açıklığın 500mm tava + iki yanda 2'şer cm boşluk olduğu kotta (≈ 1.32m)
@@ -7976,14 +7978,16 @@ function createAlan4Structure() {
     // diğer ikisine dokunma" → sol taşıyıcı (X = -18) tavası taşıyıcı boru üstünden sabit 250 cm (rampa yok).
     // Sağ taşıyıcı (askılı): "burada tavaları 250cm'de tek ölçüde yap", ardından "tavayı burada 230'a indir"
     // (2026-10-22) → sağ sabit 230 cm, sol sabit 250 cm; orta normalde 153 cm
-    const trayBottomYNormal = xOffset > 0 ? spineR + 2.30 : (xOffset < 0 ? spineR + 2.50 : 0.45 + trayLift); // Normal seyir kotu
+    // 2026-11-02: üç taşıyıcıda sağ makastaki gibi sabit 230 cm
+    const trayBottomYNormal = spineR + 2.30; // Normal seyir kotu
 
     // Kedi yolu üstünden geçiş profili (Kullanıcı İsteği 2026-10-22: sarı çizim + "daha düz ... simetrik olsun").
     // Kedi yolu üstünde ±0.80m düz bölüm taşıyıcı boru üstünden 250 cm'de; iki yanda eşit 5.70m (bir aks) rampa.
     // Rampa V istasyonlarının üstünden geçebilir; oradaki travers tavanın o noktadaki kotuna çıkar.
     const cwFlatHalf = 0.80, cwRampL = 5.70;
     // Yan taşıyıcılarda tava tek ölçüde (kedi yolu üstünde de normal kotta, rampa yok)
-    const trayBottomYOverCw = xOffset !== 0 ? trayBottomYNormal : spineR + 2.50;
+    // 2026-11-02: üç taşıyıcıda tava tek ölçüde, kedi yolu üstünde de 230 cm (rampa yok)
+    const trayBottomYOverCw = trayBottomYNormal;
     const trayBottomAtProfile = (s) => {
       for (const c of SB_INTERMEDIATE_CW_S) {
         const d = Math.abs(s - c);
