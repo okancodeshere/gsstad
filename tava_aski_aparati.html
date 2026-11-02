@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tava Askı Aparatı</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+    #view { position: absolute; inset: 0; }
+    #panel { position: absolute; top: 12px; left: 12px; width: 340px; max-height: calc(100% - 24px); overflow-y: auto; background: rgba(15, 23, 42, 0.92); border: 1px solid #334155; border-radius: 10px; padding: 14px 16px; font-size: 13px; box-sizing: border-box; }
+    #panel h1 { font-size: 15px; margin: 0 0 4px; color: #f8fafc; }
+    #panel .sub { color: #94a3b8; font-size: 12px; margin-bottom: 12px; line-height: 1.4; }
+    .ctl { margin-bottom: 10px; }
+    .ctl label { display: flex; justify-content: space-between; margin-bottom: 3px; }
+    .ctl label b { color: #fbbf24; font-variant-numeric: tabular-nums; }
+    .ctl input[type=range] { width: 100%; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 12px; }
+    .row button { flex: 1; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 6px; padding: 5px 0; cursor: pointer; font-size: 12px; }
+    .row button:hover { background: #334155; }
+    .row button.on { border-color: #fbbf24; color: #fbbf24; }
+    .chk { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+    .chk label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+    h2 { font-size: 13px; margin: 14px 0 6px; color: #f8fafc; border-top: 1px solid #334155; padding-top: 10px; }
+    .ok { color: #4ade80; } .bad { color: #f87171; }
+    table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    td, th { padding: 3px 2px; border-bottom: 1px solid #1e293b; vertical-align: top; text-align: left; }
+    th { color: #94a3b8; font-weight: 600; }
+    td.n, th.n { text-align: right; white-space: nowrap; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+    .lbl { background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid #fbbf24; border-radius: 4px; padding: 2px 6px; font-size: 11px; white-space: nowrap; pointer-events: none; }
+    .lbl.ax { border-color: #38bdf8; color: #7dd3fc; }
+    @media (max-width: 700px) { #panel { width: calc(100% - 24px); max-height: 45%; } }
+  </style>
+</head>
+<body>
+  <div id="view"></div>
+  <div id="panel">
+    <h1>Çatı Makası · Tava Tij Askısı</h1>
+    <div class="sub">Uzay çatı makasının üst borularına delme/kaynak olmadan asılan kablo tavası askısı (ana modeldeki üç alanın askısıyla aynı ölçüler). Üst boruyu saran 50 mm lama kelepçe → konik boyun → M16 dişli tij → U profil tabla; tava kenarında çeneler. Ana model (<code>main.js</code>) değişmedi.</div>
+
+    <div class="ctl"><label>Askı tipi</label></div>
+    <div class="row" style="margin-top:-6px" id="variant">
+      <button data-v="node" class="on">Düğüm (gergi Ø100)</button><button data-v="mid">Ara (zikzak Ø70)</button><button data-v="both">İkisi</button>
+    </div>
+    <div class="ctl"><label>Tava kotu (taşıyıcı boru üstü → tava tabanı) <b id="v-h">230 cm</b></label><input id="h" type="range" min="150" max="265" step="5" value="230"></div>
+    <div class="ctl"><label>Tava</label></div>
+    <div class="row" style="margin-top:-6px" id="tray">
+      <button data-w="500" class="on">500 × 200</button><button data-w="300">300 × 250</button>
+    </div>
+    <div class="ctl"><label>Kablo yükü <b id="v-cable">25 kg/m</b></label><input id="cable" type="range" min="0" max="80" step="1" value="25"></div>
+
+    <div class="chk">
+      <label><input id="t-truss" type="checkbox" checked> Makas</label>
+      <label><input id="t-tray" type="checkbox" checked> Tava</label>
+      <label><input id="t-lbl" type="checkbox" checked> Etiketler</label>
+      <label><input id="t-exp" type="checkbox"> Patlatılmış</label>
+    </div>
+    <div class="row">
+      <button data-view="iso">İzometrik</button><button data-view="front">Ön</button><button data-view="side">Yan</button><button data-view="top">Üst</button><button data-view="clamp">Kelepçe</button>
+    </div>
+
+    <h2>Bağlantı</h2>
+    <div class="sub" style="margin-bottom:6px">
+      <b>Düğüm askısı:</b> V istasyonlarında ve ara üst düğümlerde, iki aşık arasındaki Ø100 enine gergiye asılır. İki tij aynı kesitte; tabla tavaya dik.<br>
+      <b>Ara askı:</b> iki düğümün ortasında, üst düzlemdeki Ø70 zikzaktan asılır. Zikzak eğik geçtiği için iki tij farklı noktada asılır; tabla iki tij ayağını birleştirecek şekilde çapraz durur.<br>
+      <b>Kelepçe:</b> boruya 2 mm boşlukla saran 50×5 lama bant, iki ucu dışa kıvrık kulak, M10 cıvata + somun. Altında konik boyun ve somun; M16 tij tablayı geçer, tablanın altında ve üstünde somun.
+    </div>
+
+    <h2>Kontroller</h2>
+    <div id="checks"></div>
+
+    <h2>Parça listesi (bir askı)</h2>
+    <table id="bom"></table>
+
+    <h2>Modeldeki askı adetleri</h2>
+    <table id="qty"></table>
+  </div>
+  <script type="module" src="./tava_aski_aparati.js"></script>
+</body>
+</html>

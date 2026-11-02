@@ -79,6 +79,30 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ---
 
+### 2026-11-02 13:50 — Claude — Tava tij askısı için ayrı 3D çalışma sayfası
+- **Kullanıcı isteği:** "şu anda askı aparatlarımız var ya, onu da antene tasarladığımız askı aparatları gibi bir sayfa oluştur". Tava tij askısı olarak alındı.
+- **Değişen dosyalar:**
+  - YENİ `tava_aski_aparati.html` + `tava_aski_aparati.js`: `main.js`'ten bağımsız Three.js sahnesi.
+    - Ölçüler `REF_TRUSS` ve `addRefTrussTrayHangers` ile aynı.
+    - Makas parçası s = −3 … +3: Ø420 omurga, V istasyonu s = 0, ara üst düğümler ±2.86, Ø223 örgü, Ø100 gergiler, Ø70 zikzak.
+    - Askı tipi düğmeleri: Düğüm (gergiden), Ara (zikzaktan, çapraz tabla), İkisi.
+    - Ayarlar: tava kotu 150–265 cm (varsayılan 230), tava 500×200 / 300×250, kablo yükü kg/m.
+    - Görünüm seçenekleri: makas / tava / etiket aç-kapa, patlatılmış görünüş (kelepçe yukarı, tabla aşağı), görünüş düğmeleri ve kelepçe yakın planı.
+    - Tabla U80×30×3 profil olarak çizildi; modeldeki 30×80 kutu ile aynı dış ölçü.
+    - **Kontroller:**
+      - Tij boyu ve serbest boy.
+      - Tava üstü ile gergi arası boşluk.
+      - Düğüm askısında tabla ucu ile V kolu iç yüzü arası boşluk.
+      - Askı ve tij yükü: tava 9 kg/m tahmini + kablo, aralık 1.43 m. M16 8.8 (90.4 kN), M10 ve lama bant güvenlik katsayıları.
+    - **Parça listesi (bir askı, 230 cm'de ≈ 7.1 kg):**
+      - Kelepçe ve bağlantı: 2 lama kelepçe 50×5, 4 M10, 2 konik boyun.
+      - Tij ve somun: 2 M16 tij (L 740), 6 somun, 4 pul.
+      - Tabla ve çene: 1 tabla, 2 çene.
+    - **Modeldeki askı adetleri** (sahneden sayıldı): ALAN 2 sol 13+13, orta 20+19, sağ 13+13; ALAN 1-3 14+13; ALAN 4 11+11. Toplam 140 askı (71 düğüm + 69 ara), 280 tij.
+- **Doğrulama:** `npm run build` hatasız; konsol hatası yok. Tarayıcıda iki tip, patlatılmış görünüş ve kelepçe yakın planı görsel kontrol edildi. 230 cm'de tij 733 mm (modelle aynı: 733–748).
+- **Commit:** `[Claude] Tava tij askısı için ayrı 3D çalışma sayfası (tava_aski_aparati.html)`
+- **Dikkat:** Adetler sabit tablo; modelde askı sayısı değişirse `QTY` elle güncellenmeli.
+
 ### 2026-11-02 13:20 — Claude — ALAN 1-3 ve ALAN 4: reklam kaplaması ve ön üst cephe açılışta kapalı
 - **Kullanıcı isteği:** "alan 1-3 ve alan-4'ün reklam kaplamasını default olarak kapalı yap", ardından "ön üst cepheyi de kapalı yap default". Kapsam olarak aynı iki alan alındı; ALAN 2 değişmedi.
 - **Değişen dosyalar:**
