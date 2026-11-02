@@ -29,7 +29,7 @@ const T = (() => {
 const MID_NODE = T.vStep / 2;          // ara üst düğüm (2.86)
 const MID_HANGER_S = MID_NODE / 2;     // ara askı (1.43)
 const HANGER_SPACING = T.vStep / 4;    // askı aralığı ≈ 1.43 m
-const LAMA = { w: 0.05, t: 0.005, gap: 0.002 };
+const LAMA = { w: 0.05, t: 0.005, felt: 0.005 }; // 50×5 lama bant, boruyla arasında 5 mm keçe
 const TIJ_R = 0.008;
 const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (fazlası tablanın altından taşar)
 const NUT_H = 0.014 * 0.9;
@@ -91,7 +91,8 @@ const M = {
   dark: new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.4 }),
   accent: new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.3, roughness: 0.5 }),
   tray: new THREE.MeshStandardMaterial({ color: 0x90a4ae, metalness: 0.8, roughness: 0.35, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }),
-  cable: new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.2, roughness: 0.7 })
+  cable: new THREE.MeshStandardMaterial({ color: 0x141619, metalness: 0.2, roughness: 0.7 }),
+  felt: new THREE.MeshStandardMaterial({ color: 0x3f3f46, metalness: 0.0, roughness: 0.95 })
 };
 
 // ---------------------------------------------------------------------------
@@ -182,7 +183,22 @@ let lastInfo = null;
 
 // Üst boruyu saran lama kelepçe + kulaklar + M10 + konik boyun; dönen: tij üst ucu Y
 function buildClamp(parent, center, memberDir, memberR) {
-  const ringIn = memberR + LAMA.gap, ringR = ringIn + LAMA.t;
+  // Kullanıcı isteği (2026-11-02): "keçeyi de unutma askılarda" → boru ile lama bant arasında 5 mm keçe,
+  // bandın iki yanından 5'er mm taşar (sürtünme yüzeyinde korozyonu önler; Matsing askısıyla aynı)
+  const feltIn = memberR, feltOut = memberR + LAMA.felt;
+  const feltShape = new THREE.Shape();
+  feltShape.absarc(0, 0, feltOut, 0, Math.PI * 2, false);
+  const feltHole = new THREE.Path();
+  feltHole.absarc(0, 0, feltIn, 0, Math.PI * 2, true);
+  feltShape.holes.push(feltHole);
+  const fg = new THREE.ExtrudeGeometry(feltShape, { depth: LAMA.w + 0.01, bevelEnabled: false, curveSegments: 40 });
+  fg.translate(0, 0, -(LAMA.w + 0.01) / 2);
+  const felt = new THREE.Mesh(fg, M.felt);
+  felt.position.copy(center);
+  felt.quaternion.setFromUnitVectors(new V(0, 0, 1), memberDir);
+  parent.add(felt);
+
+  const ringIn = feltOut, ringR = ringIn + LAMA.t;
   const shape = new THREE.Shape();
   shape.absarc(0, 0, ringR, 0, Math.PI * 2, false);
   const hole = new THREE.Path();
@@ -311,7 +327,7 @@ function rebuild() {
   const lx = tray.w / 2 + 0.04;
   addLabel(dynGroup, `M16 tij · L=${mm(TIJ_LEN)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, info.node ? 0 : MID_HANGER_S));
   if (info.node) {
-    addLabel(dynGroup, 'Lama kelepçe 50×5 + M10 (Ø115 gergi)', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
+    addLabel(dynGroup, 'Lama kelepçe 50×5 + 5 mm keçe + M10 (Ø115 gergi)', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
     addLabel(dynGroup, `Alt lama 80×8 · L=${mm(info.node.tablaLen)} mm · ${info.node.m8}×Ø9 (M8)`, new V(0, tb - 0.12, 0.05));
   }
   if (info.mid) {

@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Tava Ofset: kablo yükü seçeneği kaldırıldı, tava seçenekleri 500×200 / 300×100`
+- **Son commit:** `[Claude] Tava Ofset: askı kelepçelerinde boru ile lama arasına 5 mm keçe`
 - **Push:** 2026-11-02'de kullanıcı onayıyla `dc3c18a`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
@@ -83,6 +83,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 15:35 — Claude — Tava Ofset: askı kelepçelerine keçe
+- **Kullanıcı isteği:** "keçeyi de unutma askılarda".
+- **Değişen dosyalar:**
+  - `tava_aski_aparati.js` → `buildClamp()`:
+    - Boru ile lama bant arasında 5 mm keçe halkası (`LAMA.felt`, `M.felt`). Bandın iki yanından 5'er mm taşıyor; Matsing askısındaki keçeyle aynı mantık.
+    - Bant iç yarıçapı boru + 5 mm (eskiden boru + 2 mm boşluk; `LAMA.gap` kalktı).
+    - Kelepçe etiketi "50×5 + 5 mm keçe + M10".
+  - `tava_aski_aparati.html`: açıklama "5 mm keçe üzerinden saran".
+- **Doğrulama:** `npm run build` hatasız, konsol hatası yok. Kelepçe yakın planında keçe görüldü.
+- **Commit:** `[Claude] Tava Ofset: askı kelepçelerinde boru ile lama arasına 5 mm keçe`
+- **Dikkat:**
+  - Ana model (`main.js`) askılarında keçe yok (kullanıcı değişiklikleri şimdilik yalnızca askı sayfasında istiyor).
+  - `95ad2de`, `4571f3b` ve bu commit push edilmedi.
 
 ### 2026-11-02 15:20 — Claude — Tava Ofset: kablo yükü kaldırıldı, tava 500×200 / 300×100
 - **Kullanıcı isteği:** "kablo yükü seçeneğini kaldır. Ayrıca 300x100 ve 500x200 tava kullanıyorum, sadece buna göre güncelle."
