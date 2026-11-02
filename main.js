@@ -1560,6 +1560,7 @@ function buildSuperColumns(parentGroup) {
     const brandaGroup1 = new THREE.Group();
     brandaGroup1.position.set(0, 2.02, 0.02);
     brandaGroup1.name = "reklam_brandasi_1";
+    brandaGroup1.visible = false; // Kullanıcı İsteği (2026-11-02): ALAN 1-3 reklam kaplaması açılışta kapalı
     alan2Wrapper.add(brandaGroup1);
     
     const brandaMesh1 = new THREE.Mesh(brandaGeo, brandaMat);
@@ -1570,6 +1571,7 @@ function buildSuperColumns(parentGroup) {
     const brandaGroup2 = new THREE.Group();
     brandaGroup2.position.set(24, 2.02, 0.02);
     brandaGroup2.name = "reklam_brandasi_2";
+    brandaGroup2.visible = false; // Kullanıcı İsteği (2026-11-02): ALAN 1-3 reklam kaplaması açılışta kapalı
     alan2Wrapper.add(brandaGroup2);
     
     const brandaMesh2 = new THREE.Mesh(brandaGeo, brandaMat);
@@ -1610,6 +1612,8 @@ function buildSuperColumns(parentGroup) {
     // Sync initial visibilities for Other Top Panels
     alan2Wrapper.traverse(c => {
         if (c.userData.isLouverPanel && !c.userData.isFrontPanel && c.name === 'louver_top') c.visible = false;
+        // Kullanıcı İsteği (2026-11-02): ALAN 1-3 ön üst cephe açılışta kapalı
+        if (c.userData.isLouverPanel && c.userData.isFrontPanel && c.name === 'louver_top') c.visible = false;
         if (c.userData.isSupportBracket && !c.userData.isFrontPanel && c.userData.bracketHeight > 1.7) c.visible = false;
     });
 
@@ -5155,7 +5159,9 @@ function addLouverCage(parentGroup, opts) {
     doorsArray,
     innerColumns = [], // Kafes içindeki kolonlar { x, z } (ön/arka braket)
     sideColumns = [],  // Yan duvarların hemen dışındaki kolonlar { x, z } (yan braket)
-    bannerName
+    bannerName,
+    bannerVisible = true, // Açılışta reklam brandası görünür mü (Reklam Kaplama düğmesi hepsini birlikte değiştirir)
+    frontTopVisible = true // Açılışta ön üst cephe görünür mü (Ön Üst Cephe düğmesi hepsini birlikte değiştirir)
   } = opts;
 
   const group = new THREE.Group();
@@ -5312,6 +5318,7 @@ function addLouverCage(parentGroup, opts) {
 
   const brandaGroup = new THREE.Group();
   brandaGroup.name = bannerName;
+  brandaGroup.visible = bannerVisible;
   brandaGroup.position.set(centerX, baseY + 0.02 + brandaH / 2, frontZ - backDir * 0.07);
   if (backDir > 0) brandaGroup.rotation.y = Math.PI; // Ön cephe -Z'ye bakıyorsa logo ayna görünmesin
   const brandaMesh = new THREE.Mesh(new THREE.PlaneGeometry(brandaW, brandaH), brandaMat);
@@ -5333,6 +5340,7 @@ function addLouverCage(parentGroup, opts) {
   // 7. Başlangıç görünürlüğü (ALAN 1-3 ile aynı): yan/arka üst bant ve üstteki braketler gizli
   group.traverse(c => {
     if (c.userData.isLouverPanel && !c.userData.isFrontPanel && c.name === 'louver_top') c.visible = false;
+    if (c.userData.isLouverPanel && c.userData.isFrontPanel && c.name === 'louver_top') c.visible = frontTopVisible;
     if (c.userData.isSupportBracket && !c.userData.isFrontPanel && c.userData.bracketHeight > lowH) c.visible = false;
   });
 
@@ -5658,7 +5666,9 @@ function createAlan3Structure() {
     baseY: 0, cageHeight: 4.0,
     doorsArray: alan3SlidingDoors,
     sideColumns: [{ x: 0, z: -1.35 }],
-    bannerName: 'reklam_brandasi_alan3'
+    bannerName: 'reklam_brandasi_alan3',
+    bannerVisible: false, // Kullanıcı İsteği (2026-11-02): ALAN 4 reklam kaplaması açılışta kapalı
+    frontTopVisible: false // Kullanıcı İsteği (2026-11-02): ALAN 4 ön üst cephe açılışta kapalı
   });
 
   // -------------------------------------------------------------

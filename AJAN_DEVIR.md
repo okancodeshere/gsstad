@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] ALAN 4 çatı makası referans makas kopyası, tava 230 cm tij askılı`
+- **Son commit:** `[Claude] ALAN 1-3 ve ALAN 4: reklam kaplaması ve ön üst cephe açılışta kapalı`
 - **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
@@ -78,6 +78,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 13:20 — Claude — ALAN 1-3 ve ALAN 4: reklam kaplaması ve ön üst cephe açılışta kapalı
+- **Kullanıcı isteği:** "alan 1-3 ve alan-4'ün reklam kaplamasını default olarak kapalı yap", ardından "ön üst cepheyi de kapalı yap default". Kapsam olarak aynı iki alan alındı; ALAN 2 değişmedi.
+- **Değişen dosyalar:**
+  - `main.js` → `buildAlan2Instance()` kafesleri (~satır 1562, 1614): `reklam_brandasi_1/2` `visible = false`. Başlangıç görünürlük döngüsünde ön üst menfez (`louver_top`, `isFrontPanel`) gizli.
+  - `main.js` → `addLouverCage()`: YENİ seçenekler `bannerVisible` ve `frontTopVisible` (varsayılan `true`). ALAN 4 çağrısında (`reklam_brandasi_alan3`) ikisi de `false`.
+  - "Reklam Kaplama" ve "Ön Üst Cephe" düğmeleri üç alanı birlikte değiştirmeye devam ediyor; ilk tıklamada hepsi aynı duruma geçiyor.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Tarayıcıda üç alan arasında geçildi. ALAN 1-3 ve ALAN 4'te branda ve ön üst cephe gizli; ALAN 2'de ikisi de görünür (branda %50).
+- **Commit:** `[Claude] ALAN 1-3 ve ALAN 4: reklam kaplaması ve ön üst cephe açılışta kapalı`
 
 ### 2026-11-02 13:00 — Claude — ALAN 4 makası referans makasın kopyası, tava 230 cm tij askılı (adım 3/3)
 - **Kullanıcı isteği:** Adım 1'deki istek ("Evet, planla devam").
