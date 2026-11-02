@@ -4533,7 +4533,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   slopedGroup.rotation.x = -slopeAngleRad;
   trussGroup.add(slopedGroup);
 
-  const carrierRadius = 0.14; // Ø28cm ana beyaz silindir
+  const carrierRadius = REF_TRUSS.spineR; // 2026-11-02: Ø420 (132 cm çevre, referans makas; eskiden Ø280)
 
   // A) Ana Taşıyıcı Boyuna Boru
   const carrierGeo = new THREE.CylinderGeometry(carrierRadius, carrierRadius, slopeLen, 32);
@@ -4544,127 +4544,27 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   // 
   slopedGroup.add(carrierMesh);
 
-  // B) 2.5 Metrede Bir V-Strut Ayakları ve Tava Taşıyıcı Traversleri
-  const armBaseX = 0.08;
-  const armBaseY = carrierRadius;
-  const armTopX = 0.55;
-  const armTopY = 1.45;
-  const strutRadius = 0.07;
-  // Çatı makası istasyonları: 5.70m aks aralığı (Kullanıcı İsteği: "tüm tavalara uygula"; eskiden 2.5m)
-  // 1. kedi yolu (s = 23.0m) iki yanındaki 22.5 / 25.0 ve 2. kedi yolu (s = 39.0m) iki yanındaki 37.5 / 40.0
-  // istasyonları korunur; uç istasyon 45.0m.
-  const armStationsZ = buildTrayStations(45.0, TRAY_SUPPORT_AXIS_STEP, [[22.5, 25.0], [37.5, 40.0]]);
-
-  const collarClampGeo = new THREE.CylinderGeometry(carrierRadius + 0.015, carrierRadius + 0.015, 0.16, 24);
-  collarClampGeo.rotateX(Math.PI / 2);
-  const crossBeamGeo = new THREE.BoxGeometry(0.70, 0.08, 0.04);
-  const pedestalGeo = new THREE.BoxGeometry(0.54, 0.05, 0.08);
-  const holdClampGeo = new THREE.BoxGeometry(0.04, 0.03, 0.05);
-
-  armStationsZ.forEach(stZ => {
-    // Sol ve sağ V-kol
-    const leftArm = createPipe(
-      new THREE.Vector3(-armBaseX, armBaseY, stZ),
-      new THREE.Vector3(-armTopX, armTopY, stZ),
-      strutRadius,
-      pipeWhiteMat
-    );
-    slopedGroup.add(leftArm);
-
-    const rightArm = createPipe(
-      new THREE.Vector3(armBaseX, armBaseY, stZ),
-      new THREE.Vector3(armTopX, armTopY, stZ),
-      strutRadius,
-      pipeWhiteMat
-    );
-    slopedGroup.add(rightArm);
-
-    // Üst enine gergi borusu
-    const topBar = createPipe(
-      new THREE.Vector3(-armTopX, armTopY, stZ),
-      new THREE.Vector3(armTopX, armTopY, stZ),
-      0.04,
-      pipeWhiteMat
-    );
-    slopedGroup.add(topBar);
-
-    // Boruyu saran takviye kelepçesi
-    const collar = new THREE.Mesh(collarClampGeo, steelFlangeMat);
-    collar.position.set(0, 0, stZ);
-    slopedGroup.add(collar);
-
-    // Kolların 60cm açıldığı Y = 0.42m kotundaki tava travers kaidesi (Sadece tavanın yer aldığı istasyonlarda: stZ <= 35.0m)
-    if (stZ <= 35.0) {
-      const crossY = 0.42;
-      const cBeam = new THREE.Mesh(crossBeamGeo, steelFlangeMat);
-      cBeam.position.set(0, crossY, stZ);
-      slopedGroup.add(cBeam);
-
-      // Tava Yastık Kaidesi
-      const pedestalY = crossY + 0.04 + 0.025;
-      const ped = new THREE.Mesh(pedestalGeo, steelFlangeMat);
-      ped.position.set(0, pedestalY, stZ);
-      slopedGroup.add(ped);
-
-      // Tava tespit kenetleri
-      [-0.26, 0.26].forEach(hx => {
-        const holdClamp = new THREE.Mesh(holdClampGeo, darkJointMat);
-        holdClamp.position.set(hx, pedestalY + 0.045, stZ);
-        slopedGroup.add(holdClamp);
-      });
-    }
-  });
-
-  // Üst Boyuna Aşık Boruları
-  const topChordGeo = new THREE.CylinderGeometry(0.09, 0.09, slopeLen, 24);
-  topChordGeo.rotateX(Math.PI / 2);
-
-  const leftTopChord = new THREE.Mesh(topChordGeo, pipeWhiteMat);
-  leftTopChord.position.set(-armTopX, armTopY, slopeLen / 2);
-  leftTopChord.castShadow = true;
-  slopedGroup.add(leftTopChord);
-
-  const rightTopChord = new THREE.Mesh(topChordGeo, pipeWhiteMat);
-  rightTopChord.position.set(armTopX, armTopY, slopeLen / 2);
-  rightTopChord.castShadow = true;
-  slopedGroup.add(rightTopChord);
-
-  // Üst Başlıklar Arası Çapraz Kafes Gergileri
-  for (let i = 0; i < armStationsZ.length - 1; i++) {
-    const z1 = armStationsZ[i];
-    const z2 = armStationsZ[i + 1];
-    const brace1 = createPipe(
-      new THREE.Vector3(-armTopX, armTopY, z1),
-      new THREE.Vector3(armTopX, armTopY, z2),
-      0.035,
-      pipeWhiteMat
-    );
-    slopedGroup.add(brace1);
-    const brace2 = createPipe(
-      new THREE.Vector3(armTopX, armTopY, z1),
-      new THREE.Vector3(-armTopX, armTopY, z2),
-      0.035,
-      pipeWhiteMat
-    );
-    slopedGroup.add(brace2);
-  }
+  // B) REFERANS MAKAS İSKELETİ (Kullanıcı İsteği 2026-11-02: ALAN 2 sağ makasın tam kopyası)
+  // V istasyonları 5.72m aralıkla; 1. kedi yolu (s ≈ 23.19) iki V'nin tam ortasında, örgü çaprazları kedi yolunun
+  // üstünde yüksekte kalır. Eski alçak V (tepe Y 1.45, ±0.55), 70 cm travers kaideleri ve üst X gergiler kalktı.
+  const cw1TrussS = 23.19; // 1. kedi yolu ekseni (makas yerelinde s)
+  const armStationsZ = buildRefTrussStations(slopeLen, cw1TrussS);
+  const { topNodes: trussTopNodes } = buildRefTrussFrame(slopedGroup, slopeLen, armStationsZ, pipeWhiteMat, steelFlangeMat);
 
   // -------------------------------------------------------------
   // 3. 50 CM GENİŞLİK, 15 CM YÜKSEKLİKTE DELİKLİ KABLO TAVASI (BATTI-ÇIKTI)
   // Kullanıcı İsteği: "ilk kedi yolunu 23. metreye koy kabloları altından geçmesi için battı çıktı yapmayı unutma"
   // -------------------------------------------------------------
-  const trayW = 0.50;
-  const trayH = 0.15;
+  // 2026-11-02: 500×200 tava, taşıyıcı boru üstünden 230 cm, üstten tij askılı (referans makas 3.E). Tava kedi
+  // yolunun üstünden düz geçer; battı-çıktı kalktı. trayBottomYDip kablo yollarında normal kotla aynı.
+  const trayW = REF_TRUSS.trayW;
+  const trayH = REF_TRUSS.trayH;
   const trayWallThick = 0.003;
-  const trayBottomYNormal = 0.42 + 0.04 + 0.025 + 0.0425; // 0.5275m
-  const trayBottomYDip = 0.20; // Kedi yolu altı alçak geçiş havuzu
+  const trayBottomYNormal = REF_TRUSS.trayBottomY;
+  const trayBottomYDip = trayBottomYNormal;
 
   const traySegments = [
-    { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 21.80 },
-    { yStart: trayBottomYNormal, zStart: 21.80, yEnd: trayBottomYDip, zEnd: 22.30 }, // 32cm iniş (battı)
-    { yStart: trayBottomYDip, zStart: 22.30, yEnd: trayBottomYDip, zEnd: 23.70 },     // Kedi yolu altı alçak havuz
-    { yStart: trayBottomYDip, zStart: 23.70, yEnd: trayBottomYNormal, zEnd: 24.20 }, // 32cm çıkış (çıktı)
-    { yStart: trayBottomYNormal, zStart: 24.20, yEnd: trayBottomYNormal, zEnd: 34.80 }  // Kullanıcı İsteği: Anten 2 çıkışından sonra tavanın fazlalığını kes (34.80m sonlandırma)
+    { yStart: trayBottomYNormal, zStart: 0.0, yEnd: trayBottomYNormal, zEnd: 34.80 } // Anten 2 çıkışından sonra sonlanır (34.80m)
   ];
 
   traySegments.forEach(seg => {
@@ -4708,27 +4608,20 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     slopedGroup.add(rLip);
   });
 
-  // Alçak geçiş altı taşıyıcı eyer montajı (z = 23.0m)
-  const dipSaddleGeo = new THREE.BoxGeometry(trayW + 0.04, 0.04, 0.20);
-  const dipSaddle = new THREE.Mesh(dipSaddleGeo, steelFlangeMat);
-  dipSaddle.position.set(0, trayBottomYDip - 0.02, 23.0);
-  slopedGroup.add(dipSaddle);
-
-  // 5.70m aks açıklıklarında ara tava destekleri (çember + 2 dikey kol + 70cm tabla)
-  addTrayIntermediateSupports(slopedGroup, armStationsZ, traySegments, {
-    carrierR: carrierRadius, trayNormalY: trayBottomYNormal,
-    mat: steelFlangeMat, clampMat: darkJointMat, name: 'alan3RoofTrayIntermediateSupports'
+  // Üstten tij askıları (referans makas 3.E): her üst düğüm + araları, ara destek ve traversler yok
+  addRefTrussTrayHangers(slopedGroup, trussTopNodes, s => (s >= 0 && s <= 34.80 ? trayBottomYNormal : null), {
+    steelMat: steelFlangeMat, darkMat: darkJointMat, name: 'alan3RoofTrayHangers', sMin: 0.2, sMax: 34.6
   });
 
   // Anten 1 ve Anten 2 Feeder Kablo İniş Olukları (Drop-out Chutes at s = 33.25m ve s = 34.25m)
   const chuteGeo = new THREE.BoxGeometry(0.24, 0.02, 0.35);
   const chute1 = new THREE.Mesh(chuteGeo, steelFlangeMat);
-  chute1.position.set(-0.12, trayBottomYNormal - 0.04, 33.25);
+  chute1.position.set(-0.12, trayBottomYNormal - 0.04, 34.00); // 2026-11-02: çapraz duran tij tablasından uzak (eskiden 33.25)
   chute1.rotation.x = 0.35;
   slopedGroup.add(chute1);
 
   const chute2 = new THREE.Mesh(chuteGeo, steelFlangeMat);
-  chute2.position.set(-0.12, trayBottomYNormal - 0.04, 34.25);
+  chute2.position.set(-0.12, trayBottomYNormal - 0.04, 34.40); // 2026-11-02 (eskiden 34.25)
   chute2.rotation.x = 0.35;
   slopedGroup.add(chute2);
 
@@ -4846,7 +4739,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     const portIdx = i % 4;
     const poiIndex = isAnt1 ? 0 : 1;
     const targetPort = isAnt1 ? ant1Ports[portIdx] : ant2Ports[portIdx];
-    const chuteZ = isAnt1 ? 33.25 : 34.25;
+    const chuteZ = isAnt1 ? 34.00 : 34.40;
 
     // 50cm tava tabanında 8 feeder simetrik yan yana dizilim
     const trayX = -0.1575 + i * 0.045;
@@ -4893,7 +4786,11 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
       new THREE.Vector3(-2.65, 4.05, vLadderRearZ),
       // 7. X = -3.00m uzay çatı makas tavasına yumuşak giriş kavisi
       new THREE.Vector3(-2.95 + trayX, 4.07, -1.48),
-      new THREE.Vector3(-3.00 + trayX, 4.10 + feederRadius, -1.35)
+      new THREE.Vector3(-3.00 + trayX, 4.10 + feederRadius, -1.35),
+      // 2026-11-02: makas başında 230 cm'deki tavaya düşey çıkış
+      new THREE.Vector3(trayX, carrierRadius + 0.30, 0.05).applyMatrix4(slopedMatrix),
+      new THREE.Vector3(trayX, trayBottomYNormal - 0.10, 0.02).applyMatrix4(slopedMatrix),
+      new THREE.Vector3(trayX, trayBottomYNormal + feederRadius, 0.0).applyMatrix4(slopedMatrix)
     ];
 
     const riserCurve = new THREE.CatmullRomCurve3(riserPts, false, 'catmullrom', 0.08);
@@ -4928,7 +4825,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     trayPts.push(new THREE.Vector3(trayX, trayBottomYNormal + feederRadius, 28.00));
 
     if (!isAnt1) {
-      trayPts.push(new THREE.Vector3(trayX, trayBottomYNormal + feederRadius, 33.25));
+      trayPts.push(new THREE.Vector3(trayX, trayBottomYNormal + feederRadius, 34.00));
     }
 
     // Chute (İniş Oluğu) Çıkışı
@@ -4937,7 +4834,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     trayPts.push(new THREE.Vector3(-0.18 + portIdx * 0.02, trayBottomYNormal - 0.18, chuteZ + 0.12));
 
     // Düşey Askı Borusu Boyunca İniş
-    const dropX = -0.06 + portIdx * 0.02;
+    const dropX = -0.30 - portIdx * 0.02; // 2026-11-02: Ø420 omurganın yanından iner
     trayPts.push(new THREE.Vector3(dropX, -0.40, chuteZ));
     trayPts.push(new THREE.Vector3(dropX, -1.20, chuteZ));
     trayPts.push(new THREE.Vector3(dropX, -1.80, chuteZ));
@@ -5165,7 +5062,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     4.10 + sIntersect * Math.sin(slopeAngleRad),
     -1.35 + sIntersect * Math.cos(slopeAngleRad)
   );
-  const topPinPos = carrierMeetCenter.clone().sub(strutDir.clone().multiplyScalar(0.22));
+  const topPinPos = carrierMeetCenter.clone().sub(strutDir.clone().multiplyScalar(carrierRadius + 0.08));
   const diagArmLen = botPinPos.distanceTo(topPinPos);
 
   // Alt Bilezik
@@ -5207,7 +5104,7 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
   const carrierCollarGroup = new THREE.Group();
   carrierCollarGroup.position.copy(carrierMeetCenter);
   carrierCollarGroup.rotation.x = -slopeAngleRad;
-  const carrierCollarGeo = new THREE.CylinderGeometry(0.14 + 0.015, 0.14 + 0.015, 0.44, 32);
+  const carrierCollarGeo = new THREE.CylinderGeometry(carrierRadius + 0.015, carrierRadius + 0.015, 0.44, 32);
   carrierCollarGeo.rotateX(Math.PI / 2);
   const carrierCollar = new THREE.Mesh(carrierCollarGeo, steelFlangeMat);
   // carrierCollar.castShadow = true; // disabled for perf
@@ -14553,7 +14450,7 @@ function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, drop
 
   // 1. ÇATI TAŞIYICISINA SARAN 2 ADET AĞIR HİZMET KELEPÇESİ (Z = -0.4048m ve Z = +0.4048m)
   // ALAN 2 omurgası Ø420 (saha çevre ölçüsü 132 cm); 2026-11-02'den itibaren ALAN 1-3 de referans makasla Ø420
-  const carrierRadius = (targetArea === 'alan3') ? 0.14 : 0.21;
+  const carrierRadius = 0.21; // 2026-11-02: tüm alanlarda referans makas Ø420
   const carrierClampR = carrierRadius + 0.014;
   const carrierClampW = 0.16;
 

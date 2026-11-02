@@ -38,18 +38,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] ALAN 2 beton kaide direkleri uzay çatıların altına (6 m ızgara), kablo merdivenleri ve kafes kabinleri uyarlandı`
+- **Son commit:** `[Claude] ALAN 4 çatı makası referans makas kopyası, tava 230 cm tij askılı`
 - **ALAN 2 beton kaide direkleri (2026-11-02):** X = −24 … +24, 6 m ızgara; −18 / 0 / +18 uzay çatıların tam altında. Push edilmedi.
 - **Askı aparatı sayfası sekmeleri:** `matsing_montaj_aparati.html?model=matsing` (varsayılan) ve `?model=gammanu`. Tek JS dosyası, ölçüler `IS_G` ile seçiliyor.
 - **Matsing aparatı yedekleri:** `matsing_yedekler/v1_ayarli_egim_123kg/` (ayarlı eğim mafsallı sürüm; dev sunucuda `/matsing_yedekler/v1_ayarli_egim_123kg/matsing_montaj_aparati.html`).
 - **Durum (2026-10-22 14:50):** ALAN 2 tavaları kedi yollarının üstünden geçiyor (alçak geçiş kaldırıldı). Kedi yolu ve dik rampa çakışmaları çözüldü. "Dik tava" hali `_backups/stad_yedek_dik_tava_20261022_1421.zip` içinde.
 - **Çözüldü (2026-10-21 12:30):** s = 17.1 tava rampası / V kolu girişimi. Kedi yolları ve istasyonlar DXF'e taşındı.
 - **Build durumu:** `npm run build` hatasız.
-- **Yarım kalan iş (2026-11-02, kullanıcı isteği):** "Tüm alanlardaki uzay çatıya takılı tavaları ALAN 2 sağ makas gibi yap, hepsi tij ile askıda, kotu da aynı." Kararlar (sorulara yanıt):
-  - ALAN 1-3 ve ALAN 4 makasları referans makasın (ALAN 2 sağ) **tam kopyası** olacak: Ø420 omurga, 300 cm iç yükseklik, ölçülen V (Ø111), Ø223 örgü çaprazları, üst zikzak.
-  - Tava 500×150 olanlar 500×200 olacak; 300'lük tava varsa ölçüsü kalacak.
-  - Tava kotu taşıyıcı üstünden 230 cm, üst aşıklardan kelepçeli tijlerle asılı (`buildScoreboardRoofTruss60m` 3.E).
-  - Sıra: (1) ALAN 2 sol + orta makas → commit, (2) ALAN 1-3 `createAlan2RoofTrussAndCableTray` → commit, (3) ALAN 4 `createAlan3RoofTrussAndCableTray` → commit. Bağımlı parçalar (kedi yolları, antenler, RRU boruları, kablolar) yeni makasa uyarlanacak.
+- **Yarım kalan iş:** Yok. 2026-11-02'de "tüm alanlardaki tavalar ALAN 2 sağ makas gibi tij askılı" işi üç adımda tamamlandı. Push edilmedi.
+- **Çatı makasları (2026-11-02):**
+  - Üç alanın makası da referans makas ölçüsünde: Ø420 omurga, 300 cm iç yükseklik, ölçülen V, Ø223 örgü.
+  - Tava 500×200, taşıyıcı üstünden 230 cm'de, tij askılı.
+  - ALAN 1-3 ve ALAN 4 ortak yardımcıları kullanıyor: `REF_TRUSS`, `buildRefTrussStations`, `buildRefTrussFrame`, `addRefTrussTrayHangers`. ALAN 2 kendi `buildScoreboardRoofTruss60m` fonksiyonunda.
 - **Ayrı çalışma alanı (2026-10-30):** Tek kollu, 2 eksenli Matsing askı aparatı `matsing_montaj_aparati.html` + `.js` içinde. Dev sunucuda `/matsing_montaj_aparati.html` adresinde açılır. `vite.config.js` girdilerinde yok, bu yüzden build/canlı sitede yayınlanmaz. Kullanıcı bu sayfa üzerinden çalışacak; `main.js` değişmedi.
 - **Önceki:** 2026-10-22'de kullanıcı onayıyla `4ee63d9`'a kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar).
 - **Açık konu (2026-10-21):** Sahadan ölçülen V kol açısı yalnızca ALAN 2 orta taşıyıcıya uygulandı (kullanıcı "sadece bir tane kedi yolunu çiz" dedi). Kullanıcı onaylarsa yan taşıyıcılara, ALAN 1-3 ve ALAN 4 makaslarına da uygulanabilir.
@@ -78,6 +78,30 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 13:00 — Claude — ALAN 4 makası referans makasın kopyası, tava 230 cm tij askılı (adım 3/3)
+- **Kullanıcı isteği:** Adım 1'deki istek ("Evet, planla devam").
+- **Değişen dosyalar:**
+  - `main.js` → `createAlan3RoofTrussAndCableTray()` (ALAN 4):
+    - **Makas:**
+      - `carrierRadius` 0.14 → `REF_TRUSS.spineR` (Ø420).
+      - Eski alçak V (tepe Y 1.45, ±0.55), 70 cm travers kaideleri, aşıklar ve X gergiler kalktı. Yerine `buildRefTrussFrame` geldi.
+      - İstasyonlar 3.17, 8.89 … 43.21. 1. kedi yolu (s ≈ 23.19) 20.33 ile 26.05 arasının tam ortasında.
+    - **Tava:**
+      - 500×150 → 500×200, `REF_TRUSS.trayBottomY` (230 cm), s = 0 → 34.80.
+      - Battı-çıktı, dip eyeri ve ara destekler kalktı. Yerine `addRefTrussTrayHangers` (`alan3RoofTrayHangers`, 66 tabla) geldi.
+    - **Feeder ve oluklar:**
+      - İniş olukları 33.25 / 34.25 → 34.00 / 34.40. Zikzaktan asılan çapraz tij tablasına değiyordu.
+      - Feeder iniş noktası `dropX` −0.06 → −0.30. Ø420 omurganın içinden geçmesin diye.
+      - Kablo merdiveninden gelen 8 feeder makas başında 230 cm'deki tavaya düşey çıkışla bağlanıyor. Eskiden omurga üstünde bitiyordu.
+    - **2. kedi yolu 45° kolu:** üst pim R + 0.08, omurga bileziği `carrierRadius + 0.015`.
+  - `main.js` → `buildMatsingTrussMidOffsetAssembly()`: `carrierRadius = 0.21` tüm alanlarda (Spot Beam askısı da Ø420 omurgada).
+- **Doğrulama:**
+  - `npm run build` hatasız; konsol hatası yok.
+  - ALAN 4 örnekleme taraması. Kalan temaslar kasıtlı bağlantılar: askı kelepçeleri, Spot Beam kelepçeleri ve omurga, feeder konnektörleri ve anten portları, 45° kol bileziği, makas başı yatay kiriş.
+  - Oluk-tabla kontrolü temiz. Görsel kontrol yapıldı.
+- **Commit:** `[Claude] ALAN 4 çatı makası referans makas kopyası, tava 230 cm tij askılı`
+- **Dikkat:** 1. kedi yolunun askı rotları (X = −1.5 / +2.0) eskiden de makasa bağlanmadan havada bitiyordu; dokunulmadı.
 
 ### 2026-11-02 12:20 — Claude — ALAN 1-3 makası referans makasın kopyası, tava 230 cm tij askılı (adım 2/3)
 - **Kullanıcı isteği:** Adım 1'deki istek. Kullanıcı bağımlı parçaların taşınması planını onayladı ("Evet, planla devam").
