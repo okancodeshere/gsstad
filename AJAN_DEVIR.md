@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Aparat sayfaları: açıklama, kontrol, parça listesi ve adet bölümleri kaldırıldı`
+- **Son commit:** `[Claude] Devir defteri: push durumu güncellendi (dc3c18a)`
+- **Push:** 2026-11-02'de kullanıcı onayıyla `dc3c18a`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
   - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
