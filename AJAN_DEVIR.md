@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Ana sayfaya "Aparatlar" butonu: Matsing-1 / Gammanu / Tava Ofset sekmeli sayfa`
+- **Son commit:** `[Claude] Aparat sayfaları: açıklama, kontrol, parça listesi ve adet bölümleri kaldırıldı`
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
   - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
@@ -82,6 +82,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 15:00 — Claude — Aparat sayfalarından bilgi bölümleri kaldırıldı
+- **Kullanıcı isteği:** "Bağlantı, Kontroller, Parça listesi, Modeldeki askı adetleri kısımlarını kaldır", ardından "antenlerden de kaldır".
+- **Değişen dosyalar:**
+  - `tava_aski_aparati.html`: "Bağlantı", "Kontroller", "Parça listesi", "Modeldeki askı adetleri" bölümleri (`#checks`, `#bom`, `#qty`) silindi.
+  - `tava_aski_aparati.js` → `updatePanel()`: `#checks` yoksa hemen dönüyor. Hesap kodu duruyor.
+  - `matsing_montaj_aparati.html`: "Eksen 1 · Bağlantı ve hareket" (açıklama, 5 adımlı ayar sırası, delik seti durumu), "Kontroller", "Parça listesi" silindi.
+  - `matsing_montaj_aparati.js`: YENİ `panelEl(id)`: eleman yoksa boş div döndürüyor. `#az-desc`, `#az-state`, `#checks` ve `#bom` yazımları bununla yapılıyor.
+  - Sol menülerde artık yalnızca başlık, kısa açıklama, ayar kaydırıcıları, aç/kapa kutuları ve görünüm düğmeleri var.
+- **Doğrulama:** `npm run build` hatasız. Aparatlar sayfasında üç sekme açıldı ve ayar değiştirildi; konsol hatası yok.
+- **Commit:** `[Claude] Aparat sayfaları: açıklama, kontrol, parça listesi ve adet bölümleri kaldırıldı`
 
 ### 2026-11-02 14:45 — Claude — Ana sayfaya "Aparatlar" butonu, üç tasarım tek sayfada sekmeli
 - **Kullanıcı isteği:** "ana sayfa projede üst tarafa bir buton ekle ve aparatlar olarak adlandır. Matsing-1, Gammanu ve Tava ofset olarak 3 tane tasarımı tek sayfada sekmeler halinde birleştir. Hepsi bağımsız sol menüden komutalsın." Ardından: "tava ofset default olarak açılan olsun".

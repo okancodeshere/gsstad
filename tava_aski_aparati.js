@@ -327,6 +327,8 @@ function rebuild() {
 // 3. KONTROLLER VE PARÇA LİSTESİ
 // ---------------------------------------------------------------------------
 function updatePanel() {
+  // Kontroller / parça listesi / adet bölümleri sayfadan kaldırıldı (2026-11-02); hesaplar geri eklenirse çalışır
+  if (!document.getElementById('checks')) return;
   const tray = TRAYS[state.trayW];
   const tb = T.spineR + state.h;
   const cls = (ok) => ok ? 'ok' : 'bad';

@@ -827,6 +827,9 @@ const elDrop = document.getElementById('drop');
 const elSlope = document.getElementById('slope');
 let lastKey = null;
 
+// Açıklama / kontrol / parça listesi bölümleri sayfadan kaldırıldı (2026-11-02): eleman yoksa yazılan metin boşa gider
+const panelEl = id => document.getElementById(id) || document.createElement('div');
+
 // Sekme ve modele özgü metinler
 document.querySelectorAll('[data-model]').forEach(a => a.classList.toggle('active', a.dataset.model === MODEL));
 // aparatlar.html içinde gömülüyken sekmeler üst çubukta; sayfanın kendi sekme çubuğu gizlenir
@@ -836,7 +839,7 @@ document.getElementById('h-title').textContent = IS_G ? 'Gammanu Spot Beam 30/30
 document.getElementById('h-sub').innerHTML = `Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, ${CLAMP.type === 'shell'
   ? 'gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk)'
   : 'alt eyer + iki lama çemberle'} asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne ${TILT_FRONT}°, arkaya ${TILT_BACK}°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.`;
-document.getElementById('az-desc').innerHTML = `
+panelEl('az-desc').innerHTML = `
   <b>Sabit taraf:</b> bağlantı plakasının altında ${pipeName(HUB)} sabit açılı göbek var; üst ucu taşıyıcı eğiminde (ALAN 2: 5°, ALAN 1-3: 7.7°) atölyede eğik kesilir. Göbeğin altına ${FLANGE_NAME} sabit flanş kaynaklı; flanşta 4 yay kanal (±${AZ_SLOT_HALF}°) ve Ø${mm(AZ_SPIGOT_R * 2)} merkez pimi var. Bu flanş hiç dönmez ve her zaman yataydır.<br>
   <b>Dönen taraf:</b> iniş borusuna kaynaklı ${FLANGE_NAME} döner flanş, sabit flanşın altına doğrudan oturur. Merkezindeki bronz burç merkez pimine geçer; dönme ekseni budur.<br>
   <b>Bağlantı:</b> 4×${AZ_BOLT.name} 8.8 cıvata döner flanştaki deliklerden geçip sabit flanştaki kanallardan çıkar; üstte Ø${mm(AZ_BOLT.wash * 2)} pul kanalı köprüler. Altta somun + kontra somun. Sıkılınca iki flanş sürtünmeyle kilitlenir.`;
@@ -866,12 +869,12 @@ function update() {
   const cls = (v, lim) => v >= lim ? 'ok' : 'bad';
   const azCap = 4 * AZ_BOLT.preload * AZ_FRICTION * AZ_BOLT_R;
   const holeNames = bs.set === 0 ? '0° / 90° / 180° / 270°' : '45° / 135° / 225° / 315°';
-  document.getElementById('az-state').innerHTML = `
+  panelEl('az-state').innerHTML = `
     Kullanılan delikler (döner flanş): <b>${holeNames}</b><br>
     Cıvata kanal ortasından <b>${bs.off > 0 ? '+' : ''}${bs.off.toFixed(0)}°</b> (kanal ±${AZ_SLOT_HALF}°)<br>
     Sürtünme kapasitesi 4×${AZ_BOLT.name} 8.8, μ=${AZ_FRICTION}: <b class="${cls(azCap / Math.max(c.T, 1), 2)}">${(azCap / 1000).toFixed(1)} kNm</b>
     ≥ rüzgar burulması ${(c.T / 1000).toFixed(2)} kNm`;
-  document.getElementById('checks').innerHTML = `
+  panelEl('checks').innerHTML = `
     <div>Anten/direk → taşıyıcı ve flanş: <b class="${cls(c.carrierClear, 0.05)}">${mm(c.carrierClear)} mm</b></div>
     <div>Anten/direk → iniş borusu: <b class="${cls(c.pipeClear, 0.03)}">${Number.isFinite(c.pipeClear) ? mm(c.pipeClear) + ' mm' : 'yan yana değil'}</b></div>
     <div>Anten merkezi eksantrikliği: ${mm(c.ecc)} mm</div>
@@ -881,7 +884,7 @@ function update() {
 
   const rows = bom();
   let total = ANT.mass;
-  document.getElementById('bom').innerHTML = rows.map(([n, q, kg]) => {
+  panelEl('bom').innerHTML = rows.map(([n, q, kg]) => {
     total += q * kg;
     return `<tr><td>${n}</td><td class="n">${q} ad.</td><td class="n">${kg ? (q * kg).toFixed(1) + ' kg' : '–'}</td></tr>`;
   }).join('') + `<tr><td><b>Toplam (anten ${ANT.mass} kg dahil)</b></td><td></td><td class="n"><b>${total.toFixed(1)} kg</b></td></tr>`;
