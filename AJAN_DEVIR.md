@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Devir defteri: push durumu güncellendi (dc3c18a)`
+- **Son commit:** `[Claude] Tava Ofset: kablo yükü seçeneği kaldırıldı, tava seçenekleri 500×200 / 300×100`
 - **Push:** 2026-11-02'de kullanıcı onayıyla `dc3c18a`'ya kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
@@ -83,6 +83,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-02 15:20 — Claude — Tava Ofset: kablo yükü kaldırıldı, tava 500×200 / 300×100
+- **Kullanıcı isteği:** "kablo yükü seçeneğini kaldır. Ayrıca 300x100 ve 500x200 tava kullanıyorum, sadece buna göre güncelle."
+- **Değişen dosyalar:**
+  - `tava_aski_aparati.html`: "Kablo yükü" kaydırıcısı silindi. Tava düğmeleri "500 × 200" ve "300 × 100" (eskiden 300 × 250).
+  - `tava_aski_aparati.js`:
+    - `TRAYS[300]`: h 0.25 → 0.10, öz ağırlık 5 kg/m (tahmini).
+    - Kablo yükü sabit `CABLE_KGM = 25`; yalnızca gizli yük hesabında kullanılıyor.
+    - Tavadaki kablo görseli 500×200'de 2 sıra (20), 300×100'de 1 sıra (10).
+    - Kaydırıcı dinleyicisi kaldırıldı.
+- **Doğrulama:** `npm run build` hatasız. Aparatlar → Tava Ofset'te 300×100 seçildi; konsol hatası yok, görsel kontrol yapıldı.
+- **Commit:** `[Claude] Tava Ofset: kablo yükü seçeneği kaldırıldı, tava seçenekleri 500×200 / 300×100`
+- **Dikkat:** Önceki `95ad2de` (push durumu notu) ve bu commit henüz push edilmedi.
 
 ### 2026-11-02 15:00 — Claude — Aparat sayfalarından bilgi bölümleri kaldırıldı
 - **Kullanıcı isteği:** "Bağlantı, Kontroller, Parça listesi, Modeldeki askı adetleri kısımlarını kaldır", ardından "antenlerden de kaldır".

@@ -39,7 +39,7 @@ const TABLA = { w: 0.08, t: 0.008, nodeLen: 0.70, pitch: 0.10, m8D: 0.009, tijD:
 const STEEL = 7850, G = 9.81;
 const TRAYS = {
   500: { w: 0.50, h: 0.20, kgm: 9.0 },   // tava öz ağırlığı (galvaniz delikli, kapaksız, tahmini)
-  300: { w: 0.30, h: 0.25, kgm: 7.0 }
+  300: { w: 0.30, h: 0.10, kgm: 5.0 }   // Kullanıcı: yalnızca 500×200 ve 300×100 tava kullanılıyor
 };
 const M16_TENS = 0.9 * 800 * 157 / 1.25;   // N, 8.8 çekme dayanımı (Ft,Rd)
 const M10_TENS = 0.9 * 800 * 58 / 1.25;
@@ -175,7 +175,9 @@ scene.add(trussGroup);
 // ---------------------------------------------------------------------------
 const dynGroup = new THREE.Group();
 scene.add(dynGroup);
-let state = { variant: 'node', h: 2.30, trayW: 500, cable: 25, explode: false };
+// Kablo yükü seçeneği kaldırıldı (2026-11-02); sabit değer yük hesabında ve tavadaki kablo görselinde kullanılır
+const CABLE_KGM = 25;
+let state = { variant: 'node', h: 2.30, trayW: 500, cable: CABLE_KGM, explode: false };
 let lastInfo = null;
 
 // Üst boruyu saran lama kelepçe + kulaklar + M10 + konik boyun; dönen: tij üst ucu Y
@@ -291,7 +293,7 @@ function rebuild() {
   const L = 2 * SEG;
   trayG.add(box(tray.w, 0.003, L, M.tray, 0, tb + 0.0015, 0));
   [-1, 1].forEach(sx => trayG.add(box(0.003, tray.h, L, M.tray, sx * (tray.w / 2 - 0.0015), tb + tray.h / 2, 0)));
-  const nC = state.cable > 0 ? Math.min(30, Math.max(4, Math.round(state.cable / 1.2))) : 0;
+  const nC = tray.h > 0.15 ? 20 : 10; // 2 sıra kablo (alçak tavada tek sıra)
   for (let i = 0; i < nC; i++) {
     const col = i % 10, row = Math.floor(i / 10);
     const x = -tray.w / 2 + 0.04 + col * (tray.w - 0.08) / 9;
@@ -393,17 +395,14 @@ function updatePanel() {
 // ---------------------------------------------------------------------------
 // 4. ARAYÜZ
 // ---------------------------------------------------------------------------
-const elH = document.getElementById('h'), elCable = document.getElementById('cable');
+const elH = document.getElementById('h');
 function sync() {
   state.h = +elH.value / 100;
-  state.cable = +elCable.value;
   state.explode = document.getElementById('t-exp').checked;
   document.getElementById('v-h').textContent = `${elH.value} cm`;
-  document.getElementById('v-cable').textContent = `${state.cable} kg/m`;
   rebuild();
 }
 elH.addEventListener('input', sync);
-elCable.addEventListener('input', sync);
 document.getElementById('t-exp').addEventListener('change', sync);
 document.getElementById('t-tray').addEventListener('change', e => { const t = dynGroup.getObjectByName('tray'); if (t) t.visible = e.target.checked; });
 document.getElementById('t-truss').addEventListener('change', e => { trussGroup.visible = e.target.checked; });
