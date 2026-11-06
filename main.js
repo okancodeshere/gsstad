@@ -14228,6 +14228,10 @@ function attachAntennaHanger(assemblyGroup, model, defaults, saved, { carrierR =
   const hanger = createAntennaHanger(model, { labels: false, carrierR });
   hanger.carrierGroup.remove(hanger.carrier);   // taşıyıcının kendisi modelde var; referans boru eklenmez
   hanger.root.rotation.y = rootRotY;
+  // Ana modeldeki anten renkleri (buildMatsingAntennaModel / buildSpotBeamPanelAntennaModel ile aynı);
+  // aparat sayfasındaki bej Matsing radomu ana modelde kullanılmaz
+  hanger.M.radome.color.setHex(0xebedf0); hanger.M.radome.roughness = 0.35; hanger.M.radome.metalness = 0.15;
+  hanger.M.antPanel.color.setHex(0x94a3b8); hanger.M.antPanel.roughness = 0.45; hanger.M.antPanel.metalness = 0.75;
   const hs = Object.assign({}, defaults, saved || {});
   hs.drop = THREE.MathUtils.clamp(hs.drop, hanger.C.DROP_RANGE.min / 1000, hanger.C.DROP_RANGE.max / 1000);
   hanger.setState({ az: hs.az, tilt: hs.tilt, drop: hs.drop, slope });

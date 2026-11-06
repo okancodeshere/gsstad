@@ -888,7 +888,7 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
     AZ_SPIGOT_R, AZ_FRICTION, SLOPE_MAX, TILT_FRONT, TILT_BACK, DROP_RANGE, DROP_PIPE, MAST_PIPE
   };
   return {
-    model: MODEL, isG: IS_G, root, carrier, carrierGroup, levelHead, azGroup, tiltGroup, antenna, labels, C, state,
+    model: MODEL, isG: IS_G, M, root, carrier, carrierGroup, levelHead, azGroup, tiltGroup, antenna, labels, C, state,
     setState, setLabelsVisible, computeChecks, bom, totalMass, azBoltState
   };
 }

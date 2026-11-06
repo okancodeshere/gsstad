@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Tek kollu anten askısı ALAN 1-3 alt kot (45° dikme) ve skorbord silindir montajlarına; eğim mafsalı ±50°`
+- **Son commit:** `[Claude] Ana model: askı aparatındaki antenlerin rengi eski haline`
 - **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat, alt kot + skorbord) push edilmedi.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
 - **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
@@ -85,6 +85,15 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-06 — Claude — Ana model: anten renkleri eski haline
+- **Kullanıcı isteği:** "kaşla göz arasında antenlerin rengini mi değiştirdin sen". Ana modele aparat eklenirken anten gövdesi de modülden gelmişti; Matsing radomu bej (0xb7b09c) olmuştu.
+- **Değişen dosyalar:**
+  - `anten_aski_modeli.js`: dönüş nesnesine `M` (malzemeler) eklendi.
+  - `main.js` → `attachAntennaHanger()`: radom 0xebedf0 (roughness 0.35, metalness 0.15), arka panel 0x94a3b8. Değerler `buildMatsingAntennaModel` / `buildSpotBeamPanelAntennaModel` ile aynı.
+  - Aparat sayfası bej radomla kaldı.
+- **Doğrulama:** `npm run build` hatasız; ALAN 1-3'te görsel kontrol yapıldı.
+- **Commit:** `[Claude] Ana model: askı aparatındaki antenlerin rengi eski haline`
 
 ### 2026-11-06 — Claude — Tek kollu askı: ALAN 1-3 alt kot ve skorbord silindir montajları, eğim mafsalı ±50°
 - **Kullanıcı isteği:** "Alan 1-3'teki alt kotta olana da bunu ekle. Ama yerçekimiyle olan mafsal için daha geniş bir aralık gerekecek sanırım. Ayrıca skorbord yanlarında kalan aparatları da değiştir, çember ölçüsünü mevcuttan alarak."
