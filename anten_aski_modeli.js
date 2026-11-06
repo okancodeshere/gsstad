@@ -14,7 +14,8 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 
-export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = true } = {}) {
+// opts.carrierR: taşıyıcı boru yarıçapı (varsayılan çatı makası omurgası Ø420; ALAN 1-3 45° dikme Ø220, skorbord silindiri Ø1500)
+export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = true, carrierR = null } = {}) {
   const IS_G = MODEL === 'gammanu';
   const root = new THREE.Group();
   root.name = IS_G ? 'gammanuTekKolluAski' : 'matsingTekKolluAski';
@@ -22,7 +23,9 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
   // ---------------------------------------------------------------------------
   // ÖLÇÜLER
   // ---------------------------------------------------------------------------
-  const CARRIER_R = 1.32 / Math.PI / 2;      // Saha çevre ölçüsü 132 cm → Ø420 (ALAN 2)
+  const CARRIER_R_REF = 1.32 / Math.PI / 2;  // Saha çevre ölçüsü 132 cm → Ø420 (çatı makası omurgası)
+  const CARRIER_R = carrierR || CARRIER_R_REF;
+  const CARRIER_NAME = `Ø${Math.round(CARRIER_R * 2000)} (çevre ${Math.round(CARRIER_R * 2 * Math.PI * 100)} cm)`;
 
   // Anten. X = arka panelden öne, Y = yukarı, Z = genişlik. windMax: kontrolde kullanılan en büyük rüzgar kuvveti.
   const ANT = IS_G ? {
@@ -79,9 +82,15 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
     WEB_T: 0.010, WEB_L: 0.36, WEB_X: 0.07, WEB_H: 0.10, WEB_Y: -0.255,
     PLATE_W: 0.30, PLATE_TOP: -0.305, PLATE_T: 0.012
   };
-  const { SADDLE_T, SADDLE_L, EAR_W, EAR_T, PLATE_TOP, PLATE_T } = CLAMP;
   const FELT_T = 0.005;                           // taşıyıcı ile kelepçe arası keçe
   const CLAMP_R = CARRIER_R + FELT_T;             // eyer / kabuk / çember iç yarıçapı
+  // Taşıyıcı çapı değişince plaka kelepçe iç yüzünden aynı mesafede kalır; ağ levhaları eyerin altına kadar uzar
+  const dR = CARRIER_R - CARRIER_R_REF;
+  CLAMP.PLATE_TOP -= dR;
+  const webTop = -Math.sqrt(Math.max(CLAMP_R ** 2 - CLAMP.WEB_X ** 2, 0)) - 0.0015;
+  CLAMP.WEB_H = webTop - CLAMP.PLATE_TOP;
+  CLAMP.WEB_Y = CLAMP.PLATE_TOP + CLAMP.WEB_H / 2;
+  const { SADDLE_T, SADDLE_L, EAR_W, EAR_T, PLATE_TOP, PLATE_T } = CLAMP;
 
   // Eksen 1 (azimut) döner tabla: sabit flanşta 4 yay kanal, döner flanşta 45° arayla 8 delik.
   // 4 cıvata döner flanşa takılır ve sabit flanştaki kanallarda yürür. Kanal ±25°;
@@ -106,7 +115,7 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
         slotR: 0.045, pin: { r: 0.012, nut: 0.020 }, bolt: M12, headH: 0.10, gusset: [0.022, 0.028, 0.024] }
     : { pinDrop: 0.05, outerR: 0.09, innerHalf: 0.035, outerX: 0.063, innerX: 0.045, lugT: 0.012,
         slotR: 0.06, pin: { r: 0.015, nut: 0.025 }, bolt: M16, headH: 0.13, gusset: [0.03, 0.035, 0.03] };
-  const SLOPE_MAX = 15;                                   // ± derece
+  const SLOPE_MAX = 50;   // ± derece (2026-11-06: 15 → 50; ALAN 1-3 alt kot anteni 45° çapraz dikmeye asılı)
   const SLOPE_PIN_Y = PLATE_TOP - PLATE_T - SLOPE.pinDrop;  // taşıyıcı yerelinde pim kotu
   const FIX_FLANGE_TOP = -SLOPE.headH;                    // pim yerelinde (levelHead) sabit flanş üst yüzü
   // Azimut grubu yerelinde (eski yığın kotları korunur, grup kaydırılır)
@@ -138,6 +147,8 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
   const DOWNTILT_MIN = 90 - TILT_FRONT, DOWNTILT_MAX = 90 + TILT_BACK; // 20 … 110
 
   const DROP_RANGE = IS_G ? { min: 800, max: 3000, val: 1000 } : { min: 1100, max: 3000, val: 1500 };
+  // Büyük çaplı taşıyıcıda (skorbord silindiri) kelepçe yığını uzar; iniş alt sınırı aynı payla kayar
+  if (dR > 0) { DROP_RANGE.min += Math.round(dR * 1000); DROP_RANGE.val += Math.round(dR * 1000); }
   const STEEL_DENSITY = 7850;
 
   // Malzemeler
@@ -243,7 +254,7 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
   const carrierGroup = new THREE.Group();
   root.add(carrierGroup);
   carrierGroup.add(carrier);
-  addLabel(carrier, 'Çatı taşıyıcısı · çevre 132 cm (Ø420)', new THREE.Vector3(0, CARRIER_R + 0.08, -1.2));
+  addLabel(carrier, `Taşıyıcı · ${CARRIER_NAME}`, new THREE.Vector3(0, CARRIER_R + 0.08, -1.2));
 
   // ---------------------------------------------------------------------------
   // 2. SABİT KISIM: eyer + (üst kabuk | lama çemberler) + bağlantı plakası

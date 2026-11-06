@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Ana modele tek kollu 2 eksenli anten askı aparatı + sol üst ayar penceresi`
-- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat) push edilmedi.
-- **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor.
+- **Son commit:** `[Claude] Tek kollu anten askısı ALAN 1-3 alt kot (45° dikme) ve skorbord silindir montajlarına; eğim mafsalı ±50°`
+- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat, alt kot + skorbord) push edilmedi.
+- **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
 - **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
@@ -85,6 +85,40 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-06 — Claude — Tek kollu askı: ALAN 1-3 alt kot ve skorbord silindir montajları, eğim mafsalı ±50°
+- **Kullanıcı isteği:** "Alan 1-3'teki alt kotta olana da bunu ekle. Ama yerçekimiyle olan mafsal için daha geniş bir aralık gerekecek sanırım. Ayrıca skorbord yanlarında kalan aparatları da değiştir, çember ölçüsünü mevcuttan alarak."
+- **Değişen dosyalar:**
+  - `anten_aski_modeli.js`:
+    - YENİ seçenek `carrierR` (taşıyıcı yarıçapı). Kelepçe plakası `dR` kadar kayıyor; ağ levhası yüksekliği `webTop`'tan hesaplanıyor.
+    - Büyük çapta `DROP_RANGE` alt sınırı `dR` kadar artıyor. Etiket `CARRIER_NAME`.
+    - `SLOPE_MAX` 15 → 50: eğim kanalı ±52°, iç ve dış kulak geometrisi aynı.
+      - 45°'de az 90 / tilt 26 / iniş 1100 açıklık 711 mm.
+      - Anten dikmenin yukarı tarafına (az 270) çevrilip tilt ≥ 26 verilirse çakışıyor; kontrol kırmızı gösteriyor.
+  - `matsing_montaj_aparati.html`: eğim kaydırıcısı ±50°, "ALAN 1-3 alt kot · 45°" düğmesi.
+  - `main.js`:
+    - YENİ `attachAntennaHanger(group, model, defaults, saved, {carrierR, slope, rootRotY})`: ortak kurucu. `userData.hangerDefaults` "Varsayılan" düğmesinde, `hangerCarrierName` pencerede kullanılıyor.
+    - `hangerAntennaMatrixWorld()` `{carrierR, rootRotY}` alıyor.
+    - `buildMatsingDiagonalOffsetAssembly(targetArea, hangerSettings)` (ALAN 1-3 alt kot, Antenna 3, x −3 ve 21):
+      - Eski 2 kelepçe + 2 düşey ofset borusu + açılı anten borusu kaldırıldı.
+      - Yerine aparat: Ø220 dikme, eğim +45°, az 90, tilt 26, iniş 1100 mm.
+      - Anten eskisinden yaklaşık 45 cm aşağıda. Matsing iniş alt sınırı 1100 mm; daha yukarı alınamıyor.
+      - Feeder hedefleri (`transformAntPort`, 28 kablo) yeni antenden.
+    - `buildScoreboardMatsingCylinderOffsetAssembly(side, hangerSettings)` (ALAN 2 skorbord yanları):
+      - Eski çember bilezik + 2.09 m boru + 45° sırt borusu kaldırıldı.
+      - Yerine aparat: kelepçe mevcut bilezik ölçüsünden Ø1500 (R 0.75), `rootRotY = 90°` (silindir X boyunca), eğim 0.
+      - Varsayılanlar `sbCylHangerDefaults()`: az 180, tilt 45 (skorbordun tersine, eskisi gibi), iniş 2680. Anten merkezi eskisine göre 7 cm aşağıda, 14 cm ileride.
+      - X ±20.00 → ±20.20 (`sbCylHangerX()`, ön ayar da). Silindirler arası bağ kirişi (x ±19.80, 0.25 m) kelepçe kabuğuna 3.5 cm biniyordu.
+      - Feeder'lar (`createScoreboard...FeederSystem` 6. bölüm) eski port düzeni yeni antene taşınarak çiziliyor. Kablolar silindirin arkasından (laneZ) inip anten arka yüzüne normal boyunca giriyor; eskiden Ø1500 silindirin içinden geçiyordu.
+      - 8. bölümdeki eski Ø114 boru kablo kelepçeleri kaldırıldı.
+    - Yükleme: iki kurucu `item.hanger` alıyor. Ön ayar adları "… Tek Kollu Askı Montajı".
+  - Yedek: `_backups/main_before_altkot_skorbord_askisi_20261106.js`.
+- **Doğrulama:**
+  - `npm run build` hatasız; ana sayfada ve aparat sayfalarında konsol hatası yok.
+  - 4 yeni aparat için kutu + silindir örnekleme taraması temiz.
+  - Alt kot ve skorbord görsel kontrolü: kelepçe taşıyıcıya oturuyor, başlık yatay, kablolar antene giriyor. Alt kot aparatına tıklayınca pencere açılıyor.
+- **Commit:** `[Claude] Tek kollu anten askısı ALAN 1-3 alt kot (45° dikme) ve skorbord silindir montajlarına; eğim mafsalı ±50°`
+- **Dikkat:** Eski JSON'larda skorbord aparatları x ±20'de yükleniyor ve bağ kirişine biniyor.
 
 ### 2026-11-06 — Claude — Ana modele tek kollu 2 eksenli anten askı aparatı + ayar penceresi
 - **Kullanıcı isteği:** "çizdiğimiz aparatları ana çizimlerimize de ekler misin, ayrıca senin verdiğin ayarlamaları da yapabileceğim bir popup menüyü sol üst tarafa koy, üzerine tıklandığında".
