@@ -38,10 +38,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Anten askı ayarı değişince antene giren feeder kabloları ve uç parçaları da hareket ediyor`
-- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat, alt kot + skorbord) push edilmedi.
+- **Son commit:** `[Claude] Devir defteri: push durumu güncellendi (b19abd7)`
+- **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
-- **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
+- **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±50°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
   - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
