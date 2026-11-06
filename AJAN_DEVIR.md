@@ -37,9 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-11-02
-- **Son commit:** `[Claude] Aparat sayfalarına WASD serbest gezinme`
-- **Push:** 2026-11-02'de kullanıcı onayıyla `b55ce85`'e kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Aparatlar sayfası canlıda. Sonrası (WASD) push edilmedi.
+- **Son güncelleyen:** Claude Code, 2026-11-06
+- **Son commit:** `[Claude] Matsing/Gammanu askı aparatı: ayarlı eğim mafsalı geri geldi (sabit göbek kaldırıldı)`
+- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. Eğim mafsalı commit'i (2026-11-06) push edilmedi.
+- **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
   - Ana sayfadaki "🔧 Aparatlar" butonu sayfayı yeni sekmede açıyor.
@@ -83,6 +84,25 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-06 — Claude — Askı aparatı: ayarlı eğim mafsalı geri geldi
+- **Kullanıcı isteği:** "Matsing ve gammanu antenlerde çemberin altındaki yer çekimine göre ayarlanan ayarlamayı neden kaldırdın", ardından "o mafsalı geri alsana". 2026-10-30 15:50 kaydındaki (v2 hafifletme) eğim mafsalı kaldırma kararı geri alındı; sabit açılı göbek çıktı.
+- **Değişen dosyalar:**
+  - `matsing_montaj_aparati.js`:
+    - `HUB`, `HUB_MIN_H`, `buildHub()` silindi. YENİ `SLOPE` (model bazlı ölçüler), `SLOPE_MAX = 15`, `SLOPE_PIN_Y` (plaka altından 50 mm aşağı), `FIX_FLANGE_TOP = -SLOPE.headH`.
+    - "2. SABİT KISIM" sonuna v1'deki dış kulaklar (`outerLugGeometry()`: pim merkezli yarım daire + ±17° kilit kanalı), bağlantı plakasına kaynaklı.
+    - "2.B TERAZİ BAŞLIĞI": iç kulaklar + berkitmeler + eğim pimi + kanal kilidi cıvatası; tabanı sabit flanş. `levelHead` origin'i yine eğim pimi.
+    - `placeHead()` v1 mantığına döndü: başlık pim noktasında yatay, azimut grubu altına oturuyor.
+    - Ölçüler: Matsing: dış kulak R90 / 12 mm, iç kulak 70 mm genişlik (v1'de 90; Ø220 flanşta azimut cıvata pullarına değmesin diye), başlık 130 mm, Ø30 pim, M16 kilit (R60). Gammanu: dış kulak R70 / 10 mm, iç kulak 56 mm, başlık 100 mm, Ø24 pim, M12 kilit (R45).
+    - BOM: göbek satırı yerine dış/iç kulak, berkitme, eğim pimi ve kilit cıvatası satırları. Açıklama metni (`#az-desc`) güncellendi.
+  - `matsing_montaj_aparati.html`: eğim kaydırıcısı etiketi "eğim mafsalı, sahada ±15° ayarlı".
+  - Yedek: `_backups/matsing_montaj_aparati_before_egim_mafsali_geri_20261106.js`.
+- **Sonuç:** Aparat ağırlığı (elle hesap) Matsing ≈ +5 kg, Gammanu ≈ +2.6 kg.
+- **Doğrulama:**
+  - `npm run build` hatasız; iki modelde konsol hatası yok.
+  - Eğim −15/0/15 × tilt −20/0/70 taraması: taşıyıcıya en az 662 mm (Matsing, iniş 1500) / 356 mm (Gammanu, iniş 1000).
+  - Mafsal yakın planı iki modelde görsel kontrol edildi.
+- **Commit:** `[Claude] Matsing/Gammanu askı aparatı: ayarlı eğim mafsalı geri geldi (sabit göbek kaldırıldı)`
 
 ### 2026-11-02 15:55 — Claude — Aparat sayfalarına WASD serbest gezinme
 - **Kullanıcı isteği:** "anten aparatları, tava aparatları sayfalarında da wasd hareketi ekle".
