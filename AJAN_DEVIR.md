@@ -38,8 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Matsing/Gammanu askı aparatı: ayarlı eğim mafsalı geri geldi (sabit göbek kaldırıldı)`
-- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. Eğim mafsalı commit'i (2026-11-06) push edilmedi.
+- **Son commit:** `[Claude] Ana modele tek kollu 2 eksenli anten askı aparatı + sol üst ayar penceresi`
+- **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat) push edilmedi.
+- **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor.
 - **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
 - **Aparatlar sayfası:**
   - `aparatlar.html`: üstte sekmeler, varsayılan Tava Ofset. Her sekme kendi sayfasını ayrı iframe'de çalıştırıyor: `matsing_montaj_aparati.html?model=matsing|gammanu&embed=1` ve `tava_aski_aparati.html?embed=1`.
@@ -84,6 +85,45 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-06 — Claude — Ana modele tek kollu 2 eksenli anten askı aparatı + ayar penceresi
+- **Kullanıcı isteği:** "çizdiğimiz aparatları ana çizimlerimize de ekler misin, ayrıca senin verdiğin ayarlamaları da yapabileceğim bir popup menüyü sol üst tarafa koy, üzerine tıklandığında".
+  - Sorulara yanıtlar: yalnızca anten aparatları (tava askıları değişmedi); ayarlar tıklanan aparata özel; taşıyıcı eğimi alandan otomatik.
+- **Değişen dosyalar:**
+  - YENİ `anten_aski_modeli.js`: `createAntennaHanger(model, { labels })`. Aparat sayfasındaki ölçüler, malzemeler, geometri, kontroller ve BOM birebir buraya taşındı.
+    - `setState({az, tilt, drop, slope, explode})`, `setLabelsVisible`, `totalMass()`, `computeChecks`, `bom`, sabitler `C`.
+    - Etiketsiz modda CSS2D etiketi ve sarı ölçü çizgisi oluşturulmuyor.
+  - `matsing_montaj_aparati.js`: artık yalnızca sahne + arayüz; aparatı modülden kuruyor. Sonuçlar değişmedi (Matsing 167.6 kg, açıklıklar aynı).
+  - `main.js`:
+    - import + YENİ üst düzey `hangerAntennaMatrixWorld()`, `oldAntennaLocalToWorld()` (feeder port hedefleri için).
+    - `buildMatsingTrussMidOffsetAssembly()` (~satır 14440): eski 2 kelepçe + 2 düşey boru + açılı travers + 10 cm ofset + 45° mafsal + direk + anten kaldırıldı. Yerine `createAntennaHanger(isAlan3 ? 'gammanu' : 'matsing')`.
+      - Taşıyıcı referans borusu çıkarıldı.
+      - Eğim alandan: ALAN 2 5°, diğerleri asin(6/45).
+      - Varsayılan yön eskisiyle aynı: az 90 (Gammanu 45), tilt 26.
+      - İniş: Matsing `dropH − 0.20` (gövde merkezi eski kotta kalsın diye), Gammanu 2.0.
+      - Yeni parametre `hangerSettings`; `userData.hanger`, `userData.weight` (aparat + anten), `userData.defaultDrop`.
+    - YENİ `antennaHangerApis` (WeakMap), `isAntennaHangerAssembly()`, `openHangerPopup()` / `closeHangerPopup()`.
+      - Pencere `#main-viewport-container` sol üstte.
+      - İçerik: azimut, tilt, iniş kaydırıcıları; alandan gelen eğim bilgisi; açıklık ve ağırlık; Varsayılan düğmesi; Detay sayfası bağlantısı (`aparatlar.html#matsing|gammanu`).
+      - `selectObject()` aparat seçilince açıyor, başka seçimde kapatıyor.
+    - `serializePlatform()`: `hanger: {az, tilt, drop}`. `deserializeItemToArea()` bunu kurucuya veriyor.
+    - Feeder port hedefleri yeni antene göre hesaplanıyor:
+      - ALAN 1-3: `computeAntennaFeederTargets`, 2×20 kablo.
+      - ALAN 4: `getSpotBeamPortsLocal`, 8 kablo.
+      - ALAN 2'deki silindir Matsing'i (`buildScoreboardMatsingCylinderOffsetAssembly`) ayrı montaj olduğu için değişmedi.
+    - **ALAN 4 Anten 2:** z 32.594 → 33.15, y 8.667 → 8.742 (preset, spawn, feeder).
+      - Yeni kelepçe, 2. kedi yolu 45° kolunun omurga bileziğiyle (z 32.51–32.95) çakışıyordu.
+      - 32.30'da da 1. antenle çakışıyor.
+  - Yedekler: `_backups/main_before_anten_askisi_20261106.js`, `_backups/matsing_montaj_aparati_before_modul_20261106.js`.
+- **Doğrulama:**
+  - `npm run build` hatasız; ana sayfada ve aparatlar sayfasında konsol hatası yok.
+  - 10 aparat için silindir örnekleme çakışma taraması (aynı alandaki tüm görünür borular): temiz (ALAN 4 Anten 2 kaydırıldıktan sonra).
+  - Üç alanda görsel kontrol: kelepçe omurgaya oturuyor, feeder kabloları antenlere giriyor.
+  - Aparata tıklama → pencere açılıyor; kaydırıcılar aparatı ve `userData.hanger`'ı güncelliyor.
+- **Commit:** `[Claude] Ana modele tek kollu 2 eksenli anten askı aparatı + sol üst ayar penceresi`
+- **Dikkat:**
+  - Feeder kabloları varsayılan ayara göre çizili; pencereden azimut, tilt veya iniş değişince kablolar antene göre güncellenmiyor.
+  - Eski JSON'larda ALAN 4 Anten 2 z 32.594'te yükleniyor ve bilezikle çakışıyor.
 
 ### 2026-11-06 — Claude — Askı aparatı: ayarlı eğim mafsalı geri geldi
 - **Kullanıcı isteği:** "Matsing ve gammanu antenlerde çemberin altındaki yer çekimine göre ayarlanan ayarlamayı neden kaldırdın", ardından "o mafsalı geri alsana". 2026-10-30 15:50 kaydındaki (v2 hafifletme) eğim mafsalı kaldırma kararı geri alındı; sabit açılı göbek çıktı.

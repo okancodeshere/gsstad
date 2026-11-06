@@ -1,5 +1,26 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { createAntennaHanger } from './anten_aski_modeli.js';
+
+// Tek kollu askı aparatında antenin dünya matrisi (montaj taşıyıcı ekseni worldPos'ta, Y dönüşü yok).
+// Feeder kablolarının port hedefleri buna göre hesaplanır (buildMatsingTrussMidOffsetAssembly ile aynı varsayılanlar).
+const _hangerAntennaMatrixCache = new Map();
+function hangerAntennaMatrixWorld(model, worldPos, drop, az, tilt, slopeDeg) {
+  const key = [model, worldPos.x, worldPos.y, worldPos.z, drop, az, tilt, slopeDeg].join('|');
+  if (!_hangerAntennaMatrixCache.has(key)) {
+    const h = createAntennaHanger(model, { labels: false });
+    h.root.position.copy(worldPos);
+    h.setState({ az, tilt, drop, slope: slopeDeg });
+    h.root.updateMatrixWorld(true);
+    _hangerAntennaMatrixCache.set(key, h.antenna.matrixWorld.clone());
+  }
+  return _hangerAntennaMatrixCache.get(key);
+}
+// Eski anten modeli yereli (X = genişlik, Y = boy, Z = boresight, origin gövde merkezi) → yeni aparat anten yereli
+// (X = arka panelden öne, Y = boy, Z = genişlik). halfD: eski modelde merkezden arka yüze.
+function oldAntennaLocalToWorld(p, antMatrix, halfD) {
+  return new THREE.Vector3(p.z + halfD, p.y, -p.x).applyMatrix4(antMatrix);
+}
 
 // Polyfill for CanvasRenderingContext2D.prototype.roundRect
 if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
@@ -2412,6 +2433,8 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
 
   // Matsing antenlerin 20 adet portunun slopedGroup koordinatlarını ve antenin içine uzanan derin penetrasyon hedeflerini hesapla
   function computeAntennaFeederTargets(targetZ, targetY, dropH) {
+    // 2026-11-06: anten tek kollu askı aparatında (varsayılan: az 90, tilt 26, iniş dropH − 0.20)
+    const antM = hangerAntennaMatrixWorld('matsing', new THREE.Vector3(-3.00, targetY, targetZ), dropH - 0.20, 90, 26, -THREE.MathUtils.radToDeg(slopeAngleRad));
     const pMid = new THREE.Vector3(0, -dropH, 0);
     const pAntUpper = new THREE.Vector3(0, -dropH + 0.45 * 0.4369, -0.4048);
     const pAntLower = new THREE.Vector3(0, -dropH - 0.45 * 0.4369, 0.4048);
@@ -2449,23 +2472,17 @@ function createAlan2RoofTrussAndCableTray(alan2Group) {
 
     return portsLocal.map((pLoc, idx) => {
       // Port ağzı noktası (Konnektör düzlemi)
-      const pRot = pLoc.clone().applyMatrix4(orientMat);
-      const pAssy = pRot.clone().add(antPosInAssembly);
-      const pWorld = new THREE.Vector3(-3.00, targetY, targetZ).add(pAssy);
+      const pWorld = oldAntennaLocalToWorld(pLoc, antM, halfD);
       const pEntry = pWorld.clone().applyMatrix4(invSlopedMatrix);
 
       // Anten gövdesinin 22cm içine penetrasyon noktası (Kullanıcı İsteği: "kabloları içine kadar uzat ki boş gibi görünmesin")
       const pInsideLoc = pLoc.clone().add(new THREE.Vector3(0, 0, insideDepth));
-      const pInsideRot = pInsideLoc.clone().applyMatrix4(orientMat);
-      const pInsideAssy = pInsideRot.clone().add(antPosInAssembly);
-      const pInsideWorld = new THREE.Vector3(-3.00, targetY, targetZ).add(pInsideAssy);
+      const pInsideWorld = oldAntennaLocalToWorld(pInsideLoc, antM, halfD);
       const pInside = pInsideWorld.clone().applyMatrix4(invSlopedMatrix);
 
       // Portun hemen dışı (Kablo yaklaşım doğrultusu)
       const pAppLoc = pLoc.clone().add(new THREE.Vector3(0, 0, -0.15));
-      const pAppRot = pAppLoc.clone().applyMatrix4(orientMat);
-      const pAppAssy = pAppRot.clone().add(antPosInAssembly);
-      const pAppWorld = new THREE.Vector3(-3.00, targetY, targetZ).add(pAppAssy);
+      const pAppWorld = oldAntennaLocalToWorld(pAppLoc, antM, halfD);
       const pApproach = pAppWorld.clone().applyMatrix4(invSlopedMatrix);
 
       return { idx, pEntry, pInside, pApproach };
@@ -4709,21 +4726,22 @@ function createAlan3RoofTrussAndCableTray(alan3Group) {
     const portX = W * 0.26;
     const portZ = -D / 2 - 0.016;
 
+    // 2026-11-06: anten tek kollu askı aparatında (Gammanu varsayılanı: az 45, tilt 26, iniş 2.0)
+    const antM = hangerAntennaMatrixWorld('gammanu', new THREE.Vector3(-3.00, targetY, targetZ), 2.0, 45, 26, -THREE.MathUtils.radToDeg(slopeAngleRad));
+    const approach = new THREE.Vector3(-1, 0, 0).transformDirection(antM);
     const ports = [];
     for (let idx = 0; idx < 4; idx++) {
       const py = portStartY - idx * portSpacing;
       const pLoc = new THREE.Vector3(portX, py, portZ);
-      const pRot = pLoc.clone().applyMatrix4(orientMat);
-      const pAssy = pRot.clone().add(antPosInAssembly);
-      const pWorld = new THREE.Vector3(-3.00, targetY, targetZ).add(pAssy);
+      const pWorld = oldAntennaLocalToWorld(pLoc, antM, D / 2);
       const pLocal = pWorld.clone().applyMatrix4(invSlopedMatrix);
-      ports.push({ pWorld, pLocal, dirApproach: dirN.clone().negate() });
+      ports.push({ pWorld, pLocal, dirApproach: approach.clone() });
     }
     return ports;
   }
 
   const ant1Ports = getSpotBeamPortsLocal(8.533, 31.603);
-  const ant2Ports = getSpotBeamPortsLocal(8.667, 32.594);
+  const ant2Ports = getSpotBeamPortsLocal(8.742, 33.15);
 
   // Dikey merdiven üzeri kablo grubu (alan3Group koordinatlarında)
   // Kullanıcı İsteği: "Alan-4 de de kablo merdivenini taşıyıcı sutunun arkasına al ."
@@ -14419,11 +14437,13 @@ function buildSpotBeamPanelAntennaModel(item = {}) {
 // - Bu travers borusundan çıkan 10 cm standoff ofset kolu
 // - 45 derece açılı mafsal kelepçesi ile +X yönüne yaklaşık 45° ve sahaya eğimli bakış
 // =========================================================================
-function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, dropDistance = 2.0, nameSuffix = '', azimuthAngleDeg = 0) {
+function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, dropDistance = 2.0, nameSuffix = '', azimuthAngleDeg = 0, hangerSettings = null) {
   const assemblyGroup = new THREE.Group();
 
   const dropH = (typeof dropDistance === 'number' && dropDistance > 0) ? dropDistance : 2.0;
   const isAlan3 = targetArea === 'alan3' || (nameSuffix && nameSuffix.includes('Alan 3'));
+  // Yeni aparatta anten tilt piminin altında; Matsing gövde merkezi eski montajla aynı kotta kalsın diye 20 cm kısa (feeder uçları)
+  const defaultDropH = dropH - (isAlan3 ? 0 : 0.20);
   if (isAlan3 && azimuthAngleDeg === 0) {
     azimuthAngleDeg = 45; // Kullanıcı İsteği: 45 derece açıyla +X tarafına bakış
   }
@@ -14449,240 +14469,101 @@ function buildMatsingTrussMidOffsetAssembly(targetArea = state.currentArea, drop
     lockedZ: false,
     allowPassThrough: true,
     isFreestanding: true,
-    azimuthAngleDeg: azimuthAngleDeg
+    azimuthAngleDeg: azimuthAngleDeg,
+    defaultDrop: defaultDropH
   };
 
-  const steelClampMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 });
-  const galvPipeMat = new THREE.MeshStandardMaterial({ color: 0xb0bec5, metalness: 0.8, roughness: 0.35 });
-  const darkHardwareMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.4 });
-
-  const slopeAngleRad = (targetArea === 'alan4') ? THREE.MathUtils.degToRad(5.0) : Math.asin(6.0 / 45.0);
-
-  // 1. ÇATI TAŞIYICISINA SARAN 2 ADET AĞIR HİZMET KELEPÇESİ (Z = -0.4048m ve Z = +0.4048m)
-  // ALAN 2 omurgası Ø420 (saha çevre ölçüsü 132 cm); 2026-11-02'den itibaren ALAN 1-3 de referans makasla Ø420
-  const carrierRadius = 0.21; // 2026-11-02: tüm alanlarda referans makas Ø420
-  const carrierClampR = carrierRadius + 0.014;
-  const carrierClampW = 0.16;
-
-  const pClampUpper = new THREE.Vector3(0, -0.0545, -0.4048);
-  const pClampLower = new THREE.Vector3(0, 0.0545, 0.4048);
-
-  [pClampUpper, pClampLower].forEach(pos => {
-    const clampGroup = new THREE.Group();
-    clampGroup.position.copy(pos);
-    clampGroup.rotation.x = -slopeAngleRad;
-
-    const clampGeo = new THREE.CylinderGeometry(carrierClampR, carrierClampR, carrierClampW, 32);
-    clampGeo.rotateX(Math.PI / 2);
-    const clampMesh = new THREE.Mesh(clampGeo, steelClampMat);
-    // clampMesh.castShadow = true; // disabled for perf
-    clampGroup.add(clampMesh);
-
-    [-carrierClampW / 2 + 0.02, carrierClampW / 2 - 0.02].forEach(cz => {
-      const rimGeo = new THREE.CylinderGeometry(carrierClampR + 0.012, carrierClampR + 0.012, 0.025, 24);
-      rimGeo.rotateX(Math.PI / 2);
-      const rim = new THREE.Mesh(rimGeo, darkHardwareMat);
-      rim.position.set(0, 0, cz);
-      clampGroup.add(rim);
-    });
-
-    [-0.09, 0.09].forEach(bx => {
-      const earGeo = new THREE.BoxGeometry(0.04, 0.06, carrierClampW);
-      const ear = new THREE.Mesh(earGeo, steelClampMat);
-      ear.position.set(bx, -carrierClampR - 0.015, 0);
-      clampGroup.add(ear);
-
-      const boltGeo = new THREE.CylinderGeometry(0.009, 0.009, 0.12, 8);
-      boltGeo.rotateZ(Math.PI / 2);
-      const bolt = new THREE.Mesh(boltGeo, darkHardwareMat);
-      bolt.position.set(bx, -carrierClampR - 0.015, 0);
-      clampGroup.add(bolt);
-    });
-
-    const socketGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.08, 20);
-    const socket = new THREE.Mesh(socketGeo, steelClampMat);
-    socket.position.set(0, -carrierClampR - 0.035, 0);
-    clampGroup.add(socket);
-
-    assemblyGroup.add(clampGroup);
-  });
-
-  // 2. TAŞIYICIDAN DİREKT AŞAĞI İNEN 2 ADET DÜŞEY OFSET BORUSU
-  const offsetPipeR = 0.035;
-  const pMid = new THREE.Vector3(0, -dropH, 0);
-
-  // Düşey boruların alt uç koordinatları
-  const pAntUpper = new THREE.Vector3(0, -dropH + 0.45 * 0.4369, -0.4048);
-  const pAntLower = new THREE.Vector3(0, -dropH - 0.45 * 0.4369, 0.4048);
-
-  const lenUpper = Math.abs(pAntUpper.y - (-0.1945));
-  const upperYMid = (-0.1945 + pAntUpper.y) / 2;
-  const upperPipeGeo = new THREE.CylinderGeometry(offsetPipeR, offsetPipeR, lenUpper, 24);
-  const upperPipe = new THREE.Mesh(upperPipeGeo, galvPipeMat);
-  upperPipe.position.set(0, upperYMid, -0.4048);
-  upperPipe.castShadow = true;
-  upperPipe.receiveShadow = true;
-  assemblyGroup.add(upperPipe);
-
-  const lenLower = Math.abs(pAntLower.y - (-0.0855));
-  const lowerYMid = (-0.0855 + pAntLower.y) / 2;
-  const lowerPipeGeo = new THREE.CylinderGeometry(offsetPipeR, offsetPipeR, lenLower, 24);
-  const lowerPipe = new THREE.Mesh(lowerPipeGeo, galvPipeMat);
-  lowerPipe.position.set(0, lowerYMid, 0.4048);
-  lowerPipe.castShadow = true;
-  lowerPipe.receiveShadow = true;
-  assemblyGroup.add(lowerPipe);
-
-  // 3. ÇAPRAZ BORU GEÇİŞ KLEMPLERİ
-  [pAntUpper, pAntLower].forEach(pos => {
-    const crossClampGeo = new THREE.BoxGeometry(0.16, 0.12, 0.16);
-    const crossClamp = new THREE.Mesh(crossClampGeo, steelClampMat);
-    crossClamp.position.copy(pos);
-    // crossClamp.castShadow = true; // disabled for perf
-    assemblyGroup.add(crossClamp);
-
-    const uboltGeo = new THREE.CylinderGeometry(0.007, 0.007, 0.20, 8);
-    uboltGeo.rotateX(Math.PI / 2);
-    [[-0.05, 0.03], [0.05, 0.03], [-0.05, -0.03], [0.05, -0.03]].forEach(([bx, by]) => {
-      const ub = new THREE.Mesh(uboltGeo, darkHardwareMat);
-      ub.position.set(pos.x + bx, pos.y + by, pos.z);
-      assemblyGroup.add(ub);
-    });
-  });
-
-  // Travers Borusunun Eksen Vektörü
-  const pipeVec = new THREE.Vector3().subVectors(pAntUpper, pAntLower);
-  const dirTravers = pipeVec.clone().normalize(); // (0, 0.4369, -0.8995)
-
-  // 4. DİKEY BORULARIN BİTTİĞİ UÇLARI BİRBİRİNE BAĞLAYAN AÇILI TRAVERS BORUSU (Ø70mm)
-  const traversLen = 0.98;
-  const traversGeo = new THREE.CylinderGeometry(offsetPipeR, offsetPipeR, traversLen, 24);
-  const traversPipe = new THREE.Mesh(traversGeo, galvPipeMat);
-  traversPipe.position.copy(pMid);
-  traversPipe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirTravers);
-  // traversPipe.castShadow = true; // disabled for perf
-  // traversPipe.receiveShadow = true; // disabled for perf
-  assemblyGroup.add(traversPipe);
-
-  // Travers borusu uç kapakları
-  const tCapGeo = new THREE.CylinderGeometry(offsetPipeR * 1.05, offsetPipeR * 1.05, 0.02, 20);
-  const tCapOffset = dirTravers.clone().multiplyScalar(traversLen / 2);
-  const tCap1 = new THREE.Mesh(tCapGeo, darkHardwareMat);
-  tCap1.position.copy(pMid).add(tCapOffset);
-  tCap1.quaternion.copy(traversPipe.quaternion);
-  assemblyGroup.add(tCap1);
-  const tCap2 = new THREE.Mesh(tCapGeo, darkHardwareMat);
-  tCap2.position.copy(pMid).sub(tCapOffset);
-  tCap2.quaternion.copy(traversPipe.quaternion);
-  assemblyGroup.add(tCap2);
-
-  // 5. ANTEN YÖNLENME HESABI VE 10 CM OFSET KOLU
-  const antPipeLen = isAlan3 ? 0.85 : 1.60;
-  const antPipeR = 0.0381;
-  const dirU0 = dirTravers.clone();
-  const dirN0 = new THREE.Vector3(0, -Math.abs(dirU0.z), -Math.abs(dirU0.y)).normalize();
-  const dirR0 = new THREE.Vector3(-1, 0, 0);
-
-  let dirU = dirU0;
-  let dirN = dirN0;
-  let dirR = dirR0;
-  let antPipeCenter = pMid.clone();
-
-  if (azimuthAngleDeg !== 0) {
-    const yawRad = THREE.MathUtils.degToRad(-azimuthAngleDeg); // 45 derece Y ekseni dönüşü
-    const rotY = new THREE.Matrix4().makeRotationY(yawRad);
-    dirU = dirU0.clone().applyMatrix4(rotY).normalize();
-    dirN = dirN0.clone().applyMatrix4(rotY).normalize();
-    dirR = dirR0.clone().applyMatrix4(rotY).normalize();
-
-    // A) YATAY/AÇILI BORUDAN ÇIKAN 10 CM OFSET KOLU
-    const offsetArmLen = 0.10; // Net 10 cm ofset (Kullanıcı İsteği)
-    const pArmEnd = pMid.clone().add(new THREE.Vector3(offsetArmLen, 0, 0));
-    antPipeCenter = pArmEnd;
-
-    const armGeo = new THREE.CylinderGeometry(0.025, 0.025, offsetArmLen, 20);
-    armGeo.rotateZ(Math.PI / 2);
-    const armMesh = new THREE.Mesh(armGeo, galvPipeMat);
-    armMesh.position.set(offsetArmLen / 2, pMid.y, pMid.z);
-    // armMesh.castShadow = true; // disabled for perf
-    assemblyGroup.add(armMesh);
-
-    // Sele kelepçesi
-    const traversSaddleGeo = new THREE.CylinderGeometry(offsetPipeR + 0.008, offsetPipeR + 0.008, 0.12, 24, 1, true, -Math.PI / 2, Math.PI);
-    const traversSaddle = new THREE.Mesh(traversSaddleGeo, steelClampMat);
-    traversSaddle.position.copy(pMid);
-    traversSaddle.quaternion.copy(traversPipe.quaternion);
-    assemblyGroup.add(traversSaddle);
-
-    // B) 10 CM OFSETİN UCUNDAKİ 45 DERECE MAFSAL KELEPÇESİ
-    const swivelBoxGeo = new THREE.BoxGeometry(0.12, 0.14, 0.12);
-    const swivelBox = new THREE.Mesh(swivelBoxGeo, steelClampMat);
-    swivelBox.position.copy(pArmEnd);
-    swivelBox.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirU);
-    // swivelBox.castShadow = true; // disabled for perf
-    assemblyGroup.add(swivelBox);
-
-    const ubolt45Geo = new THREE.CylinderGeometry(0.008, 0.008, 0.18, 12);
-    ubolt45Geo.rotateZ(Math.PI / 2);
-    [-0.04, 0.04].forEach(du => {
-      const ub = new THREE.Mesh(ubolt45Geo, darkHardwareMat);
-      ub.position.copy(pArmEnd).addScaledVector(dirU, du);
-      ub.quaternion.copy(swivelBox.quaternion);
-      assemblyGroup.add(ub);
-    });
-  }
-
-  // 6. ANTEN SIRTI MONTAJ DİREĞİ (Ø76.2mm)
-  const antPipeGeo = new THREE.CylinderGeometry(antPipeR, antPipeR, antPipeLen, 32);
-  const antPipe = new THREE.Mesh(antPipeGeo, galvPipeMat);
-  antPipe.position.copy(antPipeCenter);
-  antPipe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirU);
-  // antPipe.castShadow = true; // disabled for perf
-  // antPipe.receiveShadow = true; // disabled for perf
-  assemblyGroup.add(antPipe);
-
-  const antPipeCapGeo = new THREE.CylinderGeometry(antPipeR * 1.06, antPipeR * 1.06, 0.02, 24);
-  const capOffset = dirU.clone().multiplyScalar(antPipeLen / 2 + 0.01);
-
-  const topCap = new THREE.Mesh(antPipeCapGeo, darkHardwareMat);
-  topCap.position.copy(antPipeCenter).add(capOffset);
-  topCap.quaternion.copy(antPipe.quaternion);
-  assemblyGroup.add(topCap);
-
-  const botCap = new THREE.Mesh(antPipeCapGeo, darkHardwareMat);
-  botCap.position.copy(antPipeCenter).sub(capOffset);
-  botCap.quaternion.copy(antPipe.quaternion);
-  assemblyGroup.add(botCap);
-
-  // 7. ANTEN MODELİ (Alan 3 için Spot Beam, diğer alanlar için Matsing)
-  let antennaModel;
-  if (isAlan3) {
-    antennaModel = buildSpotBeamPanelAntennaModel({
-      name: 'Spot Beam 30/30 4-Port Panel Anten (DOY15X3030MD4TRE)',
-      category: 'Panel Anten',
-      id: 'doy15x3030md4tre',
-      width: 0.700,
-      height: 0.700,
-      depth: 0.170,
-      weight: 16.5
-    });
-  } else {
-    antennaModel = buildMatsingAntennaModel({
-      name: 'Matsing 4-Beam Lens Anten (MS-MBA-4.4.2)',
-      category: 'Matsing',
-      id: 'matsing-4-beam'
-    });
-  }
-
-  const orientMat = new THREE.Matrix4();
-  orientMat.makeBasis(dirR, dirU, dirN);
-  antennaModel.quaternion.setFromRotationMatrix(orientMat);
-  const standoffOffset = isAlan3 ? 0.421 : 0.45;
-  antennaModel.position.copy(antPipeCenter).addScaledVector(dirN, standoffOffset);
-  antennaModel.castShadow = true;
-  assemblyGroup.add(antennaModel);
+  // 2026-11-06: Aparatlar sayfasındaki tek kollu, 2 eksenli askı aparatı (anten_aski_modeli.js, aynı geometri).
+  // Eski "2 düşey boru + açılı travers + 10 cm ofset + 45° mafsal" montajının yerine geçti.
+  // Origin taşıyıcı ekseninde, yerel Z taşıyıcı boyunca (eski montajla aynı çerçeve).
+  // Taşıyıcı eğimi alandan gelir (ALAN 2: 5°, diğerleri asin(6/45) ≈ 7.66°); taşıyıcı −Z yönünde iner.
+  // Varsayılan yön eski montajla aynı: anten aşağı bakıp −Z'ye ~26° eğik (Gammanu: 45° yanlı).
+  const slopeDeg = (targetArea === 'alan4') ? 5.0 : THREE.MathUtils.radToDeg(Math.asin(6.0 / 45.0));
+  const hanger = createAntennaHanger(isAlan3 ? 'gammanu' : 'matsing', { labels: false });
+  hanger.carrierGroup.remove(hanger.carrier);   // taşıyıcı makasın kendisi; referans boru eklenmez
+  const hs = Object.assign({ az: 90 - azimuthAngleDeg, tilt: 26, drop: defaultDropH }, hangerSettings || {});
+  hs.drop = THREE.MathUtils.clamp(hs.drop, hanger.C.DROP_RANGE.min / 1000, hanger.C.DROP_RANGE.max / 1000);
+  hanger.setState({ az: hs.az, tilt: hs.tilt, drop: hs.drop, slope: -slopeDeg });
+  hanger.root.name = 'antennaHangerRoot';
+  assemblyGroup.add(hanger.root);
+  antennaHangerApis.set(assemblyGroup, hanger);
+  assemblyGroup.userData.hanger = { az: hs.az, tilt: hs.tilt, drop: hs.drop, slope: -slopeDeg };
+  assemblyGroup.userData.weight = Math.round(hanger.totalMass() * 10) / 10;
+  assemblyGroup.userData.depth = isAlan3 ? 0.70 : 1.30;
 
   return assemblyGroup;
+}
+
+// Tıklanan anten askı aparatının ayar API'si (userData kopyalanabilir kalsın diye WeakMap'te)
+const antennaHangerApis = new WeakMap();
+function isAntennaHangerAssembly(obj) {
+  return !!(obj && obj.userData && (obj.userData.blockType === 'matsing-mid-offset-assembly' || obj.userData.blockType === 'spot-beam-truss-offset-assembly') && antennaHangerApis.has(obj));
+}
+
+// Sol üstte askı aparatı ayar penceresi (aparata tıklanınca açılır; ayarlar yalnızca o aparata uygulanır)
+const hangerPopup = document.createElement('div');
+hangerPopup.id = 'antennaHangerPopup';
+hangerPopup.style.cssText = 'display:none; position:absolute; top:16px; left:16px; width:280px; background:rgba(15,23,42,0.94); color:#e2e8f0; border:1px solid #334155; border-radius:10px; padding:12px 14px; z-index:10000; font-size:12px; box-shadow:0 6px 18px rgba(0,0,0,0.35); font-family:inherit;';
+(document.getElementById('main-viewport-container') || document.body).appendChild(hangerPopup);
+let hangerPopupTarget = null;
+
+function hangerRow(key, label, min, max, step, val, unit) {
+  return `<div style="margin-bottom:9px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:3px;"><span>${label}</span><b id="hp-v-${key}" style="color:#fbbf24; font-variant-numeric:tabular-nums;">${val}${unit}</b></div>
+    <input type="range" id="hp-${key}" min="${min}" max="${max}" step="${step}" value="${val}" style="width:100%;">
+  </div>`;
+}
+
+function openHangerPopup(obj) {
+  const api = antennaHangerApis.get(obj);
+  if (!api) { closeHangerPopup(); return; }
+  hangerPopupTarget = obj;
+  const h = obj.userData.hanger;
+  const C = api.C;
+  hangerPopup.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <b style="font-size:13px; color:#f8fafc;">${api.isG ? 'Gammanu' : 'Matsing-1'} askı aparatı</b>
+      <button id="hp-close" title="Kapat" style="background:none; border:none; color:#94a3b8; font-size:16px; cursor:pointer; line-height:1;">✕</button>
+    </div>
+    <div style="color:#94a3b8; margin-bottom:10px; line-height:1.35;">#${obj.userData.id} · ${obj.userData.name}</div>
+    ${hangerRow('az', 'Eksen 1 · Azimut', -180, 180, 1, Math.round(h.az), '°')}
+    ${hangerRow('tilt', 'Eksen 2 · Tilt (0° = zemine bakış)', -C.TILT_BACK, C.TILT_FRONT, 0.5, h.tilt, '°')}
+    ${hangerRow('drop', 'İniş (taşıyıcı ekseni → tilt pimi)', C.DROP_RANGE.min, C.DROP_RANGE.max, 10, Math.round(h.drop * 1000), ' mm')}
+    <div style="color:#94a3b8; line-height:1.35;">Taşıyıcı eğimi alandan: <b style="color:#e2e8f0;">${Math.abs(h.slope).toFixed(1)}°</b> (eğim mafsalı terazi başlığını yatay tutar)</div>
+    <div id="hp-info" style="color:#94a3b8; margin-top:6px; line-height:1.35;"></div>
+    <div style="display:flex; gap:6px; margin-top:8px;">
+      <button id="hp-reset" style="flex:1; padding:5px 0; background:#1e293b; color:#e2e8f0; border:1px solid #475569; border-radius:6px; cursor:pointer;">Varsayılan</button>
+      <a href="./aparatlar.html#${api.isG ? 'gammanu' : 'matsing'}" target="_blank" style="flex:1; text-align:center; padding:5px 0; background:#1e293b; color:#e2e8f0; border:1px solid #475569; border-radius:6px; text-decoration:none;">Detay sayfası</a>
+    </div>`;
+  hangerPopup.style.display = 'block';
+  const apply = () => {
+    const az = +document.getElementById('hp-az').value;
+    const tilt = +document.getElementById('hp-tilt').value;
+    const drop = +document.getElementById('hp-drop').value / 1000;
+    document.getElementById('hp-v-az').textContent = az + '°';
+    document.getElementById('hp-v-tilt').textContent = tilt + '°';
+    document.getElementById('hp-v-drop').textContent = Math.round(drop * 1000) + ' mm';
+    api.setState({ az, tilt, drop });
+    Object.assign(obj.userData.hanger, { az, tilt, drop });
+    obj.userData.weight = Math.round(api.totalMass() * 10) / 10;
+    const c = api.computeChecks(drop);
+    document.getElementById('hp-info').innerHTML = `Anten → taşıyıcı/flanş: <b style="color:${c.carrierClear >= 0.05 ? '#4ade80' : '#f87171'}">${Math.round(c.carrierClear * 1000)} mm</b> · toplam ≈ ${obj.userData.weight} kg`;
+    obj.updateMatrixWorld(true);
+  };
+  ['az', 'tilt', 'drop'].forEach(k => document.getElementById('hp-' + k).addEventListener('input', apply));
+  document.getElementById('hp-close').addEventListener('click', closeHangerPopup);
+  document.getElementById('hp-reset').addEventListener('click', () => {
+    const isAlan3 = obj.userData.blockType === 'spot-beam-truss-offset-assembly';
+    document.getElementById('hp-az').value = 90 - (isAlan3 ? 45 : 0);
+    document.getElementById('hp-tilt').value = 26;
+    document.getElementById('hp-drop').value = Math.round((obj.userData.defaultDrop || 2.0) * 1000);
+    apply();
+  });
+  apply();
+}
+function closeHangerPopup() {
+  hangerPopup.style.display = 'none';
+  hangerPopupTarget = null;
 }
 
 function spawnMatsingTrussMidOffsetAssembly() {
@@ -14690,15 +14571,15 @@ function spawnMatsingTrussMidOffsetAssembly() {
     // Alan 3: Spot Beam 30/30 (DOY15X3030MD4TRE) çatı makası asılı montajı, 1 metre arayla 2 adet anten
     // Düğüm noktalarından kaçarak s = 33.25m ve s = 34.25m akslarına yerleştirilir
     const existingAnt1 = state.alan3Platforms.find(p => p.userData && (p.userData.blockType === 'spot-beam-truss-offset-assembly' || p.userData.blockType === 'matsing-mid-offset-assembly') && Math.abs(p.position.z - 31.603) < 0.5);
-    const existingAnt2 = state.alan3Platforms.find(p => p.userData && (p.userData.blockType === 'spot-beam-truss-offset-assembly' || p.userData.blockType === 'matsing-mid-offset-assembly') && Math.abs(p.position.z - 32.594) < 0.5);
+    const existingAnt2 = state.alan3Platforms.find(p => p.userData && (p.userData.blockType === 'spot-beam-truss-offset-assembly' || p.userData.blockType === 'matsing-mid-offset-assembly') && Math.abs(p.position.z - 33.15) < 0.5);
 
     let targetZ = 31.603;
     let targetY = 8.533;
     let suffix = ' (Alan 3 - Anten 1)';
 
     if (existingAnt1 && !existingAnt2) {
-      targetZ = 32.594;
-      targetY = 8.667;
+      targetZ = 33.15;   // 2026-11-06: 32.594'te kedi yolu 45° kol bileziğiyle çakışıyordu
+      targetY = 8.742;
       suffix = ' (Alan 3 - Anten 2)';
     }
 
@@ -16536,6 +16417,7 @@ function selectObject(obj) {
   }
 
   state.selectedObject = obj;
+  if (isAntennaHangerAssembly(obj)) openHangerPopup(obj); else closeHangerPopup();
   const propSection = document.getElementById('section-properties');
 
   if (obj) {
@@ -17861,7 +17743,8 @@ function serializePlatform(p) {
     lockedX: isLockedX,
     lockedY: isLockedY,
     lockedZ: isLockedZ,
-    allowPassThrough: p.userData.allowPassThrough !== false
+    allowPassThrough: p.userData.allowPassThrough !== false,
+    hanger: p.userData.hanger ? { az: p.userData.hanger.az, tilt: p.userData.hanger.tilt, drop: p.userData.hanger.drop } : undefined
   };
 }
 
@@ -17945,7 +17828,7 @@ function deserializeItemToArea(item, targetArea) {
     } else if (blockType === 'spot-beam-truss-offset-assembly' || itemName.includes('Spot Beam')) {
       const isAntenna2 = (itemName && itemName.includes('Anten 2')) || (item.position && item.position.z > 32.0);
       const suffix = isAntenna2 ? ' (Alan 3 - Anten 2)' : ' (Alan 3 - Anten 1)';
-      group = buildMatsingTrussMidOffsetAssembly('alan3', 2.0, suffix, 45);
+      group = buildMatsingTrussMidOffsetAssembly('alan3', 2.0, suffix, 45, item.hanger || null);
     } else if (blockType === 'alan2-ozel-karma-blok' || itemName.includes('Özel Alan 2 Kompleksi') || itemName.includes('Beton Zemin Flanşlı')) {
       group = buildAlan2OzelKarmaBlok(targetArea);
     } else if (blockType === 'alan2-kediyolu-42u-kompleks' || itemName.includes('Kedi Yolu Tabla + 42U') || itemName.includes('Kedi Yolu Tabla + POI Kompleks') || itemName.includes('30U POI Kompleks')) {
@@ -17982,7 +17865,7 @@ function deserializeItemToArea(item, targetArea) {
     const isAntenna2 = (itemName && itemName.includes('2')) || (item.position && Math.abs(item.position.z - 35.234) < 0.6);
     const dropDist = (targetArea === 'alan4') ? 2.0 : (isAntenna2 ? 1.637 : 2.0);
     const suffix = (targetArea === 'alan4') ? '' : (isAntenna2 ? ' (Ara Bölge - 2)' : ' (Ara Bölge - 1)');
-    group = buildMatsingTrussMidOffsetAssembly(targetArea, dropDist, suffix);
+    group = buildMatsingTrussMidOffsetAssembly(targetArea, dropDist, suffix, 0, item.hanger || null);
   } else if (blockType === 'matsing-offset-assembly' || itemName.includes('Matsing')) {
     group = buildMatsingDiagonalOffsetAssembly(targetArea);
   } else if (blockType === 'rack-blok-korkuluklu' || (itemName.includes('Rack Blok') && itemName.includes('Korkuluklu'))) {
@@ -18855,8 +18738,8 @@ const PRESET_DRAFTS = {
         "isInclinedPipe": false,
         "position": {
           "x": -3,
-          "y": 8.667,
-          "z": 32.594
+          "y": 8.742,
+          "z": 33.15
         },
         "rotation": {
           "x": 0,
