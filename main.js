@@ -14289,6 +14289,7 @@ function openHangerPopup(obj) {
     document.getElementById('hp-v-drop').textContent = Math.round(drop * 1000) + ' mm';
     api.setState({ az, tilt, drop });
     Object.assign(obj.userData.hanger, { az, tilt, drop });
+    syncHangerCables(obj);
     obj.userData.weight = Math.round(api.totalMass() * 10) / 10;
     const c = api.computeChecks(drop);
     document.getElementById('hp-info').innerHTML = `Anten → taşıyıcı/flanş: <b style="color:${c.carrierClear >= 0.05 ? '#4ade80' : '#f87171'}">${Math.round(c.carrierClear * 1000)} mm</b> · toplam ≈ ${obj.userData.weight} kg`;
@@ -14305,6 +14306,129 @@ function openHangerPopup(obj) {
   });
   apply();
 }
+// ---------------------------------------------------------------------------
+// Aparat ayarı değişince antene giren kabloların uçları antenle birlikte hareket eder (2026-11-06).
+// Kablolar yapı fonksiyonlarında varsayılan aparat ayarına göre sabit çizilir. Burada:
+// - Her TubeGeometry kablonun ilk (deforme edilmemiş) köşe noktaları bir kez saklanır.
+// - Bir aparatın varsayılan ayarındaki anten kutusuna ucu giren kablolar ve uç bağlantı parçaları
+//   (konnektör, pabuç, renk bandı) o aparata bağlanır.
+// - T = (şimdiki anten matrisi) · (varsayılan anten matrisi)⁻¹. Kablonun antene yakın ucu T ile tam,
+//   uzak kısmı hiç taşınmaz; aradaki en fazla HANGER_CABLE_BLEND_L metre yumuşak geçişle esner.
+//   Kablo birkaç parçaysa parçanın uzak ucu hep sabit kalır (komşu parçayla birleşim bozulmaz).
+const HANGER_CABLE_BLEND_L = 5.0;
+const _cableOrig = new Map();      // mesh → { pos: Float32Array }
+const _cableFitOrig = new Map();   // uç parçası mesh → orijinal dünya matrisi
+const _hangerCableBinds = new WeakMap(); // aparat grubu → bağlı kablolar (userData JSON kopyalanabilir kalsın)
+
+function _cableOriginal(mesh) {
+  if (!_cableOrig.has(mesh)) _cableOrig.set(mesh, { pos: mesh.geometry.attributes.position.array.slice() });
+  return _cableOrig.get(mesh);
+}
+
+function _hangerAntennaMatrixAt(api, st) {
+  const cur = Object.assign({}, api.state);
+  api.setState(st);
+  api.root.updateMatrixWorld(true);
+  const m = api.antenna.matrixWorld.clone();
+  const box = new THREE.Box3().setFromObject(api.antenna);
+  api.setState(cur);
+  api.root.updateMatrixWorld(true);
+  return { m, box };
+}
+
+function _bindHangerCables(obj, api) {
+  obj.updateMatrixWorld(true);
+  const d = obj.userData.hangerDefaults;
+  const { m: m0, box } = _hangerAntennaMatrixAt(api, { az: d.az, tilt: d.tilt, drop: d.drop });
+  const zone = box.clone().expandByScalar(0.35);
+  const own = new Set(); obj.traverse(o => own.add(o));
+  const cables = [];
+  const ends = [];
+  scene.updateMatrixWorld(true);
+  scene.traverse(o => {
+    if (!o.isMesh || own.has(o) || !o.geometry || o.geometry.type !== 'TubeGeometry') return;
+    const path = o.geometry.parameters && o.geometry.parameters.path;
+    if (!path) return;
+    const p0 = path.getPointAt(0).applyMatrix4(o.matrixWorld);
+    const p1 = path.getPointAt(1).applyMatrix4(o.matrixWorld);
+    const at1 = zone.containsPoint(p1), at0 = zone.containsPoint(p0);
+    if (!at1 && !at0) return;
+    _cableOriginal(o);
+    const p = o.geometry.parameters;
+    const len = path.getLength();
+    cables.push({ mesh: o, antAtEnd: at1, len, tubular: p.tubularSegments, radial: p.radialSegments });
+    // Kablonun antene giren son 60 cm'sinden örnek noktalar (kablo anten gövdesinin içine kadar uzanır;
+    // konnektör/pabuç port ağzında, uçtan ~20 cm geride)
+    const n = Math.ceil(Math.min(0.6, len) / 0.03);
+    for (let k = 0; k <= n; k++) {
+      const s = Math.min(0.6, len) * k / n / len;
+      ends.push(path.getPointAt(at1 ? 1 - s : s).applyMatrix4(o.matrixWorld));
+    }
+  });
+  // Uç bağlantı parçaları: kablonun son 60 cm'sine 6 cm'den yakın küçük parçalar (konnektör, pabuç, bant)
+  const fittings = [];
+  if (ends.length) {
+    const wp = new THREE.Vector3();
+    scene.traverse(o => {
+      if (!o.isMesh || own.has(o) || !o.geometry || o.geometry.type === 'TubeGeometry') return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      if (o.geometry.boundingSphere.radius > 0.06) return;
+      // Daha önce taşınmış parça (proje yeniden yüklendi) orijinal konumuyla aranır
+      if (_cableFitOrig.has(o)) wp.setFromMatrixPosition(_cableFitOrig.get(o)); else o.getWorldPosition(wp);
+      if (!zone.containsPoint(wp) && !ends.some(e => e.distanceToSquared(wp) < 0.06 * 0.06)) return;
+      if (!ends.some(e => e.distanceToSquared(wp) < 0.06 * 0.06)) return;
+      if (!_cableFitOrig.has(o)) _cableFitOrig.set(o, o.matrixWorld.clone());
+      fittings.push(o);
+    });
+  }
+  _hangerCableBinds.set(obj, { m0Inv: m0.clone().invert(), cables, fittings });
+}
+
+function syncHangerCables(obj) {
+  const api = antennaHangerApis.get(obj);
+  if (!api || !obj.parent) return;
+  if (!_hangerCableBinds.has(obj)) _bindHangerCables(obj, api);
+  const bind = _hangerCableBinds.get(obj);
+  obj.updateMatrixWorld(true);
+  api.root.updateMatrixWorld(true);
+  const T = api.antenna.matrixWorld.clone().multiply(bind.m0Inv);
+  const v = new THREE.Vector3(), t = new THREE.Vector3();
+  bind.cables.forEach(c => {
+    const mesh = c.mesh;
+    mesh.updateMatrixWorld(true);
+    const toWorld = mesh.matrixWorld, toLocal = mesh.matrixWorld.clone().invert();
+    const origPos = _cableOrig.get(mesh).pos;
+    const attr = mesh.geometry.attributes.position;
+    const ring = c.radial + 1;
+    const blendL = Math.min(HANGER_CABLE_BLEND_L, c.len * 0.98);
+    for (let i = 0; i < attr.count; i++) {
+      const u = Math.floor(i / ring) / c.tubular;
+      const dist = (c.antAtEnd ? 1 - u : u) * c.len;          // antene giren uçtan uzaklık (m)
+      const x = THREE.MathUtils.clamp(1 - dist / blendL, 0, 1);
+      const w = x * x * (3 - 2 * x);                            // smoothstep
+      v.set(origPos[3 * i], origPos[3 * i + 1], origPos[3 * i + 2]).applyMatrix4(toWorld);
+      if (w > 0) { t.copy(v).applyMatrix4(T); v.lerp(t, w); }
+      v.applyMatrix4(toLocal);
+      attr.setXYZ(i, v.x, v.y, v.z);
+    }
+    attr.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+    mesh.geometry.computeBoundingSphere();
+    mesh.geometry.computeBoundingBox();
+  });
+  const mw = new THREE.Matrix4();
+  bind.fittings.forEach(f => {
+    mw.copy(T).multiply(_cableFitOrig.get(f));
+    if (f.parent) { f.parent.updateMatrixWorld(true); mw.premultiply(f.parent.matrixWorld.clone().invert()); }
+    mw.decompose(f.position, f.quaternion, f.scale);
+  });
+}
+
+function syncAllHangerCables() {
+  [...state.alan1Platforms, ...state.alan2Platforms, ...state.alan3Platforms, ...state.alan4Platforms]
+    .forEach(p => { if (antennaHangerApis.has(p)) syncHangerCables(p); });
+}
+
 function closeHangerPopup() {
   hangerPopup.style.display = 'none';
   hangerPopupTarget = null;
@@ -19384,6 +19508,7 @@ function loadProjectFromData(importData) {
   }
 
   selectObject(null);
+  syncAllHangerCables();
   updateBOM();
 }
 

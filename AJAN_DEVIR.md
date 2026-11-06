@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Ana model: askı aparatındaki antenlerin rengi eski haline`
+- **Son commit:** `[Claude] Anten askı ayarı değişince antene giren feeder kabloları ve uç parçaları da hareket ediyor`
 - **Push:** 2026-11-02'de kullanıcı onayıyla `23a1178`'e (WASD) kadar tüm commit'ler GitHub'a push edildi. 2026-11-06 commit'leri (eğim mafsalı, ana modele aparat, alt kot + skorbord) push edilmedi.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
 - **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±15°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
@@ -85,6 +85,31 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-06 — Claude — Askı ayarı değişince antene giren kablolar da hareket ediyor
+- **Kullanıcı isteği:** "tüm antenlerde yükseklik ya da açı değiştirdiğimde arkasına giren kablolar sabit kalıyor, onları da düzelt hareket etsin."
+- **Değişen dosyalar:**
+  - `main.js` → `closeHangerPopup()` önünde YENİ blok:
+    - Sabit `HANGER_CABLE_BLEND_L = 5.0`.
+    - Kayıtlar: `_cableOrig` (kablo → ilk köşe noktaları), `_cableFitOrig` (uç parçası → ilk dünya matrisi), `_hangerCableBinds` (WeakMap: aparat → bağlı kablolar).
+    - Fonksiyonlar: `_hangerAntennaMatrixAt()`, `_bindHangerCables()`, `syncHangerCables(obj)`, `syncAllHangerCables()`.
+  - **Bağlama:** Aparatın varsayılan ayarında anten kutusu + 35 cm içine ucu giren her TubeGeometry kablo o aparata bağlanıyor.
+    - Uç parçaları da bağlanıyor: konnektör, pabuç, bant (yarıçapı 6 cm'den küçük ve kablonun son 60 cm'sine 6 cm'den yakın).
+    - Kablolar anten gövdesinin 22 cm içine kadar uzandığı için uç noktası değil son 60 cm aranıyor.
+  - **Hareket:** T = şimdiki anten matrisi · varsayılan anten matrisi⁻¹.
+    - Kablonun antene yakın ucu T ile tamamen taşınıyor; antenden 5 m (veya kablo parçasının boyu) uzaktaki kısım sabit; arada smoothstep ile esniyor.
+    - Parçalı kablolarda parçanın uzak ucu hep sabit kalıyor, birleşim bozulmuyor.
+    - Uç parçaları T ile tam taşınıyor.
+  - **Çağrılar:** pencere `apply()`, `loadProjectFromData()` sonu (`syncAllHangerCables`).
+    - Kayıtlı ayarlar varsayılandan farklıysa yüklemede kablolar uyuyor.
+    - Önceki projeden kalan deformasyon her zaman orijinalden yeniden hesaplanıyor.
+- **Doğrulama:**
+  - `npm run build` hatasız.
+  - Bağlanan kablo sayıları: alt kot 28, ALAN 1-3 Ara Bölge 20'şer, ALAN 4 Spot Beam 4'er, skorbord 14'er. ALAN 2 çatı makası Matsing'lerine kablo yok.
+  - İniş +500, tilt +20, azimut +40 değişiminden sonra tüm kablo uçları anten kutusunun içinde.
+  - ALAN 1-3 ve skorbordda görsel kontrol: kablolar ve konnektörler antenle birlikte geliyor.
+- **Commit:** `[Claude] Anten askı ayarı değişince antene giren feeder kabloları ve uç parçaları da hareket ediyor`
+- **Dikkat:** Kablo ucu sadece esnetiliyor; büyük azimut değişiminde son metrelerde kablo kıvrımı gerçekçi bir güzergâh değil (yeniden yönlendirme yok).
 
 ### 2026-11-06 — Claude — Ana model: anten renkleri eski haline
 - **Kullanıcı isteği:** "kaşla göz arasında antenlerin rengini mi değiştirdin sen". Ana modele aparat eklenirken anten gövdesi de modülden gelmişti; Matsing radomu bej (0xb7b09c) olmuştu.
