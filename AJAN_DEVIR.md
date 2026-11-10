@@ -37,9 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-11-06
-- **Son commit:** `[Claude] Devir defteri: push durumu güncellendi (b19abd7)`
+- **Son güncelleyen:** Claude Code, 2026-11-10
+- **Son commit:** `[Claude] Pafta 13: Matsing tek kollu askı aparatı DWG (görünüşler, kesitler, detaylar, parça listesi)`
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
+- **Pafta 13 DWG (2026-11-10):** `node generate_matsing_aski_aparati_dwg.mjs` → `DXF_Ciktilari/DWG/13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI.dwg` + PDF önizlemeler. Geometri `anten_aski_modeli.js`'ten; DWG için AutoCAD 2023 `accoreconsole` gerekli (yoksa yalnızca DXF + .scr). Push edilmedi.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
 - **Anten askı aparatı (2026-11-06):** Matsing ve Gammanu'da eğim yine sahada ayarlı mafsalla (pim + kanal kilidi, ±50°). v2'deki sabit açılı göbek kaldırıldı; Ø220 / Ø180 azimut flanşı ve diğer hafifletmeler duruyor.
 - **Aparatlar sayfası:**
@@ -85,6 +86,42 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-10 — Claude — Pafta 13: Matsing askı aparatı DWG
+- **Kullanıcı isteği:** "bana matsing anten için dwg planı oluştur, kesit vs vs her şey olsun".
+  - Sorulara yanıtlar: yalnızca Ø420 çatı makası montajı; anten hayalet çizgiyle.
+- **Değişen dosyalar:**
+  - YENİ `generate_matsing_aski_aparati_dwg.mjs` (Node ESM, `anten_aski_modeli.js`'i import ediyor):
+    - Aparat modülde kuruluyor: az 0, tilt 26, iniş 1800, eğim 7.66° (ALAN 1-3 Ara Bölge varsayılanı).
+    - Taşıyıcı 1.4 m'ye kısaltılıyor. İniş borusu, anten direği ve manşon kesitte et kalınlığı görünsün diye boru geometrisine (`LatheGeometry`) çevriliyor.
+    - İzdüşüm motoru: kenarlar sınır + kırık (>20°) + görünüşe göre siluet. Gizli çizgi hesabı, 2B ızgaralı örtücü üçgen derinlik testiyle (2.5 mm örnek).
+      - Alanı sıfır üçgenler komşuluğa katılmıyor; yoksa delik kenarları kayboluyor.
+      - Çok kısa çizgi eşiği 0.02 mm: three.js yayları 128 parçalı, yay parçaları 0.4–0.6 mm.
+    - Kesit: düzlem-üçgen kesişimleri çevrime bağlanıyor, 45° tarama çift-tek kuralıyla çiziliyor. Düzlemin önündeki geometri kırpılıyor; hayalet anten kırpılmıyor.
+    - Kendi R12 DXF yazıcısı: Türkçe karakterler `\U+XXXX`, arial.ttf. Pafta ölçeğine göre ayrı çizgi tipleri (GIZLI10/2, EKSEN10/2, HAYALET10/2, KESIT10).
+      - Katmanlar: APARAT, CIVATA_PIM, KECE, TASIYICI_REF, ANTEN_HAYALET, GIZLI, EKSEN, TARAMA, KESIT_HATTI, OLCU, METIN, CERCEVE, ANTET.
+    - AutoCAD `accoreconsole` script'i: katman çizgi kalınlıkları, ölçü stili (pafta 1 DIMSCALE 10, pafta 2 DIMSCALE 2), DIMLINEAR / DIMALIGNED ölçüler (metin gerçek değerle, \U+ kaçışlı), SAVEAS 2018.
+      - Script'te yollar tırnaklı olmalı; boşluk Enter sayılıyor.
+    - Ardından -PLOT ile DWG To PDF önizleme (A0 1:10, A1 1:2, monochrome.ctb).
+  - **Pafta 1 (A0, 1:10):**
+    - Ön, yan ve üst görünüş.
+    - Kesit A-A (kelepçe ortası, z = 0) ve Kesit B-B (aparat ekseni, x = 0); kesit hatları işaretli.
+    - Ölçüler: iniş 1800, pim→direk 320, flanş Ø220, kelepçe 400, direk 1600.
+    - Kılavuz notları, parça listesi (`H.bom()`, 29 satır; aparat 120.2 kg, anten dahil 171.7 kg), 7 maddelik not, antet.
+  - **Pafta 2 (A1, 1:2):** 7 detay.
+    - Detay 1–4: eğim dış kulağı, eğim iç kulağı, sabit flanş (4 yay kanal), döner flanş (8 delik + burç yuvası).
+    - Detay 5–6: çatal levhası, dil levhası.
+    - Detay 7: kelepçe kesiti, 1:5. Tek parça görünüşlerinde gizli kenarlar kesik çizgiyle.
+  - YENİ `DXF_Ciktilari/DWG/`: `.dwg` (AutoCAD 2018), `.dxf`, `_Pafta1.pdf`, `_Pafta2.pdf`.
+- **Doğrulama:**
+  - Üretim yaklaşık 5 s; 41.909 nesne.
+  - AutoCAD DXF'i hatasız açtı; ölçüler eklendi ve DWG kaydedildi. Plot günlüğü ölçekleri 1:10 / 1:2 gösteriyor.
+  - PDF'lerde iki pafta görsel kontrol edildi.
+- **Commit:** `[Claude] Pafta 13: Matsing tek kollu askı aparatı DWG (görünüşler, kesitler, detaylar, parça listesi)`
+- **Dikkat:**
+  - Ölçüler tasarım önerisi, statik hesap yok.
+  - Model değişirse betik yeniden çalıştırılmalı.
+  - ALAN 1-3 alt kot (Ø220, 45°) ve skorbord (Ø1500) varyantları çizilmedi; kullanıcı yalnızca Ø420'yi istedi.
 
 ### 2026-11-06 — Claude — Askı ayarı değişince antene giren kablolar da hareket ediyor
 - **Kullanıcı isteği:** "tüm antenlerde yükseklik ya da açı değiştirdiğimde arkasına giren kablolar sabit kalıyor, onları da düzelt hareket etsin."
