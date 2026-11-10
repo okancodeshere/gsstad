@@ -87,6 +87,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ---
 
+### 2026-11-11 — Claude — "Tüm Stadyum / Skorbord Cephesi" denemesi tamamen geri alındı
+- **Kullanıcı isteği:** "olmadı, bu çalışma alanını tüm verilerden sileceğiz", ardından "uğraşma pull et".
+- **Yapılan:** `git reset --hard de148e5`. 2026-11-10/11'de yapılan dört commit (`eeaf4b3`, `04e72f2`, `5aeb14d`, `ecbb289`) ve günlük kayıtları silindi. `stadyum_gorunumu.js`, `generate_stadyum_verisi.cjs`, `public/stadyum/` artık yok; `main.js`, `index.html`, `style.css`, `package.json` Pafta 13 commit'indeki halinde.
+- **Neden GitHub'a (`b19abd7`) değil de `de148e5`'e:** GitHub'da olmayan iki yerel commit (devir notu ve Pafta 13 DWG) stadyum işiyle ilgisiz; silinmesin diye korundu. Kod açısından `de148e5` ile GitHub aynı.
+- **Kalanlar (git dışı, dokunulmadı):** `veriler/` içindeki üç stadyum DXF'i; `_backups/main_before_stadyum_gorunumu_20261110.js` ve `index_before_...html`.
+- **Sonraki ajan için not:** Alanları tek sahnede birleştirme iki kez denendi (4 cephe, sonra tek cephe) ve kullanıcı ikisini de karışık buldu. Alan modelleri birbirinden bağımsız çizildiği için (makas eğimi, kedi yolu yerleri, makas aralıkları gerçek planla uyuşmuyor) kopyaları yan yana dizmek tutarlı bir bütün vermiyor. Kullanıcı yeniden istemeden bu işe girme.
+- **Commit:** `[Claude] Devir defteri: stadyum birleştirme denemesi geri alındı`
+
 ### 2026-11-10 — Claude — Pafta 13: Matsing askı aparatı DWG
 - **Kullanıcı isteği:** "bana matsing anten için dwg planı oluştur, kesit vs vs her şey olsun".
   - Sorulara yanıtlar: yalnızca Ø420 çatı makası montajı; anten hayalet çizgiyle.
