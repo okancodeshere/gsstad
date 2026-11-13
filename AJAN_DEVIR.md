@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 15: UKS-160 DK 300.20 duvar konsolu DXF`
+- **Son commit:** `[Claude] Blok hat boyunca dizme betiği (tava11 tava1 bloğu polyline boyunca)`
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -88,6 +88,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — tava11: blok hat boyunca dizildi (ARRAYPATH benzeri betik)
+- **Kullanıcı isteği:** `DXF_Ciktilari/Milimetre/tava11.dxf` içindeki `tava1` bloğu, aynı dosyadaki polyline hattını takip etsin ("benim yerime yap").
+- **Dosya içeriği:** `tava1` = Pafta 14 yan görünüşünün 1:10 hali (250 × 4.1 birim, taban noktası 0,0, geometri −1096,1466'da). Hat 14 köşeli düz parçalı LWPOLYLINE, 10 126.8 birim.
+- **Değişen dosyalar:**
+  - YENİ `scripts/blok_hat_boyunca_diz.cjs` (`git add -f`; `*.cjs` gitignore'da). Kullanım: `node scripts/blok_hat_boyunca_diz.cjs giris.dxf blok cikis.dxf [--ters] [--anchorY=y]`.
+    - Kiriş yöntemi: her kopyanın iki ucu hatta, parçalar köşelerde de uç uca.
+    - Blok X ekseni hat yönünde; tava gövdesinin ortası hat üzerinde.
+    - Son kısa parça X ölçeği küçültülmüş tek INSERT.
+    - Yeni INSERT'ler `TAVA_DIZI` katmanında; handle ve `$HANDSEED` güncelleniyor.
+  - Çıktılar (git dışı, kullanıcı dosyası): `tava11_DIZILI.dxf`, `tava11_DIZILI.dwg` (AutoCAD 2018), `_genel.pdf`, `_detay.pdf`. Özgün `tava11.dxf` değişmedi.
+- **Sonuç:** `--ters` ile hattın (−1387.8, 1438.2) ucundan başlandı: 40 tam parça + 1 kesik parça (123 birim, ölçek 0.492) öteki uçta.
+- **Doğrulama:** accoreconsole DXF'i hatasız açtı ve DWG kaydetti. PDF önizlemede parçalar hatta oturuyor. Not: accoreconsole Git Bash'ten `/i` argümanı bozulduğu için PowerShell'den çalıştırılmalı.
+- **Commit:** `[Claude] Blok hat boyunca dizme betiği (tava11 tava1 bloğu polyline boyunca)`
 
 ### 2026-11-13 — Claude — Pafta 15: UKS-160 DK 300.20 duvar konsolu DXF
 - **Kullanıcı isteği:** Konsol katalog tablosunu gönderdi, "L 300 uzunluk olan".
