@@ -14,6 +14,7 @@
  * Çıktılar (1 birim = 1 mm, antetsiz):
  *   DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_EKSEN1500_H1800_mm.dxf        (tek panel: ön, üst, kesit A-A)
  *   DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800_mm.dxf (8 ve 2 panel dizileri: ön + üst)
+ *   DXF_Ciktilari/Milimetre/19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf          (fens 440 + LED 800 + fens 440, ön görünüş)
  */
 const fs = require('fs');
 const path = require('path');
@@ -59,12 +60,36 @@ function generate(MODE) {
   dxf.addLayer('TARAMA', 8, 'CONTINUOUS');
   dxf.addLayer('OLCU', 2, 'CONTINUOUS');
   dxf.addLayer('METIN', 7, 'CONTINUOUS');
+  if (MODE === 'led') { dxf.addLayer('LED', 4, 'CONTINUOUS'); dxf.addLayer('CIT_LED_ARKASI', 8, 'DASHED'); }
 
-  const L = (x1, y1, x2, y2, layer) => dxf.addLine(x1, y1, x2, y2, layer);
+  // LED modu: LED ekranın arkasında kalan çit çizgileri ayrı (kesik) katmana gider
+  let hide = null; // { x0, x1, yTop }
+  const HID = 'CIT_LED_ARKASI';
+
+  const L = (x1, y1, x2, y2, layer) => {
+    if (!hide || layer === 'ZEMIN' || layer === 'OLCU') return dxf.addLine(x1, y1, x2, y2, layer);
+    const { x0, x1: xr, yTop } = hide;
+    if (y1 === y2 && y1 < yTop) {
+      const a = Math.min(x1, x2), b = Math.max(x1, x2);
+      const parts = [[a, Math.min(b, x0), layer], [Math.max(a, x0), Math.min(b, xr), HID], [Math.max(a, xr), b, layer]];
+      parts.forEach(([p, q, ly]) => { if (q - p > 1e-6) dxf.addLine(p, y1, q, y1, ly); });
+      return;
+    }
+    if (x1 === x2 && x1 > x0 && x1 < xr) {
+      const a = Math.min(y1, y2), b = Math.max(y1, y2);
+      if (Math.min(b, yTop) - a > 1e-6) dxf.addLine(x1, a, x1, Math.min(b, yTop), HID);
+      if (b - Math.max(a, yTop) > 1e-6) dxf.addLine(x1, Math.max(a, yTop), x1, b, layer);
+      return;
+    }
+    dxf.addLine(x1, y1, x2, y2, layer);
+  };
   const R = (x, y, w, h, layer) => dxf.addRect(x, y, w, h, layer);
   const C = (x, y, r, layer) => dxf.addCircle(x, y, r, layer);
   const T = (x, y, h, s, align = 'left', rot = 0) => dxf.addText(x, y, h, s, 'METIN', rot, align, 'baseline');
-  const PL = (pts, layer, closed = true) => { dxf.setLayer(layer); d.drawPolyline(pts, closed); };
+  const PL = (pts, layer, closed = true) => {
+    const behind = hide && pts.every(([x, y]) => x > hide.x0 && x < hide.x1 && y < hide.yTop);
+    dxf.setLayer(behind ? HID : layer); d.drawPolyline(pts, closed);
+  };
   const TH = 18, TK = 6;
   const dimH = (x1, x2, yRef, yDim, label) => {
     dxf.setLayer('OLCU'); const s = yDim > yRef ? 1 : -1;
@@ -98,11 +123,14 @@ function generate(MODE) {
   const axis = P.axis;
 
   // Ön görünüş: k panel yan yana, komşu paneller ortak kolon kullanır. ox,oy = sol kolon dış yüzü / zemin
-  const frontView = (ox, oy, k, detail) => {
+  const ground = (xa, xb, oy) => {
+    L(xa, oy, xb, oy, 'ZEMIN');
+    for (let x = xa; x < xb; x += 40) L(x, oy, x - 20, oy - 20, 'ZEMIN');
+  };
+  const frontView = (ox, oy, k, detail, withGround = true) => {
     const Wk = k * axis + post;
     const postXs = Array.from({ length: k + 1 }, (_, i) => ox + i * axis);
-    L(ox - 250, oy, ox + Wk + 250, oy, 'ZEMIN');
-    for (let x = ox - 250; x < ox + Wk + 250; x += 40) L(x, oy, x - 20, oy - 20, 'ZEMIN');
+    if (withGround) ground(ox - 250, ox + Wk + 250, oy);
     postXs.forEach((px) => {
       const cx = px + post / 2;
       R(cx - plate / 2, oy, plate, plateT, 'TABAN');
@@ -171,6 +199,37 @@ function generate(MODE) {
     return Wk;
   };
 
+  if (MODE === 'led') {
+    // Kullanıcı çizimi (cm): METAL FENS 440 | LED EKRAN 800 | METAL FENS 440. Çit LED'in arkasından da devam eder.
+    // Panel ölçüsü değişmez (eksen ${axis}); iki dış uçtan 5'er panel, uymayan aralık ortada (LED arkasında) kalır.
+    const fenceL = 4400, ledW = 8000, ledH = 4500, total = fenceL * 2 + ledW;
+    const kSide = Math.floor((total / 2 - post) / axis);           // 5
+    const xL = 0, xR = total - (kSide * axis + post);             // sağ dizinin sol kolon dış yüzü
+    const gapA = xL + kSide * axis + post, gapB = xR;             // ortadaki açıklık (kolon iç yüzleri)
+    const led0 = fenceL, led1 = fenceL + ledW;
+    ground(-250, total + 250, 0);
+    hide = { x0: led0, x1: led1, yTop: ledH };
+    frontView(xL, 0, kSide, false, false);
+    frontView(xR, 0, kSide, false, false);
+    hide = null;
+    dxf.addRect(led0, 0, ledW, ledH, 'LED');
+    dxf.addText((led0 + led1) / 2, ledH * 0.75 + 60, 120, 'LED EKRAN', 'LED', 0, 'center', 'baseline');
+    dxf.addText((led0 + led1) / 2, ledH * 0.75 - 120, 50, `${ledW} x ${ledH} (on yuz)`, 'LED', 0, 'center', 'baseline');
+    // Ortadaki uyumsuz aralık
+    dimH(gapA, gapB, H + cap, H + cap + 160, `${gapB - gapA} net acik (eksen ${gapB - gapA + post})`);
+    T((gapA + gapB) / 2, H + cap + 260, 26, 'UYUMSUZ ARALIK - LED ARKASINDA', 'center');
+    // Genel ölçüler
+    dimH(0, led0, 0, -320, `${fenceL} METAL FENS`);
+    dimH(led0, led1, 0, -320, `${ledW} LED EKRAN`);
+    dimH(led1, total, 0, -320, `${fenceL} METAL FENS`);
+    dimH(0, total, 0, -440, `${total} (toplam)`);
+    dimV(0, ledH, led1, led1 + 140, `${ledH}`);
+    T(0, ledH + 400, 40, 'PAFTA 19 : LED EKRAN ve PANJUR LAMELLI CIT DIZILIMI - ON GORUNUS  -  1 birim = 1 mm');
+    T(0, ledH + 350, 22, `Cit LED arkasindan da devam eder. Iki uctan ${kSide}'er panel (eksen ${axis}, kolon ${post}, yukseklik ${H}); panel olcusu degistirilmedi, uymayan aralik ortada LED arkasinda birakildi.`);
+    T(0, ledH + 310, 22, 'LED arkasinda kalan cit cizgileri CIT_LED_ARKASI katmaninda (kesik). LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
+    return dxf.toDxfString();
+  }
+
   if (MODE === 'dizi') {
     // 8'li dizi üstte, 2'li dizi altta; her biri ön + üst görünüş
     [[8, 0], [2, -4200]].forEach(([k, oy]) => {
@@ -234,7 +293,7 @@ function generate(MODE) {
 }
 
 if (!fs.existsSync(DIR_MM)) fs.mkdirSync(DIR_MM, { recursive: true });
-for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800']]) {
+for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800'], ['led', '19_CIT_LED_EKRAN_DIZILIMI_440_800_440']]) {
   const out = path.join(DIR_MM, `${base}_mm.dxf`);
   const str = generate(mode);
   if (/NaN/.test(str)) { console.error('HATA: DXF icinde NaN var', mode); process.exit(1); }
