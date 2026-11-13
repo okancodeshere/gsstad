@@ -71,8 +71,9 @@ function generate(MODE) {
     const { x0, x1: xr, yTop } = hide;
     if (y1 === y2 && y1 < yTop) {
       const a = Math.min(x1, x2), b = Math.max(x1, x2);
-      const parts = [[a, Math.min(b, x0), layer], [Math.max(a, x0), Math.min(b, xr), HID], [Math.max(a, xr), b, layer]];
-      parts.forEach(([p, q, ly]) => { if (q - p > 1e-6) dxf.addLine(p, y1, q, y1, ly); });
+      const hidLayer = (layer === 'LAMEL' || layer === 'GIZLI') ? null : HID;   // LED önde: lamel görünmez
+      const parts = [[a, Math.min(b, x0), layer], [Math.max(a, x0), Math.min(b, xr), hidLayer], [Math.max(a, xr), b, layer]];
+      parts.forEach(([p, q, ly]) => { if (ly && q - p > 1e-6) dxf.addLine(p, y1, q, y1, ly); });
       return;
     }
     if (x1 === x2 && x1 > x0 && x1 < xr) {
@@ -127,6 +128,18 @@ function generate(MODE) {
     L(xa, oy, xb, oy, 'ZEMIN');
     for (let x = xa; x < xb; x += 40) L(x, oy, x - 20, oy - 20, 'ZEMIN');
   };
+  // İki kolon iç yüzü (xa, xb) arasındaki lameller, ön görünüş
+  const bay = (xa, xb, oy) => {
+    lamYs.forEach((y0, i) => {
+      const y = oy + y0;
+      L(xa, y, xb, y, 'LAMEL');
+      L(xa, y + lamLip, xb, y + lamLip, 'LAMEL');
+      const yk = y + lamLip + lamRise, top = i < n - 1 ? oy + lamYs[i + 1] : y + P.lamH;
+      if (yk < top) L(xa, yk, xb, yk, 'LAMEL');
+      if (i === n - 1) L(xa, y + P.lamH, xb, y + P.lamH, 'LAMEL');
+      L(xa - lamInsert, y, xa, y, 'GIZLI'); L(xb, y, xb + lamInsert, y, 'GIZLI');
+    });
+  };
   const frontView = (ox, oy, k, detail, withGround = true) => {
     const Wk = k * axis + post;
     const postXs = Array.from({ length: k + 1 }, (_, i) => ox + i * axis);
@@ -140,18 +153,7 @@ function generate(MODE) {
       PL([[px - 2, oy + H], [px + post + 2, oy + H], [px + post + 2, oy + H + cap * 0.5], [px + post - 10, oy + H + cap], [px + 10, oy + H + cap], [px - 2, oy + H + cap * 0.5]], 'KOLON');
       L(cx, oy - 15, cx, oy + H + cap + 15, 'EKSEN');
     });
-    for (let b = 0; b < k; b++) {
-      const xa = postXs[b] + post, xb = postXs[b + 1];
-      lamYs.forEach((y0, i) => {
-        const y = oy + y0;
-        L(xa, y, xb, y, 'LAMEL');
-        L(xa, y + lamLip, xb, y + lamLip, 'LAMEL');
-        const yk = y + lamLip + lamRise, top = i < n - 1 ? oy + lamYs[i + 1] : y + P.lamH;
-        if (yk < top) L(xa, yk, xb, yk, 'LAMEL');
-        if (i === n - 1) L(xa, y + P.lamH, xb, y + P.lamH, 'LAMEL');
-        L(xa - lamInsert, y, xa, y, 'GIZLI'); L(xb, y, xb + lamInsert, y, 'GIZLI');
-      });
-    }
+    for (let b = 0; b < k; b++) bay(postXs[b] + post, postXs[b + 1], oy);
     for (let b = 0; b < k; b++) dimH(postXs[b] + post / 2, postXs[b + 1] + post / 2, oy, oy - 110, `${axis}`);
     dimH(ox, ox + Wk, oy, oy - 170, `${Wk} (toplam)`);
     dimV(oy, oy + H, ox, ox - 70, `${H}`);
@@ -211,13 +213,19 @@ function generate(MODE) {
     hide = { x0: led0, x1: led1, yTop: ledH };
     frontView(xL, 0, kSide, false, false);
     frontView(xR, 0, kSide, false, false);
+    bay(gapA, gapB, 0);                                           // ortadaki ÖZEL PANEL (aynı lamel, net gapB-gapA)
     hide = null;
     dxf.addRect(led0, 0, ledW, ledH, 'LED');
+    dxf.addRect(led0 + 60, 60, ledW - 120, ledH - 120, 'LED');                 // çerçeve
+    for (let y = 60 + 250; y < ledH - 60; y += 250) {                           // modül şeritleri (yazı alanı boş)
+      if (y > ledH * 0.75 - 250 && y < ledH * 0.75 + 250) continue;
+      dxf.addLine(led0 + 60, y, led1 - 60, y, 'LED');
+    }
     dxf.addText((led0 + led1) / 2, ledH * 0.75 + 60, 120, 'LED EKRAN', 'LED', 0, 'center', 'baseline');
     dxf.addText((led0 + led1) / 2, ledH * 0.75 - 120, 50, `${ledW} x ${ledH} (on yuz)`, 'LED', 0, 'center', 'baseline');
-    // Ortadaki uyumsuz aralık
-    dimH(gapA, gapB, H + cap, H + cap + 160, `${gapB - gapA} net acik (eksen ${gapB - gapA + post})`);
-    T((gapA + gapB) / 2, H + cap + 260, 26, 'UYUMSUZ ARALIK - LED ARKASINDA', 'center');
+    // Ortadaki özel panel
+    dimH(gapA, gapB, H + cap, H + cap + 160, `${gapB - gapA} net (eksen ${gapB - gapA + post})`);
+    T((gapA + gapB) / 2, H + cap + 260, 26, 'OZEL PANEL - LED ARKASINDA', 'center');
     // Genel ölçüler
     dimH(0, led0, 0, -320, `${fenceL} METAL FENS`);
     dimH(led0, led1, 0, -320, `${ledW} LED EKRAN`);
@@ -225,8 +233,8 @@ function generate(MODE) {
     dimH(0, total, 0, -440, `${total} (toplam)`);
     dimV(0, ledH, led1, led1 + 140, `${ledH}`);
     T(0, ledH + 400, 40, 'PAFTA 19 : LED EKRAN ve PANJUR LAMELLI CIT DIZILIMI - ON GORUNUS  -  1 birim = 1 mm');
-    T(0, ledH + 350, 22, `Cit LED arkasindan da devam eder. Iki uctan ${kSide}'er panel (eksen ${axis}, kolon ${post}, yukseklik ${H}); panel olcusu degistirilmedi, uymayan aralik ortada LED arkasinda birakildi.`);
-    T(0, ledH + 310, 22, 'LED arkasinda kalan cit cizgileri CIT_LED_ARKASI katmaninda (kesik). LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
+    T(0, ledH + 350, 22, `Cit LED arkasindan da devam eder. Iki uctan ${kSide}'er panel (eksen ${axis}, kolon ${post}, yukseklik ${H}); standart panel olcusu degistirilmedi; uymayan aralik ortada LED arkasinda ozel panelle (net 1600, eksen 1700, ayni lamel) kapatildi.`);
+    T(0, ledH + 310, 22, 'LED ONDE: arkasinda kalan cit lamelleri cizilmedi; kolon, taban ve kapak yerleri CIT_LED_ARKASI katmaninda (kesik). LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
     return dxf.toDxfString();
   }
 

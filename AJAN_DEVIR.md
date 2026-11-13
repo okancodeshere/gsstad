@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 19: LED ekran + panjur çit dizilimi (440 / 800 / 440)`
-- **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf`. Çit LED arkasından devam ediyor; ortada 1600 net uyumsuz aralık LED arkasında.
+- **Son commit:** `[Claude] Pafta 19: ortaya özel panel, LED önde (arkasındaki lameller gizli)`
+- **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf`. Çit LED arkasından devam ediyor; ortada LED arkasında net 1600 / eksen 1700 özel panel. LED önde, arkasındaki lameller çizilmiyor.
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -89,6 +89,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 19: ortaya özel panel, LED önde
+- **Kullanıcı isteği:** "Özel panelle kapat", ardından "led önde olacak ona göre çiz".
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs`: lamel çizimi YENİ `bay(xa, xb, oy)` fonksiyonuna taşındı (`frontView` onu kullanıyor; 16 ve 17 çıktıları değişmedi).
+    - `led` modu: ortadaki aralık `bay(gapA, gapB)` ile özel panel (net 1600, eksen 1700, aynı lamel), ölçüsü ve "OZEL PANEL - LED ARKASINDA" yazısı.
+    - LED önde: `L` LED arkasındaki LAMEL ve GIZLI çizgilerini hiç çizmiyor; kolon, taban, kapak ve eksenler `CIT_LED_ARKASI` (kesik) katmanında.
+    - LED ön yüzüne çerçeve (60 mm içte) ve 250 mm aralıklı modül şeritleri.
+  - `19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf` ve `_onizleme.pdf` yeniden üretildi.
+- **Doğrulama:** accoreconsole PDF önizleme (genel + LED arkası yakın plan) kontrol edildi.
+- **Commit:** `[Claude] Pafta 19: ortaya özel panel, LED önde (arkasındaki lameller gizli)`
 
 ### 2026-11-13 — Claude — Pafta 19: LED ekran ve panjur çit dizilimi
 - **Kullanıcı isteği:** (Görsel: METAL FENS 440 | LED EKRAN 800 | METAL FENS 440 cm, kafes kolonları 820 aks) "kafes düzenimizi bozmadan buna göre ölçekli çiz, panel boyuma dokunma, uyumsuz olursa ortadan açarsın".
