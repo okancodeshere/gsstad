@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 19: yan paneller LED kenarına dayalı, 20 cm dış uçta taşıyor`
+- **Son commit:** `[Claude] Pafta 19: LED ekran yüksekliği 3500`
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
@@ -89,6 +89,12 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 19: LED yüksekliği 3500
+- **Kullanıcı isteği:** "led ekran 350 yükseklikte, sen 450 çizmişsin" (görseldeki dikey yazı 450 okunmuştu, YANLIŞ).
+- **Değişen dosyalar:** `generate_cit_panel_dxf.cjs` `led` modu `ledH = 3500`, not metni; `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf` ve `_onizleme.pdf` yeniden üretildi.
+- **Doğrulama:** PDF önizleme kontrol edildi.
+- **Commit:** `[Claude] Pafta 19: LED ekran yüksekliği 3500`
 
 ### 2026-11-13 — Claude — Pafta 19: yan paneller LED kenarına dayalı, taşma dış uçta
 - **Kullanıcı isteği:** "3 orijinal panel koyar mısın, arkasına sıkıştırmadan" (LED arkasına 20 cm girmesin).

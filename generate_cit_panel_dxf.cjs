@@ -205,7 +205,7 @@ function generate(MODE) {
     // Kullanıcı çizimi (cm): METAL FENS 440 | LED EKRAN 800 | METAL FENS 440. LED'in arkası çevrilmez;
     // yalnızca iki yandaki 440'lık alanlar panjur çitle kapanır. Kullanıcı: her yana 3 standart panel.
     // 3 panel = 3 x 1500 + 100 = 4600 > 4400: paneller LED kenarına dayanır (arkasına girmez), fazla 200 mm dış uçta taşar.
-    const fenceL = 4400, ledW = 8000, ledH = 4500, total = fenceL * 2 + ledW;
+    const fenceL = 4400, ledW = 8000, ledH = 3500, total = fenceL * 2 + ledW;
     const kSide = 3, Wrun = kSide * axis + post;                  // 4600
     const led0 = fenceL, led1 = fenceL + ledW;
     const xL = led0 - Wrun, xR = led1;                            // sol dizi LED sol kenarında biter, sağ dizi sağ kenarında başlar
@@ -236,7 +236,7 @@ function generate(MODE) {
     dimV(0, ledH, led1, led1 + 140, `${ledH}`);
     T(0, ledH + 400, 40, 'PAFTA 19 : LED EKRAN ve PANJUR LAMELLI CIT DIZILIMI - ON GORUNUS  -  1 birim = 1 mm');
     T(0, ledH + 350, 22, `LED arkasi cevrilmez. Iki yanda ${kSide}'er standart panel (eksen ${axis}, kolon ${post}, yukseklik ${H}), toplam ${Wrun}: paneller LED kenarina dayanir, fazla ${over} mm dis uctan 440 sinirinin disina tasar.`);
-    T(0, ledH + 310, 22, 'LED ONDE, arkasi cevrilmez. LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
+    T(0, ledH + 310, 22, 'LED ONDE, arkasi cevrilmez. LED olculeri kullanici 800 cm yazisindan, yukseklik 350 cm kullanicidan.');
     return dxf.toDxfString();
   }
 
