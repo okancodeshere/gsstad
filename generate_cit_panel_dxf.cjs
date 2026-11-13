@@ -13,7 +13,7 @@
  *
  * Çıktılar (1 birim = 1 mm, antetsiz):
  *   DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_EKSEN1500_H1800_mm.dxf        (tek panel: ön, üst, kesit A-A)
- *   DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_7_VE_2_PANEL_EKSEN1500_H1800_mm.dxf (7 ve 2 panel dizileri: ön + üst)
+ *   DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800_mm.dxf (8 ve 2 panel dizileri: ön + üst)
  */
 const fs = require('fs');
 const path = require('path');
@@ -172,15 +172,15 @@ function generate(MODE) {
   };
 
   if (MODE === 'dizi') {
-    // 7'li dizi üstte, 2'li dizi altta; her biri ön + üst görünüş
-    [[7, 0], [2, -4200]].forEach(([k, oy]) => {
+    // 8'li dizi üstte, 2'li dizi altta; her biri ön + üst görünüş
+    [[8, 0], [2, -4200]].forEach(([k, oy]) => {
       const Wk = frontView(0, oy, k, false);
       topView(0, oy - 700, k, false);
       T(0, oy + H + cap + 140, 40, `${k} PANEL YAN YANA  -  ${k + 1} kolon, toplam ${Wk} mm`);
       T(0, oy + H + cap + 100, 18, `Kolon eksenleri arasi ${axis}, kolon ${post}x${post}, net panel ${axis - post}, yukseklik ${H}. Komsu paneller ortak kolon kullanir.`);
       T(0, oy - 700 + 260, 26, 'UST GORUNUS');
     });
-    T(0, -5400, 26, 'PAFTA 17 : PANJUR LAMELLI CIT DIZILERI (7 PANEL ve 2 PANEL)  -  1 birim = 1 mm');
+    T(0, -5400, 26, 'PAFTA 17 : PANJUR LAMELLI CIT DIZILERI (8 PANEL ve 2 PANEL)  -  1 birim = 1 mm');
     T(0, -5440, 18, 'Panel detayi ve kesit: Pafta 16. Lamel profili/adimi, kolon et kalinligi, taban plakasi ve kapak FOTOGRAF ORANINDAN VARSAYIMDIR.');
     return dxf.toDxfString();
   }
@@ -234,7 +234,7 @@ function generate(MODE) {
 }
 
 if (!fs.existsSync(DIR_MM)) fs.mkdirSync(DIR_MM, { recursive: true });
-for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_7_VE_2_PANEL_EKSEN1500_H1800']]) {
+for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800']]) {
   const out = path.join(DIR_MM, `${base}_mm.dxf`);
   const str = generate(mode);
   if (/NaN/.test(str)) { console.error('HATA: DXF icinde NaN var', mode); process.exit(1); }
