@@ -38,8 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 14: 200x40 perfore tava + kapak DXF`
-- **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek. **Bekleyen:** UKS-160 DK tava montaj konsolu çizimi; kullanıcıdan ölçüler bekleniyor.
+- **Son commit:** `[Claude] Pafta 15: UKS-160 DK 300.20 duvar konsolu DXF`
+- **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
+- **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
 - **Pafta 13 DWG (2026-11-10):** `node generate_matsing_aski_aparati_dwg.mjs` → `DXF_Ciktilari/DWG/13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI.dwg` + PDF önizlemeler. Geometri `anten_aski_modeli.js`'ten; DWG için AutoCAD 2023 `accoreconsole` gerekli (yoksa yalnızca DXF + .scr). Push edilmedi.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
@@ -87,6 +88,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 15: UKS-160 DK 300.20 duvar konsolu DXF
+- **Kullanıcı isteği:** Konsol katalog tablosunu gönderdi, "L 300 uzunluk olan".
+- **Değişen dosyalar:**
+  - YENİ `generate_konsol_uks160dk300_dxf.cjs` → `DXF_Ciktilari/Milimetre/15_KONSOL_UKS_160_DK_300_20_mm.dxf`.
+  - Görünüşler: A) yan, B) üst (3 kol kanalı), C) ön (4 plaka deliği), D) kesit A-A 2:1 (ters U, taramalı), E) montaj: konsol + Pafta 14 kapaklı tava kesiti (plakadan 20 mm, M8 cıvata gizli çizgi).
+- **Katalog:** h 160, s 2.0, L 300, 0.775 kg, F 1.7 kN.
+- **Varsayım (görsel oranı):** kol yüksekliği dipte 75 / uçta 12, kol 45 geniş, plaka 60 geniş, kanal 35×9, plaka delikleri 18×9.
+  - İlk denemede (60 / 40 / 50) sac alanından hesaplanan ağırlık 0.627 kg çıktı. Ölçüler büyütüldü; şimdi 0.745 kg (katalogdan %4 düşük).
+- **Doğrulama:** Betik NaN kontrolünden geçti. Görünüşlerin çakışmadığı koordinatlardan kontrol edildi. Tarayıcı önizlemesi yapılamadı.
+- **Commit:** `[Claude] Pafta 15: UKS-160 DK 300.20 duvar konsolu DXF`
 
 ### 2026-11-13 — Claude — Pafta 14: 200×40 perfore tava + kapak DXF
 - **Kullanıcı isteği:** "200mm genişlik, 40mm yükseklik olan bir tava autocadi" (yalnızca DXF, üst + yan görünüş, sade geometri), ardından "tavaya kapak da ekle ve üst görünüm ver".
