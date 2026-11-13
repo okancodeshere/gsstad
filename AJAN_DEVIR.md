@@ -37,8 +37,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-11-10
-- **Son commit:** `[Claude] Pafta 13: Matsing tek kollu askı aparatı DWG (görünüşler, kesitler, detaylar, parça listesi)`
+- **Son güncelleyen:** Claude Code, 2026-11-13
+- **Son commit:** `[Claude] Pafta 14: 200x40 perfore tava + kapak DXF`
+- **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek. **Bekleyen:** UKS-160 DK tava montaj konsolu çizimi; kullanıcıdan ölçüler bekleniyor.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
 - **Pafta 13 DWG (2026-11-10):** `node generate_matsing_aski_aparati_dwg.mjs` → `DXF_Ciktilari/DWG/13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI.dwg` + PDF önizlemeler. Geometri `anten_aski_modeli.js`'ten; DWG için AutoCAD 2023 `accoreconsole` gerekli (yoksa yalnızca DXF + .scr). Push edilmedi.
 - **Anten askı aparatı ana modelde (2026-11-06):** Geometri tek yerde: `anten_aski_modeli.js` → `createAntennaHanger(model, {labels})`. Hem `matsing_montaj_aparati.js` hem `main.js` (`buildMatsingTrussMidOffsetAssembly`) kullanıyor. Aparata tıklayınca sol üstte ayar penceresi (`#antennaHangerPopup`), ayarlar `userData.hanger` ile JSON'a yazılıyor. Ana modeldeki tüm askılı Matsing/Gammanu montajları (çatı makası, ALAN 1-3 alt kot 45° dikme, skorbord silindiri) bu aparatla.
@@ -86,6 +87,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 14: 200×40 perfore tava + kapak DXF
+- **Kullanıcı isteği:** "200mm genişlik, 40mm yükseklik olan bir tava autocadi" (yalnızca DXF, üst + yan görünüş, sade geometri), ardından "tavaya kapak da ekle ve üst görünüm ver".
+- **Değişen dosyalar:**
+  - YENİ `generate_tava_200x40_kapakli_dxf.cjs` (`dxf_engine.cjs` `DxfBuilder`). Çalıştırma: `node generate_tava_200x40_kapakli_dxf.cjs`.
+  - YENİ `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf` (903 nesne, 1 birim = 1 mm, antetsiz).
+  - Görünüşler: A) üst kapaksız, B) üst kapaklı (tava gizli çizgi), C) yan kapaklı, D) enine kesit 1:1.
+  - Katmanlar: TAVA, KAPAK, PERFORE, GIZLI, EKSEN, OLCU, METIN.
+- **Varsayımlar (üretici verisi DEĞİL, betikteki `P` bloğunda):** L 2500, sac 1.0 mm, 8 mm iç dudak; taban 30×7 oval, adım 50, 3 sıra (±60); yan duvar 20×7 oval; ek delikleri Ø7 (uçtan 15/40). Kapak 203 geniş, 1.0 mm, 10 mm etek, 0.5 mm boşluk.
+- **Montaj konsolu (UKS-160 DK):** kullanıcı görsel gönderdi ama sayısal ölçü yok; web'de katalog bulunamadı. Ölçüler (L, h, s, kanal ve delikler) kullanıcıdan istendi, çizilmedi.
+- **Doğrulama:** Betik NaN kontrolünden geçti. Tarayıcı önizlemesi bu ortamda açılmadı (yerel sunucu izni yok, puppeteer başlamıyor). Kesit ve görünüş koordinatları SVG çıktısından sayısal kontrol edildi.
+- **Commit:** `[Claude] Pafta 14: 200x40 perfore tava + kapak DXF`
 
 ### 2026-11-11 — Claude — "Tüm Stadyum / Skorbord Cephesi" denemesi tamamen geri alındı
 - **Kullanıcı isteği:** "olmadı, bu çalışma alanını tüm verilerden sileceğiz", ardından "uğraşma pull et".
