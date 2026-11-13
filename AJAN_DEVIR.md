@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 16: kolon 100 mm, panel net 1500 (ritim 100+1500)`
+- **Son commit:** `[Claude] Pafta 16/17: kolon eksen aralığı 1500, 7'li ve 2'li çit dizileri`
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -88,6 +88,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 16/17: kolon eksen aralığı 1500, 7'li ve 2'li çit dizileri
+- **Kullanıcı isteği:** "panel direklerinin ortadan ortaya ölçüsü 150 cm imiş", ardından "7 tane yan yana diz, 2 tane de yan yana ayrıca diz".
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs`: `P.axis = 1500` (kolon eksenleri arası); net panel 1400, tek panel toplamı 1600.
+    - Ön ve üst görünüş `frontView(ox, oy, k, detail)` / `topView(ox, y0, k, detail)` fonksiyonlarına taşındı. k panel yan yana, komşu paneller ortak kolon kullanıyor.
+    - `generate(MODE)`: 'tek' ve 'dizi'.
+  - YENİ `DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_EKSEN1500_H1800_mm.dxf`: tek panel, ön + üst + kesit A-A.
+  - YENİ `DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_7_VE_2_PANEL_EKSEN1500_H1800_mm.dxf`: 7 panel (8 kolon, 10 600 mm) ve 2 panel (3 kolon, 3100 mm), her biri ön + üst görünüş.
+  - Önceki `16_CIT_PANJUR_PANEL_1500x1800_mm.dxf` ve `..._K100_P1500_H1800_mm.dxf` eski ölçüde, geçersiz (silinmedi).
+- **Doğrulama:** İki dosyanın PDF önizlemesi kontrol edildi.
+- **Commit:** `[Claude] Pafta 16/17: kolon eksen aralığı 1500, 7'li ve 2'li çit dizileri`
 
 ### 2026-11-13 — Claude — Pafta 16 revizyon: kolon 100 mm, panel net 1500
 - **Kullanıcı isteği:** "panel 150 olsun, yan kolları da 10 cm yap; 150 + 10 + 150 + 10 gibi". 1500 artık panel net uzunluğu, kolon 100×100.
