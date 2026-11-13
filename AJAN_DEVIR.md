@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Blok hat boyunca dizme betiği (tava11 tava1 bloğu polyline boyunca)`
+- **Son commit:** `[Claude] Blok dizme betiği: aralık modu, tava11 konsolları 1 m aralıkla`
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -88,6 +88,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — tava11: konsol bloğu 1 m aralıkla hat boyunca
+- **Kullanıcı isteği:** `tava11_DIZILI.dxf` içine `tava_konsol` bloğu koydu: "bunu da hat boyunca 1 metrede bir yerleştir".
+- **Okuma:** `tava_konsol` = Pafta 15 konsol ön görünüşünün 1:10 hali (6 × 16 birim). Tava da 1:10 olduğu için 1 m = 100 birim alındı.
+- **Değişen dosyalar:**
+  - `scripts/blok_hat_boyunca_diz.cjs`: YENİ aralık modu (`--aralik`, `--ilk`, `--zincir`) ve `--anchorX`, `--katman` seçenekleri.
+    - Uç uca yerleşim `chordChain()` fonksiyonuna taşındı. Tava sonucu değişmedi (regresyon: 40 + 1 kesik).
+    - `--zincir=250`: noktalar tava kiriş zinciri üzerinde alınıyor; konsol tam tavanın altına oturuyor ve o tava parçasının açısını alıyor.
+    - Katman zaten varsa yeniden tanımlanmıyor.
+  - Çıktı (git dışı): `tava11_DIZILI_KONSOLLU.dxf/.dwg`, `_basl.pdf`, `_kivrim.pdf`. Kullanıcının `tava11_DIZILI.dxf` dosyası değişmedi.
+  - Komut: `node scripts/blok_hat_boyunca_diz.cjs tava11_DIZILI.dxf tava_konsol tava11_DIZILI_KONSOLLU.dxf --ters --aralik=100 --ilk=50 --zincir=250 --anchorY=4134.593560377819 --katman=KONSOL_DIZI`.
+    - anchorY = kol üstü (4132.59) + tava gövdesi yarı yüksekliği (2.0): kol üstü tava tabanına değiyor.
+- **Sonuç:** 101 konsol, `KONSOL_DIZI` katmanında; ilki başlangıçtan 50 birim (0.5 m), sonra 100'de bir.
+- **Doğrulama:** accoreconsole DWG kaydetti. Başlangıç ve kıvrım bölgesinin PDF önizlemelerinde konsollar tava altında. accoreconsole iş bittikten sonra kapanmadı; durduruldu.
+- **Commit:** `[Claude] Blok dizme betiği: aralık modu, tava11 konsolları 1 m aralıkla`
 
 ### 2026-11-13 — Claude — tava11: blok hat boyunca dizildi (ARRAYPATH benzeri betik)
 - **Kullanıcı isteği:** `DXF_Ciktilari/Milimetre/tava11.dxf` içindeki `tava1` bloğu, aynı dosyadaki polyline hattını takip etsin ("benim yerime yap").

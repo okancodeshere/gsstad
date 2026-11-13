@@ -10,16 +10,28 @@
  * - Yeni INSERT'ler ayrı katmana (TAVA_DIZI) yazılır; özgün dosya değişmez.
  *
  * Kullanım:
- *   node scripts/blok_hat_boyunca_diz.cjs <giris.dxf> <blokAdi> <cikis.dxf> [--ters] [--anchorY=<yerelY>]
- *   --ters : hattın son köşesinden başla (varsayılan: hattın ilk köşesi)
+ *   node scripts/blok_hat_boyunca_diz.cjs <giris.dxf> <blokAdi> <cikis.dxf> [secenekler]
+ *   --ters          : hattın son köşesinden başla (varsayılan: hattın ilk köşesi)
+ *   --anchorX=<x>   : bloğun hatta oturan yerel X'i (varsayılan: uç uca modda blok sol ucu, aralık modunda blok ortası)
+ *   --anchorY=<y>   : bloğun hatta oturan yerel Y'si (varsayılan: blok LINE'larının düşey ortası)
+ *   --katman=<ad>   : yeni INSERT katmanı (varsayılan TAVA_DIZI)
+ *   ARALIK MODU (ör. konsol): blok uç uca değil, sabit aralıklı noktalara konur
+ *   --aralik=<d>    : iki kopya arası (hat/zincir boyunca) mesafe
+ *   --ilk=<s>       : ilk kopyanın başlangıçtan uzaklığı (varsayılan 0)
+ *   --zincir=<L>    : noktalar hattın kendisi yerine, L boyunda uç uca dizilmiş parçaların (ör. tava) kiriş
+ *                     zinciri üzerinde alınır; böylece kopya tam o parçanın altına oturur ve onun açısını alır
  */
 const fs = require('fs');
 
 const [inp, blockName, outp, ...flags] = process.argv.slice(2);
-if (!inp || !blockName || !outp) { console.error('Kullanim: node blok_hat_boyunca_diz.cjs giris.dxf blokAdi cikis.dxf [--ters] [--anchorY=y]'); process.exit(1); }
+if (!inp || !blockName || !outp) { console.error('Kullanim: node blok_hat_boyunca_diz.cjs giris.dxf blokAdi cikis.dxf [--ters] [--anchorY=y] [--aralik=d --ilk=s --zincir=L]'); process.exit(1); }
 const reverse = flags.includes('--ters');
-const anchorYFlag = flags.find((f) => f.startsWith('--anchorY='));
-const LAYER = 'TAVA_DIZI';
+const flag = (n) => { const f = flags.find((x) => x.startsWith(`--${n}=`)); return f ? f.slice(n.length + 3) : undefined; };
+const anchorYFlag = flag('anchorY') !== undefined ? `--anchorY=${flag('anchorY')}` : undefined;
+const LAYER = flag('katman') || 'TAVA_DIZI';
+const SPACING = flag('aralik') !== undefined ? +flag('aralik') : null;
+const FIRST = +(flag('ilk') || 0);
+const CHAIN = flag('zincir') !== undefined ? +flag('zincir') : null;
 
 const raw = fs.readFileSync(inp, 'latin1');
 const EOL = raw.includes('\r\n') ? '\r\n' : '\n';
@@ -73,7 +85,8 @@ for (const e of ents) {
 const Lb = x1 - x0;
 // Tava gövdesi (kapak hariç): LINE'ların düşey aralığı; anchor bunun ortası
 const anchorY = anchorYFlag ? +anchorYFlag.split('=')[1] : (Math.min(...bodyY) + Math.max(...bodyY)) / 2;
-const ax = x0 - base[0], ay = anchorY - base[1];   // blok yerel koordinatı (taban noktasına göre)
+const anchorX = flag('anchorX') !== undefined ? +flag('anchorX') : (SPACING ? (x0 + x1) / 2 : x0);
+const ax = anchorX - base[0], ay = anchorY - base[1];   // blok yerel koordinatı (taban noktasına göre)
 console.log(`Blok ${blockName}: boy ${Lb.toFixed(3)}, yukseklik ${(y1 - y0).toFixed(3)}, anchor yerel (${ax.toFixed(3)}, ${ay.toFixed(3)})`);
 
 // --- Hat --------------------------------------------------------------------------------------
@@ -86,8 +99,8 @@ const segLen = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const pathLen = pts.slice(1).reduce((s, p, i) => s + segLen(pts[i], p), 0);
 console.log(`Hat: ${pts.length} kose, uzunluk ${pathLen.toFixed(1)}`);
 
-// --- Kiriş yöntemiyle yerleşim -----------------------------------------------------------------
-// Durum: cur noktası, segment indeksi si, segment parametresi st
+// --- Kiriş yöntemiyle zincir: hat üzerinde uç uca, her biri Lc boyunda parçalar -------------------
+function chordChain(pts, Lc) {
 const placements = [];
 let cur = pts[0], si = 0, st = 0;
 for (;;) {
@@ -96,7 +109,7 @@ for (;;) {
     const A = pts[j], B = pts[j + 1];
     const dx = B[0] - A[0], dy = B[1] - A[1];
     const fx = A[0] - cur[0], fy = A[1] - cur[1];
-    const a = dx * dx + dy * dy, b = 2 * (fx * dx + fy * dy), c = fx * fx + fy * fy - Lb * Lb;
+    const a = dx * dx + dy * dy, b = 2 * (fx * dx + fy * dy), c = fx * fx + fy * fy - Lc * Lc;
     const disc = b * b - 4 * a * c;
     if (disc < 0) continue;
     const tStart = j === si ? st : 0;
@@ -111,11 +124,32 @@ for (;;) {
   if (!found) {
     const end = pts[pts.length - 1];
     const r = segLen(cur, end);
-    if (r > Lb * 0.002) placements.push({ P0: cur, P1: end, sx: r / Lb });
+    if (r > Lc * 0.002) placements.push({ P0: cur, P1: end, sx: r / Lc });
     break;
   }
   placements.push({ P0: cur, P1: found.P, sx: 1 });
   cur = found.P; si = found.j; st = found.t;
+}
+return placements;
+}
+
+let placements;
+if (!SPACING) {
+  placements = chordChain(pts, Lb);
+} else {
+  // Aralık modu: zincir (veya hattın kendisi) boyunca FIRST, FIRST+SPACING, ... noktalarına tek kopya
+  const chain = CHAIN ? chordChain(pts, CHAIN).map((p) => [p.P0, p.P1]) : pts.slice(1).map((p, i) => [pts[i], p]);
+  const chainLen = chain.reduce((s, [a, b]) => s + segLen(a, b), 0);
+  placements = [];
+  let acc = 0, k = 0;
+  for (let sPos = FIRST; sPos <= chainLen + 1e-9; sPos += SPACING) {
+    while (k < chain.length - 1 && acc + segLen(...chain[k]) < sPos) { acc += segLen(...chain[k]); k++; }
+    const [A, B] = chain[k], l = segLen(A, B), u = Math.min(1, Math.max(0, (sPos - acc) / l));
+    const P = [A[0] + u * (B[0] - A[0]), A[1] + u * (B[1] - A[1])];
+    // P0 = nokta, P1 = yön için parçanın ucu (açı parçadan); sx = 1
+    placements.push({ P0: P, P1: [P[0] + (B[0] - A[0]) / l, P[1] + (B[1] - A[1]) / l], sx: 1 });
+  }
+  console.log(`Aralik modu: ${CHAIN ? `zincir (${CHAIN} birimlik parcalar)` : 'hat'} boyu ${chainLen.toFixed(1)}, ilk ${FIRST}, aralik ${SPACING}`);
 }
 
 // --- INSERT metni -----------------------------------------------------------------------------
@@ -149,8 +183,11 @@ if (firstLayerPS) layerDef[layerDef.length - 1] = firstLayerPS; else layerDef.sp
 // --- Yaz --------------------------------------------------------------------------------------
 const L2 = lines.slice();
 L2.splice(entitiesEndsecLine, 0, ...out);                                  // önce sondaki ekleme (satır indeksleri bozulmasın)
-if (layerTableEndLine > 0 && layerTableEndLine < entitiesEndsecLine) L2.splice(layerTableEndLine, 0, ...layerDef);
-if (layerCountLine > 0) L2[layerCountLine] = String(+L2[layerCountLine].trim() + 1).padStart(6);
+const layerExists = pairs.some((p, k) => p.c === '0' && p.v.trim() === 'LAYER' && pairs.slice(k + 1, k + 12).some((q) => q.c === '2' && q.v.trim() === LAYER));
+if (!layerExists) {
+  if (layerTableEndLine > 0 && layerTableEndLine < entitiesEndsecLine) L2.splice(layerTableEndLine, 0, ...layerDef);
+  if (layerCountLine > 0) L2[layerCountLine] = String(+L2[layerCountLine].trim() + 1).padStart(6);
+}
 if (handseedLine > 0) L2[handseedLine] = (h + 1).toString(16).toUpperCase();
 fs.writeFileSync(outp, L2.join(EOL), 'latin1');
 
