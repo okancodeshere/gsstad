@@ -206,7 +206,18 @@ function generate(MODE) {
   if (MODE === 'kafes' || MODE === 'ledkafes') {
     // Kullanıcı: 8'li ve 2'li dizi, dört taraf kapalı kafes, toplam derinlik (kolonlar dahil) 2000.
     // Yan yüz: "iki eşit parça" → kolon eksenleri arası (2000 - 100) / 2 = 950, net 850, ortada ara kolon.
-    const D = 2000, sideAx = (D - post) / 2;
+    // Kullanıcı: derinlik AYAKLAR (taban plakaları) DAHİL 2000. Plaka kolondan her yanda (plate-post)/2 = 40 taşar.
+    const Dtot = 2000, pOut = (plate - post) / 2, D = Dtot - 2 * pOut, sideAx = (D - post) / 2;   // 1920, 910
+    // Ayak aplikasyon zinciri: plaka dış kenarı → ayak (kolon) merkezleri → plaka dış kenarı
+    const chainH = (xsC, yRef, yDim) => { for (let i = 0; i + 1 < xsC.length; i++) dimH(xsC[i], xsC[i + 1], yRef, yDim, `${Math.round(xsC[i + 1] - xsC[i])}`); };
+    const chainV = (ysC, xRef, xDim) => { for (let i = 0; i + 1 < ysC.length; i++) dimV(ysC[i], ysC[i + 1], xRef, xDim, `${Math.round(ysC[i + 1] - ysC[i])}`); };
+    const ayak = (xCen, yCen, x0, x1, y0, y1) => {      // x0..x1, y0..y1: plaka dış kenarları
+      chainH([x0, ...xCen, x1], y0, y0 - 380);
+      dimH(x0, x1, y0, y0 - 470, `${Math.round(x1 - x0)} (ayaklar dahil)`);
+      chainV([y0, ...yCen, y1], x0, x0 - 380);
+      dimV(y0, y1, x0, x0 - 470, `${Math.round(y1 - y0)} (ayaklar dahil)`);
+      T(x0, y0 - 560, 22, 'AYAK APLIKASYONU: olculer taban plakasi dis kenarindan ayak (kolon) merkezlerine.');
+    };
     const postPlan = (px, py) => {                    // px,py = kolon sol-alt köşesi (dış yüzler)
       const cx = px + post / 2, cy = py + post / 2;
       R(cx - plate / 2, cy - plate / 2, plate, plate, 'TABAN');
@@ -237,13 +248,14 @@ function generate(MODE) {
       // Ölçüler
       for (let b = 0; b < k; b++) dimH(xs[b] + post / 2, xs[b + 1] + post / 2, oy - plate / 2 + post / 2, oy - 200, `${axis}`);
       dimH(ox, ox + Wx, oy - plate / 2 + post / 2, oy - 290, `${Wx}`);
-      dimV(oy, oy + D, ox - plate / 2 + post / 2, ox - 290, `${D}`);
+      dimV(oy, oy + D, ox - plate / 2 + post / 2, ox - 290, `${D} (kolon dis)`);
+      ayak(xs.map((x) => x + post / 2), ys.map((y) => y + post / 2), ox - pOut, ox + Wx + pOut, oy - pOut, oy + D + pOut);
       dimV(ys[0] + post / 2, ys[1] + post / 2, ox + Wx + plate / 2, ox + Wx + 200, `${sideAx}`);
       dimV(ys[1] + post / 2, ys[2] + post / 2, ox + Wx + plate / 2, ox + Wx + 200, `${sideAx}`);
       dimH(ox + Wx - post - 0, ox + Wx, oy + D + plate / 2 - post / 2, oy + D + 140, `${post}`);
       T(ox + Wx / 2, oy + D / 2 + 20, 60, `${k} PANELLI KAFES`, 'center');
-      T(ox + Wx / 2, oy + D / 2 - 70, 30, `dis olcu ${Wx} x ${D}  -  on ve arka ${k} x ${axis}, yanlar 2 x ${sideAx}`, 'center');
-      T(ox + Wx / 2, oy - 420, 22, 'ON', 'center');
+      T(ox + Wx / 2, oy + D / 2 - 70, 30, `ayaklar dahil ${Wx + 2 * pOut} x ${Dtot}  -  on ve arka ${k} x ${axis}, yanlar 2 x ${sideAx}`, 'center');
+      T(ox + Wx / 2, oy - 640, 22, 'ON', 'center');
       return Wx;
     };
     if (MODE === 'ledkafes') {
@@ -270,21 +282,26 @@ function generate(MODE) {
       L(-80, post / 2, Wt + 80, post / 2, 'EKSEN'); L(-80, D - post / 2, Wt + 80, D - post / 2, 'EKSEN');
       [post / 2, Wt - post / 2].forEach((x) => L(x, -80, x, D + 80, 'EKSEN'));
       dimH(led0, led1, -plate / 2 + post / 2, -290, `${ledW} LED`);
-      dimH(0, Wt, -plate / 2 + post / 2, -400, `${Wt}`);
-      dimV(0, D, -plate / 2 + post / 2, -290, `${D}`);
+      dimH(0, Wt, -plate / 2 + post / 2, -330, `${Wt}`);
+      dimV(0, D, -plate / 2 + post / 2, -290, `${D} (kolon dis)`);
+      {
+        const xC = [];
+        [xA, xB].forEach((x0) => { for (let i = 0; i <= kS; i++) xC.push(x0 + i * axis + post / 2); });
+        ayak(xC, ys.map((y) => y + post / 2), -pOut, Wt + pOut, -pOut, D + pOut);
+      }
       dimV(ys[0] + post / 2, ys[1] + post / 2, Wt + plate / 2, Wt + 200, `${sideAx}`);
       dimV(ys[1] + post / 2, ys[2] + post / 2, Wt + plate / 2, Wt + 200, `${sideAx}`);
       T(Wt / 2, D / 2 + 20, 60, 'LEDLI KAFES', 'center');
-      T(Wt / 2, D / 2 - 70, 30, `dis olcu ${Wt} x ${D}  -  on ve arka: ${kS} panel + LED ${ledW} + ${kS} panel, yanlar 2 x ${sideAx}`, 'center');
-      T(Wt / 2, -520, 22, 'ON', 'center');
-      T(0, D + 500, 40, 'PAFTA 21 : LEDLI PANJUR CIT KAFES - UST GORUNUS (DERINLIK 2000)  -  1 birim = 1 mm');
+      T(Wt / 2, D / 2 - 70, 30, `ayaklar dahil ${Wt + 2 * pOut} x ${Dtot}  -  on ve arka: ${kS} panel + LED ${ledW} + ${kS} panel, yanlar 2 x ${sideAx}`, 'center');
+      T(Wt / 2, -640, 22, 'ON', 'center');
+      T(0, D + 500, 40, 'PAFTA 21 : LEDLI PANJUR CIT KAFES - UST GORUNUS (DERINLIK AYAKLAR DAHIL 2000)  -  1 birim = 1 mm');
       T(0, D + 440, 22, `On ve arka cephe ayni: ${kS} standart panel (eksen ${axis}, kolon ${post}) + LED ${ledW} + ${kS} standart panel; paneller LED kenarina dayali. Yanlar iki esit panel, eksen ${sideAx} (net ${sideAx - post}).`);
       T(0, D + 400, 22, 'LED plan derinligi bilinmiyor: kolon derinliginde (100 mm) bant olarak gosterildi. LED on gorunusu: Pafta 19.');
       return dxf.toDxfString();
     }
     cage(0, 0, 8);
     cage(0, -3600, 2);
-    T(0, D + 500, 40, 'PAFTA 20 : PANJUR LAMELLI CIT KAFES - UST GORUNUS (8 PANEL ve 2 PANEL, DERINLIK 2000)  -  1 birim = 1 mm');
+    T(0, D + 500, 40, 'PAFTA 20 : PANJUR LAMELLI CIT KAFES - UST GORUNUS (8 PANEL ve 2 PANEL, DERINLIK AYAKLAR DAHIL 2000)  -  1 birim = 1 mm');
     T(0, D + 440, 22, `Dort taraf kapali. On/arka: standart panel (kolon eksenleri arasi ${axis}, kolon ${post}x${post}). Yanlar: iki esit panel, eksen ${sideAx} (net ${sideAx - post}), ortada ara kolon.`);
     T(0, D + 400, 22, `Lameller kolon derinliginde ortali, dis yuzden ${lamFront} mm iceride, kanat izdusumu ${lamRun}. Kolon tabanlari ${plate}x${plate}, 4 x O${P.boltD}. Yukseklik ${H} (Pafta 16/17).`);
     return dxf.toDxfString();

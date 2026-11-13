@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 20/21: panjur çit kafes üst görünüşleri (8/2 panel ve LEDli, derinlik 2000)`
-- **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik 2000, yanlar 2 × 950.
+- **Son commit:** `[Claude] Pafta 20/21: derinlik ayaklar dahil 2000, ayak aplikasyon ölçüleri`
+- **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
@@ -90,6 +90,17 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 20/21: derinlik ayaklar dahil 2000
+- **Kullanıcı isteği:** "ayaklar dahil 2 metre olacak, ayakları nereye atayım ben".
+- **Neden:** Önceki çizimde 2000 kolon dış yüzleri arasıydı; 180'lik taban plakaları kolondan her yanda 40 taşıyordu (toplam 2080).
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs` `kafes` / `ledkafes`: `Dtot = 2000` (plaka dış kenarları), `pOut = 40`, kolon dışı `D = 1920`, yan eksen `sideAx = 910` (net 810).
+    - YENİ `chainH` / `chainV` / `ayak()`: plaka dış kenarı → ayak (kolon) merkezleri → plaka dış kenarı ölçü zinciri + "(ayaklar dahil)" toplam ölçüler + "AYAK APLIKASYONU" notu.
+    - Ayaklar dahil ölçüler: 8'li 12 180 × 2000, 2'li 3180 × 2000, LED'li 17 280 × 2000. Derinlik zinciri 90 / 910 / 910 / 90.
+  - `20_...` ve `21_...` DXF + önizleme PDF'leri yeniden üretildi.
+- **Doğrulama:** PDF önizlemeler kontrol edildi.
+- **Commit:** `[Claude] Pafta 20/21: derinlik ayaklar dahil 2000, ayak aplikasyon ölçüleri`
 
 ### 2026-11-13 — Claude — Pafta 20/21: kafes üst görünüşleri (derinlik 2000)
 - **Kullanıcı isteği:** "8'li ve 2'li olanı üst kesit çizeceğiz, tam derinlik her şeyiyle 2 metre, tam tür kafes üst görünüm yap", ardından "ledli olanı da yap", "ledli olanın arka cephesi de ledli".
