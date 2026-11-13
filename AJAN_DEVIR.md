@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 16: panjur lamelli çit paneli DXF (ön, üst, kesit)`
+- **Son commit:** `[Claude] Pafta 16: kolon 100 mm, panel net 1500 (ritim 100+1500)`
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -88,6 +88,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 16 revizyon: kolon 100 mm, panel net 1500
+- **Kullanıcı isteği:** "panel 150 olsun, yan kolları da 10 cm yap; 150 + 10 + 150 + 10 gibi". 1500 artık panel net uzunluğu, kolon 100×100.
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs`: `P.net = 1500`, `P.post = 100`, `P.W = net + 2·post = 1700`.
+    - Taban plakası 180×180, dübel aralığı 130; lamel kolon derinliğinde ortalı (`lamFront` 20).
+    - Ön görünüşe toplam 1700 ve kolon eksenleri arası 1600 ölçüleri eklendi. Kesit x 2300'e kaydırıldı.
+  - YENİ çıktı `DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_P1500_H1800_mm.dxf`. Eski `16_CIT_PANJUR_PANEL_1500x1800_mm.dxf` kullanıcıda açık olduğu için (EBUSY) üzerine yazılamadı; eski ölçüde, geçersiz.
+- **Doğrulama:** PDF önizleme kontrol edildi.
+- **Commit:** `[Claude] Pafta 16: kolon 100 mm, panel net 1500 (ritim 100+1500)`
 
 ### 2026-11-13 — Claude — Pafta 16: panjur lamelli çit paneli DXF
 - **Kullanıcı isteği:** "veriler/cit dizinindeki görsellerden çitin kesitini üst ve karşıdan görünecek şekilde dxf çıkar; panel yükseklik 180 cm, yatay uzunluk toplam 150 cm".

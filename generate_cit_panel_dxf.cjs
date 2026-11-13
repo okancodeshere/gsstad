@@ -11,7 +11,7 @@
  * alınmış VARSAYIMDIR; aşağıdaki P bloğundan değiştirilip betik yeniden çalıştırılabilir:
  *   node generate_cit_panel_dxf.cjs
  *
- * Çıktı: DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_1500x1800_mm.dxf  (1 birim = 1 mm, antetsiz)
+ * Çıktı: DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_P1500_H1800_mm.dxf  (1 birim = 1 mm, antetsiz)
  */
 const fs = require('fs');
 const path = require('path');
@@ -19,12 +19,12 @@ const { DxfBuilder } = require('./dxf_engine.cjs');
 
 const P = {
   // KULLANICI
-  W: 1500,            // toplam yatay uzunluk (kolon dış yüzleri arası)
+  net: 1500,          // panel net uzunluğu (kolon iç yüzleri arası); ritim: kolon 100 + panel 1500 + kolon 100 + panel 1500 ...
   H: 1800,            // panel yüksekliği (zeminden kolon üstüne, kapak hariç)
   // VARSAYIM — kolon
-  post: 80, postT: 2, // 80x80x2 kutu profil
+  post: 100, postT: 2, // 100x100x2 kutu profil (kullanıcı: yan kolon 10 cm)
   cap: 15,            // kolon kapağı yüksekliği (kapak 84x84)
-  plate: 160, plateT: 8, boltOff: 55, boltD: 12,   // taban plakası 160x160x8, 4 x M10 dübel (Ø12 delik)
+  plate: 180, plateT: 8, boltOff: 65, boltD: 12,   // taban plakası 180x180x8, 4 x M10 dübel (Ø12 delik)
   // VARSAYIM — lamel (yan kesit profili, sac 1.0 mm)
   lamT: 1.0,
   lamLip: 12,         // ön alt dudak (düşey)
@@ -33,13 +33,14 @@ const P = {
   lamRet: 15,         // arka üst dönüş (düşey)
   pitch: 75,          // lamel adımı
   firstY: 50,         // ilk lamelin alt kenarı (zeminden)
-  lamFront: 10,       // lamel ön yüzünün kolon ön yüzüne uzaklığı
+  lamFront: 20,       // lamel ön yüzünün kolon ön yüzüne uzaklığı (lamel kolon derinliğinde ortalı)
   lamInsert: 20,      // lamel ucunun kolon içine girişi (kanal)
 };
+P.W = P.net + 2 * P.post;                              // toplam dış uzunluk (1700)
 P.lamH = P.lamLip + P.lamRise + P.lamRet;               // 87
 P.n = Math.floor((P.H - P.firstY - P.lamH) / P.pitch) + 1;
 
-const FILE_BASE = '16_CIT_PANJUR_PANEL_1500x1800';
+const FILE_BASE = '16_CIT_PANJUR_PANEL_K100_P1500_H1800';
 const DIR_MM = path.join(__dirname, 'DXF_Ciktilari', 'Milimetre');
 
 function generate() {
@@ -125,7 +126,8 @@ function generate() {
     L(xs, -60, xs, -20, 'EKSEN'); L(xs, H + 40, xs, H + 80, 'EKSEN');
     T(xs + 8, -60, 22, 'A'); T(xs + 8, H + 60, 22, 'A');
 
-    dimH(0, W, 0, -110, `${W}`);
+    dimH(0, W, 0, -170, `${W} (toplam)`);
+    dimH(post / 2, W - post / 2, 0, -110, `${W - post} (kolon eksenleri arasi)`);
     dimH(post, W - post, H + cap, H + cap + 50, `${W - 2 * post} (net)`);
     dimH(0, post, H + cap, H + cap + 50, `${post}`);
     dimV(0, H, 0, -70, `${H}`);
@@ -174,7 +176,7 @@ function generate() {
   // 3) KESİT A-A (panel ortası, yandan)   orijin x: kolon ön yüzü = 2000
   // =========================================================================
   {
-    const x0 = 2000;
+    const x0 = 2300;
     L(x0 - 250, 0, x0 + post + 250, 0, 'ZEMIN');
     for (let x = x0 - 250; x < x0 + post + 250; x += 40) L(x, 0, x - 20, -20, 'ZEMIN');
     // Arkadaki kolon (görünüş): kenarlar + taban plakası + kapak
@@ -204,7 +206,7 @@ function generate() {
 
   // Genel not
   T(0, -1150, 26, `PAFTA 16 : PANJUR LAMELLI METAL CIT PANELI  -  ${W} x ${H} mm  -  1 birim = 1 mm`);
-  T(0, -1190, 18, `Kullanici olculeri: toplam uzunluk ${W} (kolon dis yuzleri arasi), yukseklik ${H}. Kolon, lamel profili/adimi, taban plakasi ve kapak olculeri FOTOGRAF ORANINDAN VARSAYIMDIR.`);
+  T(0, -1190, 18, `Kullanici olculeri: panel net ${P.net}, yan kolon ${post} (ritim ${post} + ${P.net} + ${post} + ${P.net} ...), yukseklik ${H}. Lamel profili/adimi, kolon et kalinligi, taban plakasi ve kapak FOTOGRAF ORANINDAN VARSAYIMDIR.`);
   T(0, -1220, 18, 'Katmanlar: KOLON, LAMEL, TABAN, ZEMIN, DELIK, GIZLI, EKSEN, OLCU, METIN.');
 
   return dxf.toDxfString();
