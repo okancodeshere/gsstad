@@ -14,7 +14,7 @@
  * Çıktılar (1 birim = 1 mm, antetsiz):
  *   DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_EKSEN1500_H1800_mm.dxf        (tek panel: ön, üst, kesit A-A)
  *   DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800_mm.dxf (8 ve 2 panel dizileri: ön + üst)
- *   DXF_Ciktilari/Milimetre/19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf          (fens 440 + LED 800 + fens 440, ön görünüş)
+ *   DXF_Ciktilari/Milimetre/19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf        (LED 800 iki yanında 3'er panel, ön görünüş)
  */
 const fs = require('fs');
 const path = require('path');
@@ -202,18 +202,17 @@ function generate(MODE) {
   };
 
   if (MODE === 'led') {
-    // Kullanıcı çizimi (cm): METAL FENS 440 | LED EKRAN 800 | METAL FENS 440. Çit LED'in arkasından da devam eder.
-    // Panel ölçüsü değişmez (eksen ${axis}); iki dış uçtan 5'er panel, uymayan aralık ortada (LED arkasında) kalır.
+    // Kullanıcı çizimi (cm): METAL FENS 440 | LED EKRAN 800 | METAL FENS 440. LED'in arkası çevrilmez;
+    // yalnızca iki yandaki 440'lık alanlar panjur çitle kapanır. Kullanıcı: her yana 3 standart panel.
+    // 3 panel = 3 x 1500 + 100 = 4600 > 4400: dış uçlar 440 sınırında, fazla 200 mm LED kenarının arkasına girer.
     const fenceL = 4400, ledW = 8000, ledH = 4500, total = fenceL * 2 + ledW;
-    const kSide = Math.floor((total / 2 - post) / axis);           // 5
-    const xL = 0, xR = total - (kSide * axis + post);             // sağ dizinin sol kolon dış yüzü
-    const gapA = xL + kSide * axis + post, gapB = xR;             // ortadaki açıklık (kolon iç yüzleri)
+    const kSide = 3, Wrun = kSide * axis + post;                  // 4600
+    const xL = 0, xR = total - Wrun;                              // sağ dizinin sol kolon dış yüzü
     const led0 = fenceL, led1 = fenceL + ledW;
     ground(-250, total + 250, 0);
     hide = { x0: led0, x1: led1, yTop: ledH };
     frontView(xL, 0, kSide, false, false);
     frontView(xR, 0, kSide, false, false);
-    bay(gapA, gapB, 0);                                           // ortadaki ÖZEL PANEL (aynı lamel, net gapB-gapA)
     hide = null;
     dxf.addRect(led0, 0, ledW, ledH, 'LED');
     dxf.addRect(led0 + 60, 60, ledW - 120, ledH - 120, 'LED');                 // çerçeve
@@ -223,9 +222,9 @@ function generate(MODE) {
     }
     dxf.addText((led0 + led1) / 2, ledH * 0.75 + 60, 120, 'LED EKRAN', 'LED', 0, 'center', 'baseline');
     dxf.addText((led0 + led1) / 2, ledH * 0.75 - 120, 50, `${ledW} x ${ledH} (on yuz)`, 'LED', 0, 'center', 'baseline');
-    // Ortadaki özel panel
-    dimH(gapA, gapB, H + cap, H + cap + 160, `${gapB - gapA} net (eksen ${gapB - gapA + post})`);
-    T((gapA + gapB) / 2, H + cap + 260, 26, 'OZEL PANEL - LED ARKASINDA', 'center');
+    // LED kenarının arkasına giren kısım
+    dimH(led0, xL + Wrun, H + cap, H + cap + 160, `${xL + Wrun - led0} LED arkasi`);
+    dimH(xR, led1, H + cap, H + cap + 160, `${led1 - xR} LED arkasi`);
     // Genel ölçüler
     dimH(0, led0, 0, -320, `${fenceL} METAL FENS`);
     dimH(led0, led1, 0, -320, `${ledW} LED EKRAN`);
@@ -233,8 +232,8 @@ function generate(MODE) {
     dimH(0, total, 0, -440, `${total} (toplam)`);
     dimV(0, ledH, led1, led1 + 140, `${ledH}`);
     T(0, ledH + 400, 40, 'PAFTA 19 : LED EKRAN ve PANJUR LAMELLI CIT DIZILIMI - ON GORUNUS  -  1 birim = 1 mm');
-    T(0, ledH + 350, 22, `Cit LED arkasindan da devam eder. Iki uctan ${kSide}'er panel (eksen ${axis}, kolon ${post}, yukseklik ${H}); standart panel olcusu degistirilmedi; uymayan aralik ortada LED arkasinda ozel panelle (net 1600, eksen 1700, ayni lamel) kapatildi.`);
-    T(0, ledH + 310, 22, 'LED ONDE: arkasinda kalan cit lamelleri cizilmedi; kolon, taban ve kapak yerleri CIT_LED_ARKASI katmaninda (kesik). LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
+    T(0, ledH + 350, 22, `LED arkasi cevrilmez. Iki yanda ${kSide}'er standart panel (eksen ${axis}, kolon ${post}, yukseklik ${H}), toplam ${Wrun}: dis uc 4400 sinirinda, fazla ${Wrun - fenceL} mm LED kenarinin arkasina girer.`);
+    T(0, ledH + 310, 22, 'LED ONDE: arkasinda kalan lameller cizilmedi; LED yanindaki kolon ve taban CIT_LED_ARKASI katmaninda (kesik). LED olculeri kullanici cizimindeki 800 / 450 cm yazilarindan alindi.');
     return dxf.toDxfString();
   }
 
@@ -301,7 +300,7 @@ function generate(MODE) {
 }
 
 if (!fs.existsSync(DIR_MM)) fs.mkdirSync(DIR_MM, { recursive: true });
-for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800'], ['led', '19_CIT_LED_EKRAN_DIZILIMI_440_800_440']]) {
+for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800'], ['led', '19_CIT_LED_YANLARI_3_PANEL_440_800_440']]) {
   const out = path.join(DIR_MM, `${base}_mm.dxf`);
   const str = generate(mode);
   if (/NaN/.test(str)) { console.error('HATA: DXF icinde NaN var', mode); process.exit(1); }

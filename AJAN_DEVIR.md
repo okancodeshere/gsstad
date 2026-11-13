@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 19: ortaya özel panel, LED önde (arkasındaki lameller gizli)`
-- **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf`. Çit LED arkasından devam ediyor; ortada LED arkasında net 1600 / eksen 1700 özel panel. LED önde, arkasındaki lameller çizilmiyor.
+- **Son commit:** `[Claude] Pafta 19: LED arkası çevrilmiyor, iki yanda 3 standart panel`
+- **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), fazla 200 mm LED kenarı arkasında. Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -89,6 +89,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 19: LED arkası çevrilmiyor, yanlarda 3'er panel
+- **Kullanıcı isteği:** "ledin arkasını çevirmeyecekmişim, yanlarında 440'lık alanı kapatacağım". Soru yanıtları: mevcut panjur panel; "3 tane bizim panelden koysan nolur".
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs` `led` modu: ortadaki özel panel ve LED arkası dizisi kaldırıldı. Her yanda `kSide = 3` standart panel (3 × 1500 + 100 = 4600). Dış uçlar 0 ve 16 800'de (440 sınırı), fazla 200 mm LED kenarının arkasına giriyor; o kolon `CIT_LED_ARKASI` katmanında kesik. "200 LED arkasi" ölçüleri eklendi.
+  - Çıktı adı `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf` + `_onizleme.pdf`. Eski `19_CIT_LED_EKRAN_DIZILIMI_440_800_440_mm.dxf` kullanıcıda açık olduğu için (EBUSY) yazılamadı; eski hali (ortada özel panelli), geçersiz.
+- **Doğrulama:** accoreconsole PDF önizleme (genel + LED kenarı yakın plan) kontrol edildi.
+- **Commit:** `[Claude] Pafta 19: LED arkası çevrilmiyor, iki yanda 3 standart panel`
 
 ### 2026-11-13 — Claude — Pafta 19: ortaya özel panel, LED önde
 - **Kullanıcı isteği:** "Özel panelle kapat", ardından "led önde olacak ona göre çiz".
