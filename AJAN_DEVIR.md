@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Devir defteri: tavakesit2 tava + konsol dizilimi`
+- **Son commit:** `[Claude] Pafta 20/21: panjur çit kafes üst görünüşleri (8/2 panel ve LEDli, derinlik 2000)`
+- **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik 2000, yanlar 2 × 950.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
@@ -89,6 +90,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — Pafta 20/21: kafes üst görünüşleri (derinlik 2000)
+- **Kullanıcı isteği:** "8'li ve 2'li olanı üst kesit çizeceğiz, tam derinlik her şeyiyle 2 metre, tam tür kafes üst görünüm yap", ardından "ledli olanı da yap", "ledli olanın arka cephesi de ledli".
+  - Soru yanıtları: dört taraf kapalı; yan yüz "iki eşit parça" (kolon eksenleri arası 950, net 850, ortada ara kolon).
+- **Değişen dosyalar:**
+  - `generate_cit_panel_dxf.cjs`: YENİ `kafes` ve `ledkafes` modları; yardımcılar `postPlan`, `lamX` / `lamY` (dış yüzden içe lamel izdüşümü), `cage(ox, oy, k)`. Diğer çıktılar değişmedi.
+  - YENİ `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf` + `_onizleme.pdf`: 8 panelli kafes 12 100 × 2000, 2 panelli kafes 3100 × 2000. Ön ve arka standart panel, yanlar 2 × 950.
+  - YENİ `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf` + `_onizleme.pdf`: 17 200 × 2000. Ön ve arka cephe aynı: 3 panel + LED 8000 + 3 panel, paneller LED kenarına dayalı (Pafta 19 ile aynı). LED plan derinliği bilinmiyor; kolon derinliğinde (100) bant olarak gösterildi.
+- **Doğrulama:** accoreconsole PDF önizlemeler kontrol edildi. İlk yamada blok yanlış `if (MODE === 'led')` eşleşmesine girdi (ReferenceError); dosya geri alınıp doğru yere eklendi.
+- **Commit:** `[Claude] Pafta 20/21: panjur çit kafes üst görünüşleri (8/2 panel ve LEDli, derinlik 2000)`
 
 ### 2026-11-13 — Claude — tavakesit2: tava + 1 m'de bir ayak konsolu
 - **Kullanıcı isteği:** "tavakesit2_DIZILI.dxf dosyasındaki hatta tava ve konsolu diz" (LED/çit cephesi için, tavakesit1 ile aynı iş).

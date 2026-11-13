@@ -14,6 +14,8 @@
  * Çıktılar (1 birim = 1 mm, antetsiz):
  *   DXF_Ciktilari/Milimetre/16_CIT_PANJUR_PANEL_K100_EKSEN1500_H1800_mm.dxf        (tek panel: ön, üst, kesit A-A)
  *   DXF_Ciktilari/Milimetre/17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800_mm.dxf (8 ve 2 panel dizileri: ön + üst)
+ *   DXF_Ciktilari/Milimetre/20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf     (4 taraf kapalı kafes, derinlik 2000, üst görünüş)
+ *   DXF_Ciktilari/Milimetre/21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf             (ön ve arka: 3 panel | LED 8000 | 3 panel, derinlik 2000)
  *   DXF_Ciktilari/Milimetre/19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf        (LED 800 iki yanında 3'er panel, ön görünüş)
  */
 const fs = require('fs');
@@ -60,7 +62,7 @@ function generate(MODE) {
   dxf.addLayer('TARAMA', 8, 'CONTINUOUS');
   dxf.addLayer('OLCU', 2, 'CONTINUOUS');
   dxf.addLayer('METIN', 7, 'CONTINUOUS');
-  if (MODE === 'led') { dxf.addLayer('LED', 4, 'CONTINUOUS'); dxf.addLayer('CIT_LED_ARKASI', 8, 'DASHED'); }
+  if (MODE === 'led' || MODE === 'ledkafes') { dxf.addLayer('LED', 4, 'CONTINUOUS'); dxf.addLayer('CIT_LED_ARKASI', 8, 'DASHED'); }
 
   // LED modu: LED ekranın arkasında kalan çit çizgileri ayrı (kesik) katmana gider
   let hide = null; // { x0, x1, yTop }
@@ -201,6 +203,93 @@ function generate(MODE) {
     return Wk;
   };
 
+  if (MODE === 'kafes' || MODE === 'ledkafes') {
+    // Kullanıcı: 8'li ve 2'li dizi, dört taraf kapalı kafes, toplam derinlik (kolonlar dahil) 2000.
+    // Yan yüz: "iki eşit parça" → kolon eksenleri arası (2000 - 100) / 2 = 950, net 850, ortada ara kolon.
+    const D = 2000, sideAx = (D - post) / 2;
+    const postPlan = (px, py) => {                    // px,py = kolon sol-alt köşesi (dış yüzler)
+      const cx = px + post / 2, cy = py + post / 2;
+      R(cx - plate / 2, cy - plate / 2, plate, plate, 'TABAN');
+      [-1, 1].forEach((sx) => [-1, 1].forEach((sy) => C(cx + sx * P.boltOff, cy + sy * P.boltOff, P.boltD / 2, 'DELIK')));
+      R(px - 2, py - 2, post + 4, post + 4, 'KOLON');
+      R(px + 10, py + 10, post - 20, post - 20, 'KOLON');
+      R(px + postT, py + postT, post - 2 * postT, post - 2 * postT, 'GIZLI');
+    };
+    // Yatay (X boyunca) panel: kolon iç yüzleri xa..xb, dış yüz yOut, içe doğru yön sgn (+1 yukarı)
+    const lamX = (xa, xb, yOut, sgn) => {
+      [yOut + sgn * lamFront, yOut + sgn * (lamFront + lamRun)].forEach((yy) => { L(xa, yy, xb, yy, 'LAMEL'); L(xa - lamInsert, yy, xa, yy, 'GIZLI'); L(xb, yy, xb + lamInsert, yy, 'GIZLI'); });
+    };
+    const lamY = (ya, yb, xOut, sgn) => {
+      [xOut + sgn * lamFront, xOut + sgn * (lamFront + lamRun)].forEach((xx) => { L(xx, ya, xx, yb, 'LAMEL'); L(xx, ya - lamInsert, xx, ya, 'GIZLI'); L(xx, yb, xx, yb + lamInsert, 'GIZLI'); });
+    };
+    const cage = (ox, oy, k) => {
+      const Wx = k * axis + post;
+      const xs = Array.from({ length: k + 1 }, (_, i) => ox + i * axis);
+      const ys = [oy, oy + sideAx, oy + 2 * sideAx];
+      xs.forEach((x) => { postPlan(x, ys[0]); postPlan(x, ys[2]); });
+      [xs[0], xs[k]].forEach((x) => postPlan(x, ys[1]));
+      for (let b = 0; b < k; b++) { lamX(xs[b] + post, xs[b + 1], oy, 1); lamX(xs[b] + post, xs[b + 1], oy + D, -1); }
+      for (let b = 0; b < 2; b++) { lamY(ys[b] + post, ys[b + 1], ox, 1); lamY(ys[b] + post, ys[b + 1], ox + Wx, -1); }
+      // Eksen çizgileri
+      L(ox - 80, oy + post / 2, ox + Wx + 80, oy + post / 2, 'EKSEN');
+      L(ox - 80, oy + D - post / 2, ox + Wx + 80, oy + D - post / 2, 'EKSEN');
+      [ox + post / 2, ox + Wx - post / 2].forEach((x) => L(x, oy - 80, x, oy + D + 80, 'EKSEN'));
+      // Ölçüler
+      for (let b = 0; b < k; b++) dimH(xs[b] + post / 2, xs[b + 1] + post / 2, oy - plate / 2 + post / 2, oy - 200, `${axis}`);
+      dimH(ox, ox + Wx, oy - plate / 2 + post / 2, oy - 290, `${Wx}`);
+      dimV(oy, oy + D, ox - plate / 2 + post / 2, ox - 290, `${D}`);
+      dimV(ys[0] + post / 2, ys[1] + post / 2, ox + Wx + plate / 2, ox + Wx + 200, `${sideAx}`);
+      dimV(ys[1] + post / 2, ys[2] + post / 2, ox + Wx + plate / 2, ox + Wx + 200, `${sideAx}`);
+      dimH(ox + Wx - post - 0, ox + Wx, oy + D + plate / 2 - post / 2, oy + D + 140, `${post}`);
+      T(ox + Wx / 2, oy + D / 2 + 20, 60, `${k} PANELLI KAFES`, 'center');
+      T(ox + Wx / 2, oy + D / 2 - 70, 30, `dis olcu ${Wx} x ${D}  -  on ve arka ${k} x ${axis}, yanlar 2 x ${sideAx}`, 'center');
+      T(ox + Wx / 2, oy - 420, 22, 'ON', 'center');
+      return Wx;
+    };
+    if (MODE === 'ledkafes') {
+      // Ön ve arka cephe aynı: 3 standart panel | LED 8000 | 3 standart panel; paneller LED kenarına dayalı.
+      // Yanlar 2 x 950. LED plan derinliği bilinmiyor: kolon derinliğinde (100) bant olarak çizildi.
+      const ledW = 8000, kS = 3, Wr = kS * axis + post;              // 4600
+      const xA = 0, led0 = Wr, led1 = Wr + ledW, xB = led1, Wt = 2 * Wr + ledW;   // 17200
+      const ys = [0, sideAx, 2 * sideAx];
+      [xA, xB].forEach((x0) => {
+        const xs = Array.from({ length: kS + 1 }, (_, i) => x0 + i * axis);
+        xs.forEach((x) => { postPlan(x, ys[0]); postPlan(x, ys[2]); });
+        for (let b = 0; b < kS; b++) { lamX(xs[b] + post, xs[b + 1], 0, 1); lamX(xs[b] + post, xs[b + 1], D, -1); }
+        for (let b = 0; b < kS; b++) dimH(xs[b] + post / 2, xs[b + 1] + post / 2, -plate / 2 + post / 2, -200, `${axis}`);
+        dimH(x0, x0 + Wr, -plate / 2 + post / 2, -290, `${Wr}`);
+      });
+      [xA, Wt - post].forEach((x) => postPlan(x, ys[1]));
+      for (let b = 0; b < 2; b++) { lamY(ys[b] + post, ys[b + 1], xA, 1); lamY(ys[b] + post, ys[b + 1], Wt, -1); }
+      // LED'ler (ön ve arka)
+      [[0, 'ON'], [D - post, 'ARKA']].forEach(([y, ad]) => {
+        dxf.addRect(led0, y, ledW, post, 'LED');
+        dxf.addLine(led0, y + post / 2, led1, y + post / 2, 'LED');
+        dxf.addText((led0 + led1) / 2, y === 0 ? y + post + 80 : y - 140, 50, `${ad} LED EKRAN ${ledW} x 3500`, 'LED', 0, 'center', 'baseline');
+      });
+      L(-80, post / 2, Wt + 80, post / 2, 'EKSEN'); L(-80, D - post / 2, Wt + 80, D - post / 2, 'EKSEN');
+      [post / 2, Wt - post / 2].forEach((x) => L(x, -80, x, D + 80, 'EKSEN'));
+      dimH(led0, led1, -plate / 2 + post / 2, -290, `${ledW} LED`);
+      dimH(0, Wt, -plate / 2 + post / 2, -400, `${Wt}`);
+      dimV(0, D, -plate / 2 + post / 2, -290, `${D}`);
+      dimV(ys[0] + post / 2, ys[1] + post / 2, Wt + plate / 2, Wt + 200, `${sideAx}`);
+      dimV(ys[1] + post / 2, ys[2] + post / 2, Wt + plate / 2, Wt + 200, `${sideAx}`);
+      T(Wt / 2, D / 2 + 20, 60, 'LEDLI KAFES', 'center');
+      T(Wt / 2, D / 2 - 70, 30, `dis olcu ${Wt} x ${D}  -  on ve arka: ${kS} panel + LED ${ledW} + ${kS} panel, yanlar 2 x ${sideAx}`, 'center');
+      T(Wt / 2, -520, 22, 'ON', 'center');
+      T(0, D + 500, 40, 'PAFTA 21 : LEDLI PANJUR CIT KAFES - UST GORUNUS (DERINLIK 2000)  -  1 birim = 1 mm');
+      T(0, D + 440, 22, `On ve arka cephe ayni: ${kS} standart panel (eksen ${axis}, kolon ${post}) + LED ${ledW} + ${kS} standart panel; paneller LED kenarina dayali. Yanlar iki esit panel, eksen ${sideAx} (net ${sideAx - post}).`);
+      T(0, D + 400, 22, 'LED plan derinligi bilinmiyor: kolon derinliginde (100 mm) bant olarak gosterildi. LED on gorunusu: Pafta 19.');
+      return dxf.toDxfString();
+    }
+    cage(0, 0, 8);
+    cage(0, -3600, 2);
+    T(0, D + 500, 40, 'PAFTA 20 : PANJUR LAMELLI CIT KAFES - UST GORUNUS (8 PANEL ve 2 PANEL, DERINLIK 2000)  -  1 birim = 1 mm');
+    T(0, D + 440, 22, `Dort taraf kapali. On/arka: standart panel (kolon eksenleri arasi ${axis}, kolon ${post}x${post}). Yanlar: iki esit panel, eksen ${sideAx} (net ${sideAx - post}), ortada ara kolon.`);
+    T(0, D + 400, 22, `Lameller kolon derinliginde ortali, dis yuzden ${lamFront} mm iceride, kanat izdusumu ${lamRun}. Kolon tabanlari ${plate}x${plate}, 4 x O${P.boltD}. Yukseklik ${H} (Pafta 16/17).`);
+    return dxf.toDxfString();
+  }
+
   if (MODE === 'led') {
     // Kullanıcı çizimi (cm): METAL FENS 440 | LED EKRAN 800 | METAL FENS 440. LED'in arkası çevrilmez;
     // yalnızca iki yandaki 440'lık alanlar panjur çitle kapanır. Kullanıcı: her yana 3 standart panel.
@@ -303,7 +392,7 @@ function generate(MODE) {
 }
 
 if (!fs.existsSync(DIR_MM)) fs.mkdirSync(DIR_MM, { recursive: true });
-for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800'], ['led', '19_CIT_LED_YANLARI_3_PANEL_440_800_440']]) {
+for (const [mode, base] of [['tek', FILE_BASE], ['dizi', '17_CIT_PANJUR_DIZI_8_VE_2_PANEL_EKSEN1500_H1800'], ['led', '19_CIT_LED_YANLARI_3_PANEL_440_800_440'], ['kafes', '20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000'], ['ledkafes', '21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000']]) {
   const out = path.join(DIR_MM, `${base}_mm.dxf`);
   const str = generate(mode);
   if (/NaN/.test(str)) { console.error('HATA: DXF icinde NaN var', mode); process.exit(1); }
