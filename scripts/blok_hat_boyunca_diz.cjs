@@ -94,8 +94,15 @@ console.log(`Blok ${blockName}: boy ${Lb.toFixed(3)}, yukseklik ${(y1 - y0).toFi
 const polys = ents.filter((e) => e.sec === 'ENTITIES' && e.type === 'LWPOLYLINE');
 let pts;
 if (flag('yol') === 'spline') {
-  const spl = ents.filter((e) => e.sec === 'ENTITIES' && e.type === 'SPLINE');
-  if (spl.length !== 1) { console.error('Model alaninda tam 1 SPLINE bekleniyordu, bulunan:', spl.length); process.exit(1); }
+  // --yolKatman=<metin>: yalnız katman adı bu metni içeren SPLINE ('!' önekiyle: içermeyen)
+  const yk = flag('yolKatman');
+  const spl = ents.filter((e) => e.sec === 'ENTITIES' && e.type === 'SPLINE').filter((e) => {
+    if (!yk) return true;
+    const lay = (get(e, '8')[0] || '').toLowerCase();
+    return yk.startsWith('!') ? !lay.includes(yk.slice(1).toLowerCase()) : lay.includes(yk.toLowerCase());
+  });
+  if (spl.length !== 1) { console.error('Model alaninda tam 1 SPLINE bekleniyordu, bulunan:', spl.length, '(secim icin --yolKatman=katman)'); process.exit(1); }
+  console.log('Hat SPLINE katmani:', get(spl[0], '8')[0]);
   const e = spl[0];
   const p = +get(e, '71')[0], U = get(e, '40').map(Number);
   const cp = get(e, '10').map((x, i) => [+x, +get(e, '20')[i]]);

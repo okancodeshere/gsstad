@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Blok dizme betiği: SPLINE hat ve nokta çıktısı (tavakesit1 tava + ayak konsolu)`
+- **Son commit:** `[Claude] Blok dizme betiği: --yolKatman (tavakesit1 çift tava bölümü)`
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
 - **Pafta 14 (2026-11-13):** `node generate_tava_200x40_kapakli_dxf.cjs` → `DXF_Ciktilari/Milimetre/14_TAVA_200x40_KAPAKLI_mm.dxf`. Perfore/sac ölçüleri varsayım; katalog gelince `P` bloğu güncellenecek.
 - **Push:** 2026-11-06'da kullanıcı onayıyla `b19abd7`'ye kadar tüm commit'ler GitHub'a push edildi (Cloudflare otomatik yayınlar). Anten askı aparatı, alt kot ve skorbord montajları ve kablo senkronizasyonu canlıda.
@@ -88,6 +88,19 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-13 — Claude — tavakesit1: çift tava bölümü (aynı konsolda arka arkaya)
+- **Kullanıcı isteği:** "belirli yerlerde aynı konsolda arka arkaya 2 tane tava olması lazım". Kullanıcı ana hattın üstüne `cifttava` katmanında ikinci bir SPLINE çizdi (x 12923.7 → 20165.4; ana hatla sapma 0; uçlar dosyadaki kısa düşey çizgilerde).
+  - Soru yanıtları: derinlikte arka arkaya; konsol aynı (L 200).
+- **Değişen dosyalar:**
+  - `scripts/blok_hat_boyunca_diz.cjs`: YENİ `--yolKatman=<metin>` (SPLINE'ı katman adına göre seçer; `!` öneki: içermeyen).
+  - Çıktılar (git dışı): `tavakesit1_CIFT_TAVA.dxf` (ara) ve `tavakesit1_CIFT_TAVA.dwg` (sonuç), `_baslangic/_orta/_genel.pdf`.
+    - Ön tavalar 56 + 1 (`TAVA_DIZI`). Arka tavalar `cifttava` hattında 28 + 1 (248.7), `TAVA_DIZI_ARKA`, ön tavaların tam arkasında.
+    - 142 `AYAK_KONSOL` (`KONSOL_DIZI`); 72'si çift bölgede.
+    - `CIFT_TAVA_NOT` katmanı: sınır işaretleri, üst çizgi ve "CIFT TAVA - AYNI KONSOLDA ARKA ARKAYA 2 x 200x40 (L = 72.4 m, 72 konsol)" yazısı.
+  - `tavakesit1_DIZILI_KONSOLLU.dwg` kullanıcıda açık (dwl); ona dokunulmadı.
+- **Doğrulama:** PDF önizlemeler kontrol edildi.
+- **Commit:** `[Claude] Blok dizme betiği: --yolKatman (tavakesit1 çift tava bölümü)`
 
 ### 2026-11-13 — Claude — tavakesit1: tava spline boyunca + 1 m'de bir ayak konsolu
 - **Kullanıcı isteği:** `tavakesit1.dxf` içindeki hatta aynı dosyadaki `tava yan kesit` bloğunu yerleştir; ayrıca 1 m'de bir alttan ayak konsolu koy.
