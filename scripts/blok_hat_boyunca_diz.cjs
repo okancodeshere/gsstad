@@ -90,10 +90,34 @@ const ax = anchorX - base[0], ay = anchorY - base[1];   // blok yerel koordinat�
 console.log(`Blok ${blockName}: boy ${Lb.toFixed(3)}, yukseklik ${(y1 - y0).toFixed(3)}, anchor yerel (${ax.toFixed(3)}, ${ay.toFixed(3)})`);
 
 // --- Hat --------------------------------------------------------------------------------------
+// --yol=spline: model alanındaki tek SPLINE yoğun örneklenip hat olarak kullanılır (NURBS, de Boor)
 const polys = ents.filter((e) => e.sec === 'ENTITIES' && e.type === 'LWPOLYLINE');
-if (polys.length !== 1) { console.error('Model alaninda tam 1 LWPOLYLINE bekleniyordu, bulunan:', polys.length); process.exit(1); }
-if (get(polys[0], '42').some((b) => Math.abs(+b) > 1e-9)) { console.error('Hatta yay (bulge) var; bu betik yalniz duz parcali hat destekler.'); process.exit(1); }
-let pts = get(polys[0], '10').map((x, i) => [+x, +get(polys[0], '20')[i]]);
+let pts;
+if (flag('yol') === 'spline') {
+  const spl = ents.filter((e) => e.sec === 'ENTITIES' && e.type === 'SPLINE');
+  if (spl.length !== 1) { console.error('Model alaninda tam 1 SPLINE bekleniyordu, bulunan:', spl.length); process.exit(1); }
+  const e = spl[0];
+  const p = +get(e, '71')[0], U = get(e, '40').map(Number);
+  const cp = get(e, '10').map((x, i) => [+x, +get(e, '20')[i]]);
+  const wRaw = get(e, '41').map(Number), W = cp.map((_, i) => (wRaw.length === cp.length ? wRaw[i] : 1));
+  if (!cp.length || U.length !== cp.length + p + 1) { console.error('SPLINE kontrol noktasi / dugum sayisi uyusmuyor (fit-point spline desteklenmiyor).'); process.exit(1); }
+  const evalAt = (u) => {
+    let k = p; while (k < cp.length - 1 && U[k + 1] <= u) k++;
+    const dd = []; for (let j = 0; j <= p; j++) { const c = cp[k - p + j], w = W[k - p + j]; dd.push([c[0] * w, c[1] * w, w]); }
+    for (let r = 1; r <= p; r++) for (let j = p; j >= r; j--) {
+      const i = k - p + j, den = U[i + p - r + 1] - U[i], a = den === 0 ? 0 : (u - U[i]) / den;
+      dd[j] = dd[j].map((v, q) => (1 - a) * dd[j - 1][q] + a * v);
+    }
+    return [dd[p][0] / dd[p][2], dd[p][1] / dd[p][2]];
+  };
+  const N = 6000, u0 = U[p], u1 = U[cp.length];
+  pts = Array.from({ length: N + 1 }, (_, i) => evalAt(i === N ? u1 - 1e-12 * (u1 - u0) : u0 + ((u1 - u0) * i) / N));
+  console.log(`SPLINE: derece ${p}, ${cp.length} kontrol noktasi, ${N} parca ile orneklendi`);
+} else {
+  if (polys.length !== 1) { console.error('Model alaninda tam 1 LWPOLYLINE bekleniyordu, bulunan:', polys.length, '(SPLINE hat icin --yol=spline)'); process.exit(1); }
+  if (get(polys[0], '42').some((b) => Math.abs(+b) > 1e-9)) { console.error('Hatta yay (bulge) var; bu betik yalniz duz parcali hat destekler.'); process.exit(1); }
+  pts = get(polys[0], '10').map((x, i) => [+x, +get(polys[0], '20')[i]]);
+}
 if (reverse) pts = pts.reverse();
 const segLen = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
 const pathLen = pts.slice(1).reduce((s, p, i) => s + segLen(pts[i], p), 0);
@@ -150,6 +174,13 @@ if (!SPACING) {
     placements.push({ P0: P, P1: [P[0] + (B[0] - A[0]) / l, P[1] + (B[1] - A[1]) / l], sx: 1 });
   }
   console.log(`Aralik modu: ${CHAIN ? `zincir (${CHAIN} birimlik parcalar)` : 'hat'} boyu ${chainLen.toFixed(1)}, ilk ${FIRST}, aralik ${SPACING}`);
+}
+// --noktaJson=dosya: DXF yazmadan yalnız noktaları (hat/zincir üzerindeki P0) ve açıları yaz
+if (flag('noktaJson')) {
+  const pts2 = placements.map(({ P0, P1 }) => ({ x: P0[0], y: P0[1], aci: (Math.atan2(P1[1] - P0[1], P1[0] - P0[0]) * 180) / Math.PI }));
+  fs.writeFileSync(flag('noktaJson'), JSON.stringify(pts2, null, 1));
+  console.log(`Noktalar: ${pts2.length} adet -> ${flag('noktaJson')}`);
+  process.exit(0);
 }
 
 // --- INSERT metni -----------------------------------------------------------------------------
