@@ -38,8 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Kesit → üst görünüş aktarma betiği (kuzey kafes, tava, konsol)`
-- **Kesit → üst görünüş aktarımı (2026-11-15):** `node scripts/kesit_ust_gorunus_aktar.cjs giris.dxf cikis.dxf`. Kuzey tribün: `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
+- **Son commit:** `[Claude] Kesit → üst görünüş: yerleşim C eğrisi üzerinde, yay boyuyla`
+- **Kesit → üst görünüş aktarımı (2026-11-15):** `node scripts/kesit_ust_gorunus_aktar.cjs giris.dxf cikis.dxf`. Kuzey tribün: `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış. Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
 - **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
@@ -91,6 +91,25 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Kesit → üst görünüş: düz hat yerine C eğrisi (önceki kayıt düzeltildi)
+- **Kullanıcı isteği:** "düz bir hat üstüne çiz demedim ki, arkasında bulunan C şeklinde duran hat üzerine çizecektin. derinlik yan kesitte görünmediğinden patladın". Aşağıdaki ilk kayıttaki yerleşim (kolon ayakları arası düz bant, x 1374638…1374838, sol uç +Y) YANLIŞTI ve değiştirildi.
+  - Soru yanıtları: yan görünüş C'nin İÇİNDEN bakış (sol uç planda −Y ucuna, ON yüzü C'nin içine); yan görünüşteki yatay mesafe EĞRİ BOYUNCA gerçek boy (açılım, izdüşüm değil); tava ve konsollar İÇ eğri üzerinde.
+- **Geometri:** `parabolik_kiris` katmanında iki eş merkezli eğri (yay parçalı LWPOLYLINE, iki yarım): iç (ortada x 1368935.1) ve dış (1368735.1), araları tam 200 = duvar bandı. İç eğri boyu 23 612.2; ref merkezi (Y −374240.089) tam ortada (iki yana 11 806.1). Köşelerde R ≈ 6407, 65°.
+- **Değişen dosyalar:**
+  - `scripts/kesit_ust_gorunus_aktar.cjs` baştan yazıldı:
+    - `samplePoly()` (bulge → 0.05° adımlı örnekleme), iç eğri iki yarımdan birleştirilir, `at(t)` yay boyu → nokta, `toT(x) = tMid + (x − cx)`.
+    - Kafes: TABAN uçları iç eğride kiriş, açı kirişten, merkez kiriş ortasından 100 dışa (bant ortası). Blok yerel −Y (ON) C'nin içine.
+    - Tava: her parçanın yatay başı/sonu yay boyuna taşınır, blok kirişe göre dönük ve X ölçekli. Konsol: yay boyundaki noktada, teğete göre dönük.
+    - Eğri dışına taşan konumda hata verir.
+  - Çıktı (git dışı) üzerine yazıldı: `DXF_Ciktilari/Milimetre/kesitaktarma_UST_YERLESIM.dxf` (4 kafes, 57 tava, 142 konsol; katmanlar aynı).
+- **Sonuç (iç eğri üzerindeki uçlar):**
+  - 2'li: (1369540.2, −379269.2)…(1369432.7, −378970.0) açı 109.77°; (1369428.9, −369521.6)…(1369535.9, −369222.2) açı 70.34°.
+  - 8'li: (1369022.8, −376533.9)…(1368956.4, −375317.8) açı 93.13°; (1368956.1, −373174.3)…(1369021.9, −371958.2) açı 86.90°.
+  - Tava: (1369533.1, −379250.8) → (1372024.7, −366153.4), ref merkezinden −5070.8 … +9095.1.
+- **Doğrulama:** accoreconsole AUDIT 0 hata. Kontrol görüntülerinde kafesler iki eğri arasında, ON içte, tava iç eğride.
+- **Dikkat:** Kafes TABAN derinliği 208 (bant 200), iki yandan 4 taşıyor. Tava iç eğride olduğu için kafeslerin ön ayak sırasıyla aynı hatta.
+- **Commit:** `[Claude] Kesit → üst görünüş: yerleşim C eğrisi üzerinde, yay boyuyla`
 
 ### 2026-11-15 — Claude — Kesit → üst görünüş ekipman aktarımı (kuzey tribün)
 - **Kullanıcı isteği:** Yan görünüşte (kesit) yerleştirilmiş kafes, tava ve konsolları üst görünüşe aynı sağ-sol konumda aktar; `kuzey ref` çizgileri referans. Bloklar `2lıüst`, `8lıüst`, hat boyunca `tavaüst`, 1 m'de bir `konsolüst`. Python/ezdxf istendi; makinede Python kurulu değil, Node ile yapıldı (kullanıcıya bildirildi).
