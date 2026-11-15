@@ -40,7 +40,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Son güncelleyen:** Claude, 2026-11-15 (Tava Ofset sayfası). Aşağıdaki pafta maddeleri Antigravity'nin 15:46 güncellemesinden.
 - **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında saha fotoğrafındaki kaynaklı delikli U parça) + 80 cm M12 tij + 40×40 U profil. U parça ölçüleri (45 × 40) fotoğraf oranından; kullanıcı ölçü verirse `BOSS` güncellenecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
   - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
-- **Son commit:** `[Claude] Tava Ofset sayfası: kelepçe altında saha fotoğrafındaki kaynaklı delikli U parça`
+  - Tava kenarı tespit çenesi (takoz) yok (kullanıcı kararı).
+- **Son commit:** `[Claude] Tava Ofset sayfası: tava kenarı takozları kaldırıldı`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -121,6 +122,12 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Tava Ofset sayfası: tava kenarı takozları kaldırıldı
+- **Kullanıcı isteği:** "tij ile U profilin orada takoz gibi bir şey var, onları kaldır, öyle bir şey kullanmayacağım".
+- **Değişen dosyalar:** `tava_aski_aparati.js` → `buildHanger()`: tava kenarındaki iki tespit çenesi (40×30×60 kutu) silindi; parça listesinden "Tava tespit çenesi" satırı çıktı. `tava_aski_aparati.html`: açıklamadan "tava kenarında çeneler" çıkarıldı.
+- **Doğrulama:** `npm run build` hatasız; dev sunucuda U profil yakın planında takoz yok, konsol hatası yok.
+- **Commit:** `[Claude] Tava Ofset sayfası: tava kenarı takozları kaldırıldı`
 
 ### 2026-11-15 — Claude — Tava Ofset sayfası: kelepçe altı saha fotoğrafındaki kaynaklı U parça
 - **Kullanıcı isteği:** İlk görsel anlaşılmadığı için 4 saha fotoğrafı gönderdi (boruya takılı numune kelepçe).

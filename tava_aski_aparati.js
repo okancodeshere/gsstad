@@ -1,7 +1,7 @@
 // Çatı makası kablo tavası tij askısı: ayrı 3D çalışma alanı (tava_aski_aparati.html)
 // Makas ölçüleri main.js REF_TRUSS ile aynı. Askı (kullanıcı tarifi + kelepçe görseli, 2026-11-15):
 // üst boruyu saran iki parçalı kelepçe (yanlarda kulak + M10), alt yarıda kaynaklı delikli kulak (M12),
-// kulaktan inen M12 dişli tij, iki tij arasında tava taşıyıcısı 40×40 U profil; tava kenarında çeneler.
+// kulaktan inen M12 dişli tij, iki tij arasında tava taşıyıcısı 40×40 U profil (tava kenarı çenesi / takoz yok).
 // Çatı borusunda delme / kaynak yok (Kalıcı karar). Ana modeldeki (main.js) askı eski halinde.
 //
 // Koordinatlar (m): makas yerel ekseni. Z = makas boyunca s, Y = omurga ekseninden yukarı, X = enine.
@@ -332,7 +332,7 @@ function buildHanger(s, k, trayBottom, tray) {
     feet.push(new V(xa, trayBottom, topS));
   });
   const tb = buildTabla(tablaG, feet[0], feet[1], k === null ? TABLA.nodeLen : null);
-  [-1, 1].forEach(sx => tablaG.add(box(0.04, 0.03, 0.06, M.dark, sx * (tray.w / 2 + 0.01), trayBottom + 0.015, s)));
+  // Tava kenarı tespit çeneleri (takoz) kaldırıldı: kullanıcı kullanmayacak (2026-11-15)
   if (state.explode) { clampG.position.y += 0.22; tablaG.position.y -= 0.22; }
   dynGroup.add(grp);
   return { need, tablaLen: tb.len, m8: tb.m8, bandLen, memberR: k === null ? T.tieR : T.zigR, feet };
@@ -425,8 +425,7 @@ function updatePanel() {
       [`M12 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 0.89 * TIJ_LEN],
       ['M12 somun (kelepçe U parçası içi/altı + U profil üstü/altı)', 8, 0.016],
       ['M12 pul', 4, 0.006],
-      [`U profil 40×40×3, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø14 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * uKgm],
-      ['Tava tespit çenesi', 2, 0.08]
+      [`U profil 40×40×3, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø14 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * uKgm]
     ];
   };
   const kits = [];
