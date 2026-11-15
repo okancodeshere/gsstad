@@ -412,7 +412,11 @@ function drawTrayMountingDetails(dxf, cx1, cy1, cx2, cy2, s) {
  * Inner Width = 500mm, Side Height = 100mm, Sheet Metal t = 2mm.
  */
 function draw500mmTrayProfile(dxf, cx, cy, s, trayH = 100, hasSeparator = false, sepOffsetFromCenter = 0, sepLabel = 'SEPERATOR') {
-  const W = 500 * s;
+  drawTrayProfile(dxf, cx, cy, s, 500, trayH, hasSeparator, sepOffsetFromCenter, sepLabel);
+}
+
+function drawTrayProfile(dxf, cx, cy, s, width = 500, trayH = 100, hasSeparator = false, sepOffsetFromCenter = 0, sepLabel = 'SEPERATOR') {
+  const W = width * s;
   const H = trayH * s;
   const t = 2 * s;
   const lipW = 15 * s;
@@ -450,7 +454,7 @@ function draw500mmTrayProfile(dxf, cx, cy, s, trayH = 100, hasSeparator = false,
 
   // Perforated drainage slots along bottom (symbolic dashed slots)
   dxf.setLayer('TAVA_DETAY_DELIK');
-  const numSlots = 9;
+  const numSlots = width === 300 ? 5 : 9;
   const slotW = 30 * s;
   const slotSpacing = (W - 60 * s) / (numSlots - 1);
   for (let i = 0; i < numSlots; i++) {
@@ -471,21 +475,21 @@ function draw500mmTrayProfile(dxf, cx, cy, s, trayH = 100, hasSeparator = false,
 
   // 3. Under-Tray Support Console & M10 Threaded Suspension Rods (C-Profil Konsol)
   dxf.setLayer('TAVA_ASKI_KONSOL');
-  const consoleW = 580 * s;
+  const consoleW = (width + 80) * s;
   const consoleH = 35 * s;
   const consoleY = yBot - t - consoleH;
   dxf.addRect(cx - consoleW / 2, consoleY, consoleW, consoleH);
   dxf.addRect(cx - consoleW / 2 + 10 * s, consoleY + 8 * s, consoleW - 20 * s, 14 * s);
 
   // Left Threaded Rod (M10 tij)
-  const rodXL = cx - 270 * s;
+  const rodXL = cx - (width / 2 + 20) * s;
   dxf.addLine(rodXL, consoleY - 20 * s, rodXL, yTop + 80 * s);
   dxf.addLine(rodXL + 8 * s, consoleY - 20 * s, rodXL + 8 * s, yTop + 80 * s);
   dxf.addRect(rodXL - 4 * s, consoleY - 14 * s, 16 * s, 10 * s);
   dxf.addRect(rodXL - 6 * s, consoleY - 4 * s, 20 * s, 4 * s);
 
   // Right Threaded Rod (M10 tij)
-  const rodXR = cx + 262 * s;
+  const rodXR = cx + (width / 2 + 12) * s;
   dxf.addLine(rodXR, consoleY - 20 * s, rodXR, yTop + 80 * s);
   dxf.addLine(rodXR + 8 * s, consoleY - 20 * s, rodXR + 8 * s, yTop + 80 * s);
   dxf.addRect(rodXR - 4 * s, consoleY - 14 * s, 16 * s, 10 * s);
@@ -493,7 +497,7 @@ function draw500mmTrayProfile(dxf, cx, cy, s, trayH = 100, hasSeparator = false,
 
   // Tray Dimensions
   dxf.setLayer('OLCULER');
-  dxf.addDimension(xL, yTop + 25 * s, xR, yTop + 25 * s, 25 * s, '500 mm (IC GENISLIK)');
+  dxf.addDimension(xL, yTop + 25 * s, xR, yTop + 25 * s, 25 * s, `${width} mm (IC GENISLIK)`);
   dxf.addDimension(xL - lipW - 15 * s, yBot, xL - lipW - 15 * s, yTop, -25 * s, `${trayH} mm`);
 }
 
@@ -784,15 +788,15 @@ function generateCableTraySections2D(units = 'mm') {
   dxf.addText(col2X, k5Y - 100 * s, 18 * s, '20 Adet 1/2" Feeder Kablo Kesiti (Doluluk: %8.0 - %92.0 Genisleme Rezervi)', 'METIN_BILGI', 0, 'center');
 
   // -----------------------------------------------------------------------
-  // KESİT 6: ALAN 2 (SCOREBOARD)
+  // KESİT 6: ALAN 2 (SCOREBOARD) - 300x100 MM TAVA
   // 13 TANE 2x25 ENERJİ KABLOSU + 3 TANE FİBEROPTİK
   // -----------------------------------------------------------------------
   const k6Y = 1250 * s;
-  draw500mmTrayProfile(dxf, col2X, k6Y, s, 100, true, 40, 'IZOLASYON SEPERATORU');
+  drawTrayProfile(dxf, col2X, k6Y, s, 300, 100, true, 35, 'IZOLASYON SEPERATORU');
 
-  const k6PwrStartX = col2X - 210 * s;
-  const k6PwrSpacingX = 32 * s;
-  const k6PwrSpacingY = 26 * s;
+  const k6PwrStartX = col2X - 128 * s;
+  const k6PwrSpacingX = 24.5 * s;
+  const k6PwrSpacingY = 24 * s;
   let k6PwrCount = 0;
   for (let t = 0; t < 2; t++) {
     for (let c = 0; c < 7; c++) {
@@ -804,8 +808,8 @@ function generateCableTraySections2D(units = 'mm') {
     }
   }
 
-  const k6FibStartX = col2X + 110 * s;
-  const k6FibSpacingX = 35 * s;
+  const k6FibStartX = col2X + 65 * s;
+  const k6FibSpacingX = 28 * s;
   for (let f = 0; f < 3; f++) {
     const fx = k6FibStartX + f * k6FibSpacingX;
     const fy = k6Y + rFib;
@@ -813,22 +817,22 @@ function generateCableTraySections2D(units = 'mm') {
   }
 
   dxf.setLayer('METIN_BILGI');
-  dxf.addText(col2X - 100 * s, k6Y + 65 * s, 18 * s, '13 ADET 2x25 mm2 DC ENERJI', 'METIN_BILGI', 0, 'center');
-  dxf.addText(col2X + 150 * s, k6Y + 30 * s, 16 * s, '3x FIBER', 'METIN_BILGI', 0, 'center');
+  dxf.addText(col2X - 55 * s, k6Y + 65 * s, 18 * s, '13 ADET 2x25 mm2 DC ENERJI', 'METIN_BILGI', 0, 'center');
+  dxf.addText(col2X + 95 * s, k6Y + 30 * s, 16 * s, '3x FIBER', 'METIN_BILGI', 0, 'center');
 
   dxf.addText(col2X, k6Y - 70 * s, 26 * s, 'KESIT 6: ALAN 2 (SCOREBOARD) - DC ENERJI VE FIBER HATTI', 'METIN_BILGI', 0, 'center');
-  dxf.addText(col2X, k6Y - 100 * s, 18 * s, '13x 2x25 mm2 DC Enerji + 3x Fiberoptik Kablo Kesiti (Doluluk: %9.7)', 'METIN_BILGI', 0, 'center');
+  dxf.addText(col2X, k6Y - 100 * s, 18 * s, '13x 2x25 mm2 DC Enerji + 3x Fiberoptik (300x100 mm Tava - Doluluk: %16.2)', 'METIN_BILGI', 0, 'center');
 
   // -----------------------------------------------------------------------
-  // KESİT 7: ALAN 4 (ÇAPRAZ KÖŞE TRİBÜN)
+  // KESİT 7: ALAN 4 (ÇAPRAZ KÖŞE TRİBÜN) - 300x100 MM TAVA
   // 8 TANE 7/8" FEEDER KABLO
   // -----------------------------------------------------------------------
   const k7Y = 750 * s;
-  draw500mmTrayProfile(dxf, col2X, k7Y, s, 100, false);
+  drawTrayProfile(dxf, col2X, k7Y, s, 300, 100, false);
 
   const k7Cols = 8;
-  const k7StartX = col2X - 210 * s;
-  const k7SpacingX = 60 * s;
+  const k7StartX = col2X - 115.5 * s;
+  const k7SpacingX = 33 * s;
 
   for (let c = 0; c < k7Cols; c++) {
     const cx = k7StartX + c * k7SpacingX;
@@ -842,7 +846,7 @@ function generateCableTraySections2D(units = 'mm') {
   dxf.addText(col2X, k7Y + 45 * s, 18 * s, '8 ADET 7/8" FEEDER (TEK SIRA YAN YANA KLIPSLI DIZILIM)', 'METIN_BILGI', 0, 'center');
 
   dxf.addText(col2X, k7Y - 70 * s, 26 * s, 'KESIT 7: ALAN 4 (KOSE TRIBUN) - CATI BESLEME HATTI', 'METIN_BILGI', 0, 'center');
-  dxf.addText(col2X, k7Y - 100 * s, 18 * s, '8 Adet 7/8" Feeder Kablo Kesiti (Doluluk: %9.8 - %90.2 Rezerv Alan)', 'METIN_BILGI', 0, 'center');
+  dxf.addText(col2X, k7Y - 100 * s, 18 * s, '8 Adet 7/8" Feeder Kablo Kesiti (300x100 mm Tava - Doluluk: %16.4)', 'METIN_BILGI', 0, 'center');
 
   // -----------------------------------------------------------------------
   // BÖLÜM 3: KABLO TİPLERİ, ÇAPLARI VE LEJANT BİLGİLERİ
@@ -900,8 +904,8 @@ function generateCableTraySections2D(units = 'mm') {
     { no: 'KESIT 3', loc: 'Alan 1 & 3 (Maraton)', cables: '20x 1/2" Feeder + 58x 1/2" Feeder (Toplam: 78)', area: '15,683 mm2', fill: '%31.4 (Limit: %50)', status: 'UYGUN (Homojen Dagilim)' },
     { no: 'KESIT 4', loc: 'Alan 1 & 3 (Maraton)', cables: '40 Adet 7/8" Feeder Kablo', area: '24,630 mm2', fill: '%41.0 (Limit: %60)', status: 'UYGUN (Standart 4 Katman)' },
     { no: 'KESIT 5', loc: 'Alan 2 (Skorboard)', cables: '20 Adet 1/2" Feeder Kablo', area: '4,021 mm2', fill: '%8.0 (Limit: %50)', status: 'UYGUN (%92 Rezerv Alan)' },
-    { no: 'KESIT 6', loc: 'Alan 2 (Skorboard)', cables: '13x 2x25 mm2 Enerji + 3x Fiberoptik', area: '4,845 mm2', fill: '%9.7 (Limit: %50)', status: 'UYGUN (Seperatorlu Ayrim)' },
-    { no: 'KESIT 7', loc: 'Alan 4 (Kose Tribun)', cables: '8 Adet 7/8" Feeder Kablo', area: '4,926 mm2', fill: '%9.8 (Limit: %50)', status: 'UYGUN (Tek Sira Klipsli)' }
+    { no: 'KESIT 6', loc: 'Alan 2 (Skorboard)', cables: '13x 2x25 mm2 Enerji + 3x Fiberoptik', area: '4,845 mm2', fill: '%16.2 (Limit: %50)', status: 'UYGUN (300x100 Tava)' },
+    { no: 'KESIT 7', loc: 'Alan 4 (Kose Tribun)', cables: '8 Adet 7/8" Feeder Kablo', area: '4,926 mm2', fill: '%16.4 (Limit: %50)', status: 'UYGUN (300x100 Tava)' }
   ];
 
   const rowH = 16 * s;
