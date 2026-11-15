@@ -37,7 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude, 2026-11-15 (Tava Ofset sayfası). Aşağıdaki pafta maddeleri Antigravity'nin 15:46 güncellemesinden.
+- **Son güncelleyen:** Antigravity, 2026-11-15 21:20 (Aparatlar: Matsing-2 sekmesi).
+- **Matsing-2 Aparatlar Sekmesi (2026-11-15):** `aparatlar.html` üst menüsüne "Matsing-2" eklendi (`matsing_montaj_aparati.html?model=matsing2&embed=1`). Skorbord yanı silindire (çevre 483 cm $\rightarrow \varnothing 1537$ mm) takılan aparat parametrik olarak yüklendi (`carrierR = 4.83 / Math.PI / 2`). Varsayılan: slope 0°, tilt 45°, drop 2700 mm. Görünüş açıları ve zemin kotu silindir çapına uyarlandı. `npm run build` temiz.
+- **Son commit:** [Antigravity] Aparatlar: Matsing-2 skorbord silindiri sekmesi ve model entegrasyonu
+- **Önceki güncelleme:** Claude, 2026-11-15 (Pafta 31-32, Tava Ofset sayfası).
 - **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında saha fotoğrafındaki kaynaklı delikli U parça) + 80 cm M12 tij + 40×40 U profil. U parça ölçüleri (45 × 40) fotoğraf oranından; kullanıcı ölçü verirse `BOSS` güncellenecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
   - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
   - Tava kenarı tespit çenesi (takoz) yok (kullanıcı kararı).
@@ -46,7 +49,6 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
   - Pafta 26: `node generate_tava_aski_kesit_dxf.cjs` → `26_TAVA_ASKISI_DUZ_VE_CAPRAZ_KESIT_mm.dxf` + `_onizleme.svg`. DWG/PDF üretilmedi.
 - **Pafta 27-30 (2026-11-15):** `node generate_matsing_aski_aparati_dwg.mjs --model=matsing|gammanu --anten=yok|var` → `DXF_Ciktilari/Milimetre/27…30_*_ASKI_APARATI_ANTENSIZ|ANTENLI` (.dxf ölçülü, .dwg, 2 PDF). AutoCAD 2023 `accoreconsole` gerekli. Seçeneksiz çalıştırma Pafta 13'ü yeniden yazar (denenmedi).
 - **Pafta 31-32 (2026-11-15):** aynı betik `--cevre=483` ile → `31/32_MATSING2_SKORBORD_ASKI_APARATI_*` (skorbord yanı silindir, 483 cm çevre = Ø1537; Pafta 1 ölçeği 1:15).
-- **SIRADAKİ İŞ (kullanıcı istedi, limit sıfırlanınca):** Aparatlar sayfasına (`aparatlar.html`) "Matsing-2" sekmesi: skorbord yanı silindire (çevre 483 cm) takılan Matsing aparatı. `createAntennaHanger` `carrierR` seçeneğini zaten destekliyor; `matsing_montaj_aparati.js`'e taşıyıcı seçeneği eklenip yeni sekme bağlanacak.
 - **Son commit:** `[Claude] Pafta 31-32: Matsing-2 skorbord silindiri askı aparatı DXF/DWG/PDF`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
@@ -128,6 +130,20 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 21:20 — Antigravity — Aparatlar: Matsing-2 (Skorbord Silindiri) sekmesi ve model entegrasyonu
+- **Kullanıcı isteği:** "bunu yapabilir misin. çok kolay sayfa kodunu klonlayıp sadece çember çapını degiştireceksin" (Aparatlar sayfasına Matsing-2 sekmesi: skorbord yanı silindir Ø1537 / 483 cm çevre).
+- **Değişen dosyalar:**
+  - `anten_aski_modeli.js` (~satır 149-155): `DROP_RANGE.max`, dR > 0 durumunda (büyük taşıyıcı silindiri vb.) alt sınır ve varsayılan gibi dR payı kadar genişletildi (`DROP_RANGE.max += Math.round(dR * 1000)`).
+  - `matsing_montaj_aparati.js`:
+    - `model=matsing2` / `cevre=483` URL parametresi algılandı.
+    - `carrierR = 4.83 / Math.PI / 2` (çevre 483 cm $\rightarrow \varnothing 1537$ mm) hesaplanarak `createAntennaHanger(MODEL, { carrierR })`'e iletildi; tam saran alt eyer + üst kabuk kelepçesi boru çapına göre otomatik ölçeklendi.
+    - Başlık, alt başlık metinleri, zemin grid kotu (-4.5m), varsayılan değerler (slope: 0°, tilt: 45°, drop: 2700 mm) ve kamera açıları (`VIEWS` / `target`) büyük silindire göre ayarlandı.
+    - `window.matsingAparat` objesine `modelKey`, `isM2`, `carrierR` eklendi.
+  - `matsing_montaj_aparati.html`: Bağımsız gezinme sekme çubuğuna `Matsing-1`, `Matsing-2 (Skorbord)` ve `Gammanu` sekmeleri eklendi; hızlı eğim butonlarına `0° · Skorbord` tanımlandı.
+  - `aparatlar.html`: Ana aparatlarda üst sekme çubuğuna `Matsing-2` butonu ve iframe adresi (`./matsing_montaj_aparati.html?model=matsing2&embed=1`) eklendi.
+- **Doğrulama:** `npm run build` hatasız (1.65s).
+- **Commit:** `[Antigravity] Aparatlar: Matsing-2 skorbord silindiri sekmesi ve model entegrasyonu`
 
 ### 2026-11-15 — Claude — Pafta 31-32: Matsing-2 (skorbord yanı silindir) askı aparatı
 - **Kullanıcı isteği:** "bir tane de skorbord yanındaki için Matsing'i klonla, onun çember çapı 483 cm; şu an sadece DXF çiz, sonra limit sıfırlanınca aparatlar sayfasına Matsing-2 olarak bir sayfa eklersin".

@@ -17,8 +17,15 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { enableWasd } from './aparat_wasd.js';
 import { createAntennaHanger } from './anten_aski_modeli.js';
 
-const MODEL = new URLSearchParams(location.search).get('model') === 'gammanu' ? 'gammanu' : 'matsing';
+const params = new URLSearchParams(location.search);
+const rawModel = (params.get('model') || '').toLowerCase();
+const IS_M2 = rawModel === 'matsing2' || rawModel === 'matsing-2' || params.get('cevre') === '483';
+const MODEL = rawModel === 'gammanu' ? 'gammanu' : 'matsing';
 const IS_G = MODEL === 'gammanu';
+const MODEL_KEY = IS_G ? 'gammanu' : (IS_M2 ? 'matsing2' : 'matsing');
+
+const CEVRE = IS_M2 ? (parseFloat(params.get('cevre')) || 483) : (parseFloat(params.get('cevre')) || 0);
+const carrierR = CEVRE > 0 ? (CEVRE / 100 / Math.PI / 2) : null;
 
 // ---------------------------------------------------------------------------
 // SAHNE
@@ -51,13 +58,13 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const grid = new THREE.GridHelper(6, 30, 0x334155, 0x1e293b);
-grid.position.y = -3.4;
+grid.position.y = IS_M2 ? -4.5 : -3.4;
 scene.add(grid);
 
 // ---------------------------------------------------------------------------
 // APARAT (geometri anten_aski_modeli.js içinde; ana model de aynı modülü kullanır)
 // ---------------------------------------------------------------------------
-const H = createAntennaHanger(MODEL);
+const H = createAntennaHanger(MODEL, { carrierR });
 scene.add(H.root);
 const { carrier, carrierGroup, levelHead, azGroup, tiltGroup, antenna, labels, computeChecks, bom, azBoltState } = H;
 const { ANT, CLAMP, FLANGE_R, FLANGE_T, FLANGE_NAME, FIX_FLANGE_TOP, AZ_BOLT, AZ_BOLT_R, AZ_SLOT_HALF, AZ_SPIGOT_R,
@@ -77,19 +84,36 @@ const elSlope = document.getElementById('slope');
 const panelEl = id => document.getElementById(id) || document.createElement('div');
 
 // Sekme ve modele özgü metinler
-document.querySelectorAll('[data-model]').forEach(a => a.classList.toggle('active', a.dataset.model === MODEL));
+document.querySelectorAll('[data-model]').forEach(a => a.classList.toggle('active', a.dataset.model === MODEL_KEY));
 // aparatlar.html içinde gömülüyken sekmeler üst çubukta; sayfanın kendi sekme çubuğu gizlenir
 if (new URLSearchParams(location.search).has('embed')) document.querySelector('.tabs')?.remove();
-document.title = IS_G ? 'Gammanu Askı Aparatı' : 'Matsing Askı Aparatı';
-document.getElementById('h-title').textContent = IS_G ? 'Gammanu Spot Beam 30/30 · Tek Kollu Askı Aparatı' : 'Matsing 4-Beam · Tek Kollu Askı Aparatı';
-document.getElementById('h-sub').innerHTML = `Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, ${CLAMP.type === 'shell'
-  ? 'gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk)'
-  : 'alt eyer + iki lama çemberle'} asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne ${TILT_FRONT}°, arkaya ${TILT_BACK}°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.`;
+document.title = IS_M2
+  ? 'Matsing-2 Askı Aparatı (Skorbord Silindiri)'
+  : (IS_G ? 'Gammanu Askı Aparatı' : 'Matsing-1 Askı Aparatı');
+
+document.getElementById('h-title').textContent = IS_M2
+  ? 'Matsing 4-Beam · Skorbord Silindiri Askı Aparatı (Matsing-2)'
+  : (IS_G ? 'Gammanu Spot Beam 30/30 · Tek Kollu Askı Aparatı' : 'Matsing 4-Beam · Tek Kollu Askı Aparatı (Matsing-1)');
+
+if (IS_M2) {
+  document.getElementById('h-sub').innerHTML = `Skorbord yanı taşıyıcı silindire (çevre ${Math.round(H.C.CARRIER_R * 2 * Math.PI * 100)} cm, Ø${Math.round(H.C.CARRIER_R * 2000)}) delme/kaynak olmadan, gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk, 8×M16) asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne ${TILT_FRONT}°, arkaya ${TILT_BACK}°). Taşıyıcı ile kelepçe arasında keçe.`;
+} else {
+  document.getElementById('h-sub').innerHTML = `Çatı taşıyıcısına (çevre 132 cm, Ø420) delme/kaynak olmadan, ${CLAMP.type === 'shell'
+    ? 'gövdeyi tam saran iki parçalı kelepçeyle (alt eyer + üst kabuk)'
+    : 'alt eyer + iki lama çemberle'} asılır. Eksen 1: azimut (kanallı sabit flanş + merkez pimli döner flanş, 360°). Eksen 2: tilt (çatal mafsal; zemine göre öne ${TILT_FRONT}°, arkaya ${TILT_BACK}°). Kelepçe ile taşıyıcı arasında keçe. Ana model (<code>main.js</code>) değişmedi.`;
+}
 panelEl('az-desc').innerHTML = `
   <b>Sabit taraf:</b> bağlantı plakasının altındaki eğim mafsalında (pim + kanal kilidi, ±${SLOPE_MAX}°) terazi başlığı yer çekimiyle düşeye gelip kilitlenir. Başlığın tabanı ${FLANGE_NAME} sabit flanş; flanşta 4 yay kanal (±${AZ_SLOT_HALF}°) ve Ø${mm(AZ_SPIGOT_R * 2)} merkez pimi var. Bu flanş hiç dönmez ve her zaman yataydır.<br>
   <b>Dönen taraf:</b> iniş borusuna kaynaklı ${FLANGE_NAME} döner flanş, sabit flanşın altına doğrudan oturur. Merkezindeki bronz burç merkez pimine geçer; dönme ekseni budur.<br>
   <b>Bağlantı:</b> 4×${AZ_BOLT.name} 8.8 cıvata döner flanştaki deliklerden geçip sabit flanştaki kanallardan çıkar; üstte Ø${mm(AZ_BOLT.wash * 2)} pul kanalı köprüler. Altta somun + kontra somun. Sıkılınca iki flanş sürtünmeyle kilitlenir.`;
-elDrop.min = DROP_RANGE.min; elDrop.max = DROP_RANGE.max; elDrop.value = DROP_RANGE.val;
+elDrop.min = DROP_RANGE.min; elDrop.max = DROP_RANGE.max;
+if (IS_M2) {
+  elDrop.value = 2700;
+  elTilt.value = 45;
+  elSlope.value = 0;
+} else {
+  elDrop.value = DROP_RANGE.val;
+}
 
 function update() {
   const az = +elAz.value, tilt = +elTilt.value, drop = +elDrop.value / 1000, slope = +elSlope.value;
@@ -136,8 +160,16 @@ document.getElementById('t-car').addEventListener('change', e => { carrier.visib
 document.getElementById('t-lbl').addEventListener('change', e => H.setLabelsVisible(e.target.checked));
 document.getElementById('t-exp').addEventListener('change', update);
 
-const target = IS_G ? new THREE.Vector3(0.2, -0.7, 0) : new THREE.Vector3(0.3, -1.0, 0);
-const VIEWS = IS_G ? {
+const target = IS_M2
+  ? new THREE.Vector3(0.3, -1.4, 0)
+  : (IS_G ? new THREE.Vector3(0.2, -0.7, 0) : new THREE.Vector3(0.3, -1.0, 0));
+
+const VIEWS = IS_M2 ? {
+  iso: new THREE.Vector3(4.5, 0.8, 4.5),
+  front: new THREE.Vector3(6.2, -1.4, 0),
+  side: new THREE.Vector3(0.3, -1.4, 6.2),
+  top: new THREE.Vector3(0.3, 5.2, 0.001)
+} : (IS_G ? {
   iso: new THREE.Vector3(1.9, 0.2, 1.9),
   front: new THREE.Vector3(3.0, -0.7, 0),
   side: new THREE.Vector3(0.2, -0.7, 3.0),
@@ -147,7 +179,7 @@ const VIEWS = IS_G ? {
   front: new THREE.Vector3(4.2, -1.0, 0),
   side: new THREE.Vector3(0.3, -1.0, 4.2),
   top: new THREE.Vector3(0.3, 3.4, 0.001)
-};
+});
 function setView(name) {
   if (name === 'az') {
     // Eksen 1 yakın plan: sabit flanş merkezine, hafif alttan
@@ -185,4 +217,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Tarayıcı konsolundan inceleme için
-window.matsingAparat = { model: MODEL, scene, camera, controls, carrierGroup, levelHead, azGroup, tiltGroup, antenna, computeChecks, hanger: H };
+window.matsingAparat = { model: MODEL, modelKey: MODEL_KEY, isM2: IS_M2, carrierR: H.C.CARRIER_R, scene, camera, controls, carrierGroup, levelHead, azGroup, tiltGroup, antenna, computeChecks, hanger: H };

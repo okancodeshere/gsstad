@@ -148,7 +148,11 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
 
   const DROP_RANGE = IS_G ? { min: 800, max: 3000, val: 1000 } : { min: 1100, max: 3000, val: 1500 };
   // Büyük çaplı taşıyıcıda (skorbord silindiri) kelepçe yığını uzar; iniş alt sınırı aynı payla kayar
-  if (dR > 0) { DROP_RANGE.min += Math.round(dR * 1000); DROP_RANGE.val += Math.round(dR * 1000); }
+  if (dR > 0) {
+    DROP_RANGE.min += Math.round(dR * 1000);
+    DROP_RANGE.val += Math.round(dR * 1000);
+    DROP_RANGE.max += Math.round(dR * 1000);
+  }
   const STEEL_DENSITY = 7850;
 
   // Malzemeler
