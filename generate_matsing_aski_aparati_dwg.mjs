@@ -29,18 +29,23 @@ const { createAntennaHanger } = await import(pathToFileURL(path.join(ROOT, 'ante
 const arg = k => (process.argv.find(a => a.startsWith(`--${k}=`)) || '').split('=')[1];
 const MODEL = arg('model') || 'matsing';
 const ANT_MODE = arg('anten') || 'hayalet';
-const IS_DEFAULT = !arg('model') && !arg('anten');
+const IS_DEFAULT = !arg('model') && !arg('anten') && !arg('cevre');
 const IS_G = MODEL === 'gammanu';
 const MODEL_TR = IS_G ? 'Gammanu' : 'Matsing';
-const VARIANT = { 'matsing|yok': 27, 'matsing|var': 28, 'gammanu|yok': 29, 'gammanu|var': 30 }[`${MODEL}|${ANT_MODE}`];
-if (!IS_DEFAULT && !VARIANT) { console.error('Geçersiz seçenek. --model=matsing|gammanu --anten=var|yok'); process.exit(1); }
+// --cevre=<cm>: taşıyıcı çevre ölçüsü. Verilirse skorbord yanı silindir montajı (Matsing-2, Pafta 31-32):
+//   taşıyıcı yatay (eğim 0), tilt 45°, iniş 2700 (ana modeldeki skorbord varsayılanına yakın).
+const CEVRE = parseFloat(arg('cevre')) || 0;
+const IS_SB = CEVRE > 0;
+const VARIANT = IS_SB ? { 'matsing|yok': 31, 'matsing|var': 32 }[`${MODEL}|${ANT_MODE}`]
+  : { 'matsing|yok': 27, 'matsing|var': 28, 'gammanu|yok': 29, 'gammanu|var': 30 }[`${MODEL}|${ANT_MODE}`];
+if (!IS_DEFAULT && !VARIANT) { console.error('Geçersiz seçenek. --model=matsing|gammanu --anten=var|yok [--cevre=483 (yalnızca matsing)]'); process.exit(1); }
 const PAFTA_NO = IS_DEFAULT ? 13 : VARIANT;
 const TARIH = IS_DEFAULT ? '2026-11-10' : '2026-11-15';
 
 const OUT_DIR = path.join(ROOT, 'DXF_Ciktilari', IS_DEFAULT ? 'DWG' : 'Milimetre');
 fs.mkdirSync(OUT_DIR, { recursive: true });
 const BASE = IS_DEFAULT ? '13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI'
-  : `${PAFTA_NO}_${MODEL_TR.toUpperCase()}_ASKI_APARATI_${ANT_MODE === 'var' ? 'ANTENLI' : 'ANTENSIZ'}`;
+  : `${PAFTA_NO}_${MODEL_TR.toUpperCase()}${IS_SB ? '2_SKORBORD' : ''}_ASKI_APARATI_${ANT_MODE === 'var' ? 'ANTENLI' : 'ANTENSIZ'}`;
 const DXF_PATH = path.join(OUT_DIR, BASE + '.dxf');
 const SCR_PATH = path.join(OUT_DIR, BASE + '.scr');
 const DWG_PATH = path.join(OUT_DIR, BASE + '.dwg');
@@ -50,10 +55,14 @@ const ACCORE = 'C:\\Program Files\\Autodesk\\AutoCAD 2023\\accoreconsole.exe';
 // MODEL DURUMU (ana modeldeki ALAN 1-3 Ara Bölge varsayılanı; azimut 0 = anten +X'e bakar)
 // ---------------------------------------------------------------------------
 // Gammanu: ana modeldeki ALAN 4 Spot Beam varsayılan inişi 2.0 m
-const STATE = { az: 0, tilt: 26, drop: IS_G ? 2.00 : 1.80, slope: 7.66 };
-const H = createAntennaHanger(MODEL, { labels: false });
+const STATE = IS_SB ? { az: 0, tilt: 45, drop: 2.70, slope: 0 } : { az: 0, tilt: 26, drop: IS_G ? 2.00 : 1.80, slope: 7.66 };
+const H = createAntennaHanger(MODEL, { labels: false, carrierR: IS_SB ? CEVRE / 100 / Math.PI / 2 : null });
 H.setState(STATE);
 const C = H.C;
+const RC = C.CARRIER_R * 1000;   // taşıyıcı yarıçapı (mm)
+const CARRIER_TXT = `Ø${Math.round(RC * 2)} (çevre ${Math.round(RC * 2 * Math.PI / 10)} cm)`;
+const CARRIER_WHAT = IS_SB ? 'skorbord yanı taşıyıcı silindiri' : 'mevcut çatı makası omurgası';
+const TITLE_NAME = IS_SB ? 'Matsing-2 askı aparatı' : `${MODEL_TR} askı aparatı`;
 if (ANT_MODE === 'yok') H.antenna.visible = false;
 const mmv = v => +(v * 1000).toFixed(1);   // m → mm (metin için)
 // Taşıyıcı referans borusu kısaltılır (3.2 m → 1.4 m)
@@ -418,9 +427,10 @@ function frame(x, y, W, Hh, k, title, sheetNo, scaleTxt) {
 // ===========================================================================
 // PAFTA 1 — GENEL MONTAJ (A0 yatay, 1:10)
 // ===========================================================================
-const K1 = 10, W1 = 1189 * K1, H1 = 841 * K1, X1 = 0, Y1 = 0;
+// Skorbord silindiri (Ø1537) 1:10'da A0'a sığmıyor: o varyantta pafta 1:15, yerleşim sabitleri SC ile ölçeklenir
+const K1 = IS_SB ? 15 : 10, SC = K1 / 10, SCT = `1:${K1}`, W1 = 1189 * K1, H1 = 841 * K1, X1 = 0, Y1 = 0;
 const ANT_TR = ANT_MODE === 'var' ? ' · ANTENLİ' : ANT_MODE === 'yok' ? ' · ANTENSİZ' : '';
-frame(X1, Y1, W1, H1, K1, `Pafta ${PAFTA_NO} · ${MODEL_TR} askı aparatı · Ø420 çatı makası · GENEL MONTAJ${ANT_TR}`, 1, '1:10');
+frame(X1, Y1, W1, H1, K1, `Pafta ${PAFTA_NO} · ${TITLE_NAME} · ${IS_SB ? `skorbord Ø${Math.round(RC * 2)}` : 'Ø420 çatı makası'} · GENEL MONTAJ${ANT_TR}`, 1, SCT);
 const th1 = 3.5 * K1;
 
 const vFront = makeView(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0));    // +Z'den bakış, sağ = +X
@@ -433,8 +443,8 @@ const placeView = (v, cx, topY) => { const e = extents(v, allMeshes); return { o
 const titleUnder = (x, y, s1, s2) => { TEXT(x, y, th1 * 1.4, s1, 'METIN', 1); if (s2) TEXT(x, y - th1 * 2, th1, s2, 'METIN', 1); };
 
 // Konumlar
-const top1 = Y1 + H1 - 900;
-const colX = [2050, 4350, 6650, 8900];
+const top1 = Y1 + H1 - 900 * SC;
+const colX = [2050, 4350, 6650, 8900].map(v => v * SC);
 const pF = placeView(vFront, colX[0], top1);
 const pS = placeView(vSide, colX[1], top1);
 const pA = placeView(vFront, colX[2], top1);
@@ -463,17 +473,17 @@ drawView(vSide, allMeshes, nonAnt, pB.ox, pB.oy, { plane: planeB, sheet: 10 });
 
 // Üst görünüş (ön görünüşün altında değil, sağ altta)
 // Ön görünüşün altındaki açıklama satırlarına binmesin diye en az 1000 mm aşağıda
-const pT = placeView(vTop, colX[0], Math.min(Y1 + 3600, pF.oy + pF.e.y0 - 1000));
+const pT = placeView(vTop, colX[0], Math.min(Y1 + 3600 * SC, pF.oy + pF.e.y0 - 1000));
 console.log('Üst görünüş…');
 drawView(vTop, allMeshes, viewOcc, pT.ox, pT.oy, { sheet: 10, layerFn: viewLayer });
 
 // Görünüş başlıkları
 const titleY = v => v.oy + v.e.y0 - 350;
-titleUnder(colX[0], titleY(pF), 'ÖN GÖRÜNÜŞ', 'taşıyıcı ekseni boyunca bakış · 1:10');
-titleUnder(colX[1], titleY(pS), 'YAN GÖRÜNÜŞ', 'antenin önünden bakış · 1:10');
-titleUnder(colX[2], titleY(pA), 'KESİT A-A', 'kelepçe ortasından, taşıyıcıya dik · 1:10');
-titleUnder(colX[3], titleY(pB), 'KESİT B-B', 'aparat ekseninden, taşıyıcı boyunca · 1:10');
-titleUnder(pT.ox + (pT.e.x0 + pT.e.x1) / 2, pT.oy + pT.e.y0 - 350, 'ÜST GÖRÜNÜŞ', '1:10');
+titleUnder(colX[0], titleY(pF), 'ÖN GÖRÜNÜŞ', 'taşıyıcı ekseni boyunca bakış · ' + SCT);
+titleUnder(colX[1], titleY(pS), 'YAN GÖRÜNÜŞ', 'antenin önünden bakış · ' + SCT);
+titleUnder(colX[2], titleY(pA), 'KESİT A-A', 'kelepçe ortasından, taşıyıcıya dik · ' + SCT);
+titleUnder(colX[3], titleY(pB), 'KESİT B-B', 'aparat ekseninden, taşıyıcı boyunca · ' + SCT);
+titleUnder(pT.ox + (pT.e.x0 + pT.e.x1) / 2, pT.oy + pT.e.y0 - 350, 'ÜST GÖRÜNÜŞ', SCT);
 
 // Kesit hatları (ön görünüşte B-B, yan görünüşte A-A)
 {
@@ -518,9 +528,10 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   const [fx, fy] = at(vFront, pF, fixTop);
   const R = C.FLANGE_R * 1000;
   DIM(fx - R, fy, fx + R, fy, fx, fy + 260, `Ø${Math.round(R * 2)}`);
-  CENTERLINE(ax, ay + 400, ax, py - 300, 10);
-  CENTERLINE(ax - 400, ay, ax + 400, ay, 10);
-  NOTE(ax + 160, ay + 150, ax + 700, ay + 450, 'Taşıyıcı Ø420 (çevre 132 cm) — mevcut çatı makası omurgası', th1);
+  CENTERLINE(ax, ay + RC + 190, ax, py - 300, 10);
+  CENTERLINE(ax - RC - 190, ay, ax + RC + 190, ay, 10);
+  if (IS_SB) TEXT(ax, ay + RC + 480, th1, `Taşıyıcı ${CARRIER_TXT} — ${CARRIER_WHAT}`, 'METIN', 1);   // büyük silindirde not çizgisi yan görünüşe taşıyor
+  else NOTE(ax + RC * 0.74, ay + RC * 0.74, ax + RC + 490, ay + RC + 240, `Taşıyıcı ${CARRIER_TXT} — ${CARRIER_WHAT}`, th1);
   const [sx, sy] = at(vFront, pF, pinSlope);
   NOTE(sx + 60, sy, sx + 650, sy + 120, `Eğim mafsalı: Ø${mmv(C.SLOPE.pin.r * 2)} pim + ${C.SLOPE.bolt.name} kanal kilidi (±${C.SLOPE_MAX}°)`, th1);
   NOTE(fx + R, fy - 10, fx + 650, fy - 150, `Eksen 1 azimut: sabit + döner flanş Ø${mmv(C.FLANGE_R * 2)}×${mmv(C.FLANGE_T)}, 4×${C.AZ_BOLT.name}`, th1);
@@ -547,11 +558,12 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   const along = new THREE.Vector3(0, -Math.sin(STATE.slope * Math.PI / 180), Math.cos(STATE.slope * Math.PI / 180));
   const [ax1, ay1] = at(vSide, pS, along.clone().multiplyScalar(C.CLAMP.SADDLE_L / 2));
   const [ax2, ay2] = at(vSide, pS, along.clone().multiplyScalar(-C.CLAMP.SADDLE_L / 2));
-  DIMALIGNED(ax1, ay1 + 300, ax2, ay2 + 300, cx, cy + 520, `${L} kelepçe boyu`);
+  DIMALIGNED(ax1, ay1 + RC + 90, ax2, ay2 + RC + 90, cx, cy + RC + 310, `${L} kelepçe boyu`);
   const [k1x, k1y] = at(vSide, pS, along.clone().multiplyScalar(0.7));
   const [k2x, k2y] = at(vSide, pS, along.clone().multiplyScalar(-0.7));
   CENTERLINE(k1x, k1y, k2x, k2y, 10);
-  TEXT(k2x, k2y + 380, th1, `Taşıyıcı eğimi ${STATE.slope}° (${IS_G ? 'ALAN 4' : 'ALAN 1-3; ALAN 2: 5°'}) — terazi başlığı her zaman yatay`, 'METIN');
+  TEXT(k2x, k2y + RC + 170 + (IS_SB ? 330 : 0), th1, IS_SB ? 'Taşıyıcı yatay (skorbord yanı silindir, ALAN 2) — eğim mafsalı 0°'
+    : `Taşıyıcı eğimi ${STATE.slope}° (${IS_G ? 'ALAN 4' : 'ALAN 1-3; ALAN 2: 5°'}) — terazi başlığı her zaman yatay`, 'METIN');
   const [sx, sy] = at(vSide, pS, pinSlope);
   CENTERLINE(sx, sy + 300, sx, sy - 2600, 10);
   const [m1x, m1y] = at(vSide, pS, mastC.clone().addScaledVector(mastDir, C.MAST_PIPE.L / 2));
@@ -562,12 +574,12 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
 // Parça listesi (BOM) — sağ alt, antetin üstünde
 {
   const rows = H.bom();
-  const bx = W1 - 10 * K1 - 2450, by0 = 56 * K1 + 10 * K1 + 300;
-  const rh = 75, cw = [120, 1700, 200, 330];
+  const bx = W1 - 10 * K1 - 2450 * SC, by0 = 56 * K1 + 10 * K1 + 300 * SC;
+  const rh = 75 * SC, cw = [120, 1700, 200, 330].map(v => v * SC);
   const head = ['No', 'Parça', 'Adet', 'Ağırlık (kg)'];
   let y = by0 + (rows.length + 2) * rh;
-  TEXT(bx, y + 60, th1 * 1.4, 'PARÇA LİSTESİ (bir aparat)', 'METIN');
-  const line = (cells, yy, bold) => { let x = bx; cells.forEach((c, i) => { TEXT(x + 15, yy + 22, bold ? th1 * 1.05 : th1 * 0.9, c, 'METIN', i >= 2 ? 0 : 0); x += cw[i]; }); };
+  TEXT(bx, y + 60 * SC, th1 * 1.4, 'PARÇA LİSTESİ (bir aparat)', 'METIN');
+  const line = (cells, yy, bold) => { let x = bx; cells.forEach((c, i) => { TEXT(x + 15 * SC, yy + 22 * SC, bold ? th1 * 1.05 : th1 * 0.9, c, 'METIN', i >= 2 ? 0 : 0); x += cw[i]; }); };
   const totalW = cw.reduce((a, b) => a + b, 0);
   y -= rh; line(head, y, true); RECT(bx, y, totalW, rh, 'METIN');
   let total = C.ANT.mass, aparat = 0;
@@ -594,9 +606,10 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
     '6. Tilt: zemine bakış 0°; öne 70°, arkaya 20°. Kilit cıvatası çatal kanalında.',
     '7. Ölçüler tasarım önerisidir; imalat öncesi statik hesap yapılmalıdır.'
   ];
-  let ny = Y1 + 3000;   // alt ortadaki boş alan
-  const nx = 3700;
-  notes.forEach((n, i) => { TEXT(nx, ny, i ? th1 * 0.95 : th1 * 1.3, n, 'METIN'); ny -= i ? 70 : 110; });
+  // Alt ortadaki boş alan; uzun görünüşlerde (büyük taşıyıcı / uzun iniş) yan görünüş başlığının altına iner
+  let ny = Math.min(Y1 + 3000 * SC, pS.oy + pS.e.y0 - 700);
+  const nx = 3700 * SC;
+  notes.forEach((n, i) => { TEXT(nx, ny, i ? th1 * 0.95 : th1 * 1.3, n, 'METIN'); ny -= (i ? 70 : 110) * SC; });
 }
 
 // ===========================================================================
@@ -604,7 +617,7 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
 // ===========================================================================
 scr.push('__P2__');
 const K2 = 2, W2 = 841 * K2, H2 = 594 * K2, X2 = W1 + 1000, Y2 = 0;
-frame(X2, Y2, W2, H2, K2, `Pafta ${PAFTA_NO} · ${MODEL_TR} askı aparatı · PARÇA DETAYLARI`, 2, '1:2');
+frame(X2, Y2, W2, H2, K2, `Pafta ${PAFTA_NO} · ${TITLE_NAME} · PARÇA DETAYLARI`, 2, '1:2');
 const th2 = 3.5 * K2;
 
 // Tek parça görünüşü: parçanın kendi yerelinde (nesne dönüşümü sıfırlanmış) izdüşüm, gizli çizgiler kesik
@@ -691,23 +704,24 @@ if (tongue) {
   // Gammanu: kesit lama çemberin ortasından (z = 100); Matsing: kelepçe ortasından
   const pl = { o: new THREE.Vector3(0, 0, IS_G ? C.CLAMP.BAND_Z[1] : 0), n: new THREE.Vector3(0, 0, -1) };
   const e = extents(v, clampMeshes);
-  const k7 = 0.4;   // pafta 1:2, detay 1:5
-  const cx = X2 + 1250, cy = 560;
+  const k7 = RC > 400 ? 0.16 : 0.4;   // pafta 1:2, detay 1:5 (büyük taşıyıcıda 1:12.5)
+  const cx = X2 + 1250, cy = RC > 400 ? 520 : 560;
   const ox = cx - (e.x0 + e.x1) / 2 * k7, oy = cy - (e.y0 + e.y1) / 2 * k7;
   drawSection(v, clampMeshes, pl, ox, oy, 3, { k: k7 });
   drawView(v, clampMeshes, clampMeshes, ox, oy, { plane: pl, sheet: 2, k: k7 });
   CIRCLE(ox, oy, C.CARRIER_R * 1000 * k7, 'TASIYICI_REF', 'HAYALET2');
-  CENTERLINE(ox - 130, oy, ox + 130, oy, 2); CENTERLINE(ox, oy + 120, ox, oy - 170, 2);
+  const rc7 = RC * k7;
+  CENTERLINE(ox - rc7 - 45, oy, ox + rc7 + 45, oy, 2); CENTERLINE(ox, oy + rc7 + 35, ox, oy - rc7 - 85, 2);
   const yb = oy + e.y0 * k7;
-  TEXT(cx, yb - 50, th2 * 1.3, 'DETAY 7 · Kelepçe kesiti (taşıyıcıya dik) · 1:5', 'METIN', 1);
+  TEXT(cx, yb - 50, th2 * 1.3, `DETAY 7 · Kelepçe kesiti (taşıyıcıya dik) · 1:${2 / k7}`, 'METIN', 1);
   const CL = C.CLAMP, pw = CL.PLATE_W * 1000, cr = (C.CARRIER_R + 0.005) * 1000;
   TEXT(cx, yb - 50 - th2 * 2, th2 * 0.9, IS_G
     ? `Eyer ${mmv(CL.SADDLE_T)} mm + 2 lama çember ${mmv(CL.BAND_W)}×${mmv(CL.BAND_T)} + 5 mm keçe; çember başına 2×${CL.bolt.name} kulak cıvatası`
     : `Eyer ${mmv(CL.SADDLE_T)} mm 140° + üst kabuk ${mmv(CL.SHELL_T)} mm 220° + 5 mm keçe; 2×4 ${CL.bolt.name} kulak cıvatası`, 'METIN', 1);
   TEXT(cx, yb - 50 - th2 * 3.6, th2 * 0.9, `Ağ levhası ${mmv(CL.WEB_T)} mm; bağlantı plakası ${pw}×${mmv(CL.SADDLE_L)}×${mmv(CL.PLATE_T)}; eğim dış kulakları plakaya kaynaklı`, 'METIN', 1);
   DIM(ox - pw / 2 * k7, yb, ox + pw / 2 * k7, yb, ox, yb - 25, String(pw));
-  DIM(ox - cr * k7, oy, ox + cr * k7, oy, ox, oy + 130, `Ø${Math.round(cr * 2)} iç (keçe dahil)`);
-  NOTE(ox + 60, oy + 40, ox + 200, oy + 110, 'Ø420 taşıyıcı (hayalet)', th2 * 0.9);
+  DIM(ox - cr * k7, oy, ox + cr * k7, oy, ox, oy + rc7 + 46, `Ø${Math.round(cr * 2)} iç (keçe dahil)`);
+  NOTE(ox + rc7 * 0.7, oy + rc7 * 0.5, ox + rc7 + 116, oy + rc7 + 26, `Ø${Math.round(RC * 2)} taşıyıcı (hayalet)`, th2 * 0.9);
   H.carrierGroup.rotation.x = savedRot; H.root.updateMatrixWorld(true);
   [_triCache, _edgeCache].forEach(c => clampMeshes.forEach(m => c.delete(m)));
 }
@@ -725,7 +739,7 @@ const script = [
   '_.LWDISPLAY', '1',
   // Ölçü stili: pafta 1 (1:10)
   '_.DIMTXSTY', 'GSSTAD', '_.DIMTXT', '3.5', '_.DIMASZ', '3', '_.DIMEXO', '2', '_.DIMEXE', '2', '_.DIMGAP', '1.5', '_.DIMDEC', '0', '_.DIMCLRD', '3', '_.DIMCLRE', '3', '_.DIMCLRT', '7',
-  '_.DIMSCALE', '10', '-LAYER', '_S', 'OLCU', '',
+  '_.DIMSCALE', String(K1), '-LAYER', '_S', 'OLCU', '',
   ...scr.slice(0, scr.indexOf('__P2__')),
   '_.DIMSCALE', '2',
   ...scr.slice(scr.indexOf('__P2__') + 1),

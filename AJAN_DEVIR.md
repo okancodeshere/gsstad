@@ -45,7 +45,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
   - Görseller: `Gorseller/11_...png` (düz askı), `Gorseller/12_...png` (çapraz askı); git dışı.
   - Pafta 26: `node generate_tava_aski_kesit_dxf.cjs` → `26_TAVA_ASKISI_DUZ_VE_CAPRAZ_KESIT_mm.dxf` + `_onizleme.svg`. DWG/PDF üretilmedi.
 - **Pafta 27-30 (2026-11-15):** `node generate_matsing_aski_aparati_dwg.mjs --model=matsing|gammanu --anten=yok|var` → `DXF_Ciktilari/Milimetre/27…30_*_ASKI_APARATI_ANTENSIZ|ANTENLI` (.dxf ölçülü, .dwg, 2 PDF). AutoCAD 2023 `accoreconsole` gerekli. Seçeneksiz çalıştırma Pafta 13'ü yeniden yazar (denenmedi).
-- **Son commit:** `[Claude] Pafta 27-30: Matsing ve Gammanu askı aparatı DXF/DWG/PDF (antensiz ve antenli)`
+- **Pafta 31-32 (2026-11-15):** aynı betik `--cevre=483` ile → `31/32_MATSING2_SKORBORD_ASKI_APARATI_*` (skorbord yanı silindir, 483 cm çevre = Ø1537; Pafta 1 ölçeği 1:15).
+- **SIRADAKİ İŞ (kullanıcı istedi, limit sıfırlanınca):** Aparatlar sayfasına (`aparatlar.html`) "Matsing-2" sekmesi: skorbord yanı silindire (çevre 483 cm) takılan Matsing aparatı. `createAntennaHanger` `carrierR` seçeneğini zaten destekliyor; `matsing_montaj_aparati.js`'e taşıyıcı seçeneği eklenip yeni sekme bağlanacak.
+- **Son commit:** `[Claude] Pafta 31-32: Matsing-2 skorbord silindiri askı aparatı DXF/DWG/PDF`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -126,6 +128,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Pafta 31-32: Matsing-2 (skorbord yanı silindir) askı aparatı
+- **Kullanıcı isteği:** "bir tane de skorbord yanındaki için Matsing'i klonla, onun çember çapı 483 cm; şu an sadece DXF çiz, sonra limit sıfırlanınca aparatlar sayfasına Matsing-2 olarak bir sayfa eklersin".
+- **Yorum (kullanıcıya bildirildi, sorulmadı):** 483 cm ÇEVRE ölçüsü alındı → Ø1537 mm. Gerekçe: ana modeldeki skorbord silindiri Ø1500; 4.83 m çaplı boru yok; kullanıcı önceki ölçüleri de çevre olarak verdi. Çap kastedildiyse `--cevre` değeri değiştirilip yeniden üretilir.
+- **Değişen dosyalar:**
+  - `generate_matsing_aski_aparati_dwg.mjs`: YENİ `--cevre=<cm>` seçeneği (yalnızca Matsing). Verilince `createAntennaHanger('matsing', { carrierR })` ile skorbord varyantı: taşıyıcı yatay (eğim 0), tilt 45°, azimut 0, iniş 2700 (ana modeldeki skorbord varsayılanı 2680, Ø1500 için).
+    - Bu varyantta Pafta 1 ölçeği 1:15 (`K1 = 15`, `SC`, `SCT`): Ø1537 silindirle 1:10'da üst görünüş A0'dan taşıyordu. Sütun konumları, parça listesi, notlar ve `DIMSCALE` `SC` ile ölçekleniyor.
+    - Taşıyıcıya bağlı sabit konumlar `RC` (taşıyıcı yarıçapı, mm) ile: eksen çizgileri, kelepçe boyu ölçüsü, taşıyıcı notu, Detay 7 (büyük taşıyıcıda 1:12.5).
+    - Notlar bloğu yan görünüşün altına iniyor (`min(3000·SC, yan görünüş altı − 700)`).
+  - YENİ `DXF_Ciktilari/Milimetre/`: `31_MATSING2_SKORBORD_ASKI_APARATI_ANTENSIZ`, `32_MATSING2_SKORBORD_ASKI_APARATI_ANTENLI` (.dxf ölçülü, .dwg, 2 PDF).
+  - Komut: `node generate_matsing_aski_aparati_dwg.mjs --model=matsing --anten=yok|var --cevre=483`.
+- **Sonuç:** Aparat 200.3 kg, anten dahil 251.8 kg. Ø420'deki 120.2 kg'a göre artışın çoğu silindiri tam saran eyer + üst kabuktan (47.7 + 46.8 kg). Kullanıcıya bildirildi; Matsing-2 sayfası yapılırken kelepçe (ör. lama çember) yeniden düşünülebilir.
+- **Doğrulama:** Antenli sürümün iki PDF'i görsel kontrol edildi; antensiz sürümün PDF'ine bakılmadı. Pafta 27-30 bu değişiklikten sonra yeniden üretilmedi (o yollar için konumlar aynı formülden aynı değere çıkıyor; taşıyıcı notu birkaç cm kayar).
+- **Yarım kalan (kullanıcı isteği, sonraki oturum):** Aparatlar sayfasına "Matsing-2" sekmesi: `matsing_montaj_aparati.html?model=matsing` + skorbord silindiri (`carrierR` = 4.83/2π) için ayrı sekme / sayfa.
+- **Commit:** `[Claude] Pafta 31-32: Matsing-2 skorbord silindiri askı aparatı DXF/DWG/PDF`
 
 ### 2026-11-15 — Claude — Pafta 27-30: Matsing ve Gammanu askı aparatı, antensiz ve antenli
 - **Kullanıcı isteği:** "gammanu ve matsing antenler için yaptığımız aparatlar için de dxf üret, bir de antenli versiyonu lazım".
