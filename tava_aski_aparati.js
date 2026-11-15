@@ -541,4 +541,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Tarayıcı konsolundan inceleme için
-window.tavaAski = { scene, camera, controls, trussGroup, dynGroup, state, info: () => lastInfo };
+window.tavaAski = { scene, camera, controls, renderer, trussGroup, dynGroup, state, info: () => lastInfo };

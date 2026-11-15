@@ -42,7 +42,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
   - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
   - Tava kenarı tespit çenesi (takoz) yok (kullanıcı kararı).
   - Tij bağlantılarında pul + rondela; U profilin altında çift somun (kullanıcı kararı).
-- **Son commit:** `[Claude] Tava Ofset sayfası: tij bağlantılarında pul, rondela ve en altta çift somun`
+  - Görseller: `Gorseller/11_...png` (düz askı), `Gorseller/12_...png` (çapraz askı); git dışı.
+- **Son commit:** `[Claude] Tava askısı görselleri için renderer konsola açıldı, devir kaydı`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -123,6 +124,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Tava askısı görselleri (düz ve çapraz)
+- **Kullanıcı isteği:** "bunlardan birer tane kesit çıkar, görselin anlaşılacağı bir açıyla". "Kesit" 3D modelden etiketli görsel olarak yorumlandı (açı istendiği için); kullanıcıya bildirildi, DXF kesit istenirse ayrıca çizilecek.
+- **Üretilen dosyalar** (`Gorseller/`, git dışı): `11_tava_aski_duz_gergi_kelepce_M12_tij_U_profil.png`, `12_tava_aski_capraz_zikzak_kelepce_M12_tij_U_profil.png`. Her biri 1700×1100: solda etiketli genel görünüş, sağda kelepçe + kaynaklı U parça ve U profil altı (pul + rondela + 2 somun) yakın planları. Tava yarı saydam, kablolar gizli.
+- **Yöntem:** Sayfanın kendi `renderer`'ı ile ayrı kameralardan render (ortam haritası aynı kalsın diye), etiketler 3D noktaların izdüşümüne 2D canvas'ta; PNG geçici yerel alıcıyla (scratchpad, kapatıldı) kaydedildi.
+- **Değişen dosyalar:** `tava_aski_aparati.js` → `window.tavaAski`'ye `renderer` eklendi (konsoldan görüntü almak için).
+- **Doğrulama:** `npm run build` hatasız; iki PNG açılıp kontrol edildi.
+- **Commit:** `[Claude] Tava askısı görselleri için renderer konsola açıldı, devir kaydı`
 
 ### 2026-11-15 — Claude — Tava Ofset sayfası: pul, rondela ve en altta çift somun
 - **Kullanıcı isteği:** "somun pul ve rondela da koy, en altta 2 somun olacak".
