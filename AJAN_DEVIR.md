@@ -43,7 +43,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
   - Tava kenarı tespit çenesi (takoz) yok (kullanıcı kararı).
   - Tij bağlantılarında pul + rondela; U profilin altında çift somun (kullanıcı kararı).
   - Görseller: `Gorseller/11_...png` (düz askı), `Gorseller/12_...png` (çapraz askı); git dışı.
-- **Son commit:** `[Claude] Tava askısı görselleri için renderer konsola açıldı, devir kaydı`
+  - Pafta 26: `node generate_tava_aski_kesit_dxf.cjs` → `26_TAVA_ASKISI_DUZ_VE_CAPRAZ_KESIT_mm.dxf` + `_onizleme.svg`. DWG/PDF üretilmedi.
+- **Son commit:** `[Claude] Pafta 26: tava askısı düz ve çapraz kesit DXF`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -124,6 +125,16 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Pafta 26: tava askısı düz ve çapraz kesit DXF
+- **Kullanıcı isteği:** Görsellerden sonra sorulan "ölçülü DXF kesit de çizeyim mi?" sorusuna "Evet, DXF çiz".
+- **Değişen dosyalar:** YENİ `generate_tava_aski_kesit_dxf.cjs` → YENİ `DXF_Ciktilari/Milimetre/26_TAVA_ASKISI_DUZ_VE_CAPRAZ_KESIT_mm.dxf` (148 KB, mm) + `26_..._onizleme.svg` (betik aynı çizimi SVG olarak da yazar; tarayıcıda açılır).
+- **İçerik (her askı için):** ön görünüş (boru eksenine dik bakış: boru, iki kelepçe, tijler, U profil, tava kesiti), Kesit A-A (tij ekseninden: boru, keçe, iki yarım çember + kulaklar + M10, kaynaklı delikli U parça, pul/rondela/somunlar, U profil C kesiti), U profil üst görünüşü (M8 ve tij delikleri).
+  - Düz askı: gergi Ø115, tij aralığı 580, U profil 700 (5 × Ø9). Çapraz askı: zikzak Ø223, tij aralığı 1247, U profil 1400 (12 × Ø9); tava askıya 27.7° çapraz geçtiği için ön görünüşte eğik kesit genişliği 1075.
+  - Ortak: boru ekseni → tava tabanı 780, M12 tij 800, U profilin altında çift somun.
+- **Varsayım:** ölçüler `tava_aski_aparati.js` ile aynı (kelepçe 50×5, kulak 30, U parça 45×40, U profil et 3, pul Ø24×2.5, rondela Ø20×3, somun 19×10); saha ölçüsü değil. Sayfa değişirse betik de güncellenmeli (sabitler betiğin başında).
+- **Doğrulama:** NaN taraması temiz; SVG önizlemede genel yerleşim, kelepçe kesiti ve U profil kesiti yakın planda kontrol edildi. AutoCAD (accoreconsole) ile DWG/PDF üretilmedi.
+- **Commit:** `[Claude] Pafta 26: tava askısı düz ve çapraz kesit DXF`
 
 ### 2026-11-15 — Claude — Tava askısı görselleri (düz ve çapraz)
 - **Kullanıcı isteği:** "bunlardan birer tane kesit çıkar, görselin anlaşılacağı bir açıyla". "Kesit" 3D modelden etiketli görsel olarak yorumlandı (açı istendiği için); kullanıcıya bildirildi, DXF kesit istenirse ayrıca çizilecek.
