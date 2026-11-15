@@ -38,9 +38,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude, 2026-11-15 (Tava Ofset sayfası). Aşağıdaki pafta maddeleri Antigravity'nin 15:46 güncellemesinden.
-- **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında M12 delikli kulak) + 80 cm M12 tij + 40×40 U profil. Kullanıcı kelepçenin altının nasıl bağlandığını ayrıca basit bir çizimle gösterecek; kulak geometrisi o çizime göre düzeltilecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
+- **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında saha fotoğrafındaki kaynaklı delikli U parça) + 80 cm M12 tij + 40×40 U profil. U parça ölçüleri (45 × 40) fotoğraf oranından; kullanıcı ölçü verirse `BOSS` güncellenecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
   - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
-- **Son commit:** `[Claude] Tava Ofset sayfası: U profilin açık tarafı yana bakıyor`
+- **Son commit:** `[Claude] Tava Ofset sayfası: kelepçe altında saha fotoğrafındaki kaynaklı delikli U parça`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -121,6 +121,13 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Tava Ofset sayfası: kelepçe altı saha fotoğrafındaki kaynaklı U parça
+- **Kullanıcı isteği:** İlk görsel anlaşılmadığı için 4 saha fotoğrafı gönderdi (boruya takılı numune kelepçe).
+- **Fotoğraftan okunan:** iki yarım çember, karşılıklı iki kulak çifti birer cıvatayla sıkılı; kulaklara 90° konumda çembere iki ucundan kaynaklı, lamadan bükülmüş U (kutu) parça, boru ekseni yönünde açık, dış yüzünde tek delik.
+- **Değişen dosyalar:** `tava_aski_aparati.js` → `buildClamp()`: altıgen kulak kaldırıldı; yerine iki bacak + Ø13 delikli alt yüzden oluşan U parça (`BOSS` 45 × 40, lama 50×5; ölçüler fotoğraf oranından, varsayım). M12 tij alt yüzdeki delikten geçiyor, U'nun içinde taşıyıcı somun, altında kontra somun. Etiket, parça listesi satırı ve `.html` açıklaması güncellendi. Önceki iki kayıttaki "altıgen kulak" geçersiz.
+- **Doğrulama:** `npm run build` hatasız; dev sunucuda kelepçe yakın planı kontrol edildi, konsol hatası yok. 230 cm'de düz askıda gereken tij 752 mm.
+- **Commit:** `[Claude] Tava Ofset sayfası: kelepçe altında saha fotoğrafındaki kaynaklı delikli U parça`
 
 ### 2026-11-15 — Claude — Tava Ofset sayfası: U profilin açık tarafı yana
 - **Kullanıcı isteği:** "U'nun açık tarafı yana bakacak". Kelepçe-tij bağlantısı için ikinci bir görsel gönderecek (ilk görseldeki kulak Claude'un yorumuyla çizildi, doğrulanmadı).

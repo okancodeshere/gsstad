@@ -35,7 +35,9 @@ const LAMA = { w: 0.05, t: 0.005, felt: 0.005 }; // 50×5 lama bant, boruyla ara
 const TIJ_R = 0.006;                   // M12 dişli tij (kullanıcı, 2026-11-15)
 const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (fazlası U profilin altından taşar)
 const NUT_R = 0.011, NUT_H = 0.010;    // M12 somun
-const BOSS = { r: 0.015, h: 0.025 };   // kelepçe altındaki kaynaklı delikli kulak (ölçü varsayım)
+// Kelepçe altındaki kaynaklı U parça (saha fotoğrafları, 2026-11-15): lamadan bükülmüş, iki ucu çembere kaynaklı,
+// boru ekseni yönünde açık; alt yüzünde Ø13 delik, M12 tij buradan geçer. Ölçüler fotoğraf oranından (varsayım).
+const BOSS = { w: 0.045, d: 0.04, t: 0.005 };
 const EAR_GAP = 0.004;                 // iki kelepçe yarısı arasındaki sıkma boşluğu
 // Tava taşıyıcısı: 40×40 U profil (et 3 mm varsayım), açık tarafı yana bakar (tava üst kanada oturur). Düz askıda
 // 70 cm, çapraz askıda iki tij ayağını kapsayan 10 cm katı boy. Üst kanatta her 10 cm'de M8 deliği (Ø9), tij Ø14.
@@ -203,7 +205,7 @@ function buildClamp(parent, center, memberDir, memberR) {
   parent.add(felt);
 
   // İki parçalı kelepçe (kullanıcı görseli, 2026-11-15): üst ve alt yarım çember, yanlarda dışa kıvrık kulaklar
-  // M10 ile sıkılır; alt yarının en altında kaynaklı delikli kulak, M12 tij buradan aşağı iner.
+  // M10 ile sıkılır; alt yarının en altında kaynaklı delikli U parça, M12 tij buradan aşağı iner.
   const ringIn = feltOut, ringR = ringIn + LAMA.t;
   const up = new V(0, 1, 0);
   const perp = new V().crossVectors(memberDir, up).normalize();
@@ -234,12 +236,34 @@ function buildClamp(parent, center, memberDir, memberR) {
     parent.add(nut(p.x, p.y + 0.012, p.z, 0.0095));
     parent.add(nut(p.x, p.y - 0.014, p.z, 0.0095));
   });
-  const bossY = center.y - ringR - BOSS.h / 2 + 0.001;
-  const boss = new THREE.Mesh(new THREE.CylinderGeometry(BOSS.r, BOSS.r, BOSS.h, 6), M.accent);
-  boss.position.set(center.x, bossY, center.z);
-  parent.add(boss);
-  parent.add(nut(center.x, center.y - ringR - BOSS.h - NUT_H / 2, center.z)); // kontra somun
-  return { rodTop: center.y - ringR - 0.002, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
+  // Kaynaklı U parça: iki düşey bacak + delikli alt yüz; tij alt yüzden geçer, içte ve altta somun
+  const q = new THREE.Quaternion().setFromRotationMatrix(basis);
+  const botY = center.y - ringR - BOSS.d;            // U parçanın alt yüzü
+  const legTop = center.y - ringR + 0.004, legH = legTop - botY;
+  [-1, 1].forEach(e => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(BOSS.t, legH, LAMA.w), M.band);
+    leg.position.copy(center).addScaledVector(perp, e * (BOSS.w - BOSS.t) / 2).setY(botY + legH / 2);
+    leg.quaternion.copy(q);
+    parent.add(leg);
+  });
+  const plateShape = new THREE.Shape();
+  plateShape.moveTo(-BOSS.w / 2, -LAMA.w / 2);
+  plateShape.lineTo(BOSS.w / 2, -LAMA.w / 2);
+  plateShape.lineTo(BOSS.w / 2, LAMA.w / 2);
+  plateShape.lineTo(-BOSS.w / 2, LAMA.w / 2);
+  plateShape.closePath();
+  const ph = new THREE.Path();
+  ph.absarc(0, 0, 0.0065, 0, Math.PI * 2, true);
+  plateShape.holes.push(ph);
+  const pg = new THREE.ExtrudeGeometry(plateShape, { depth: BOSS.t, bevelEnabled: false, curveSegments: 16 });
+  pg.rotateX(Math.PI / 2); // yerel: X = yana, Z = boru ekseni, kalınlık aşağı
+  const plate = new THREE.Mesh(pg, M.band);
+  plate.position.set(center.x, botY + BOSS.t, center.z);
+  plate.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(perp, up, new V().crossVectors(perp, up)));
+  parent.add(plate);
+  parent.add(nut(center.x, botY + BOSS.t + NUT_H / 2, center.z)); // U parçanın içinde, yükü taşıyan somun
+  parent.add(nut(center.x, botY - NUT_H / 2, center.z));          // alttan kontra somun
+  return { rodTop: botY + BOSS.t + NUT_H + 0.004, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
 }
 
 // Tava taşıyıcısı 40×40 U profil: açık tarafı yana bakar, üst kanadı tava tabanında. Boy: verilen sabit boy (düz askı 70 cm)
@@ -345,11 +369,11 @@ function rebuild() {
   const lx = tray.w / 2 + 0.04;
   addLabel(dynGroup, `M12 tij · L=${mm(TIJ_LEN)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, info.node ? 0 : MID_HANGER_S));
   if (info.node) {
-    addLabel(dynGroup, 'İki parçalı kelepçe Ø115 (36 cm çevre) + keçe · altında M12 kulak', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
+    addLabel(dynGroup, 'İki parçalı kelepçe Ø115 (36 cm çevre) + keçe · altında kaynaklı delikli U (M12)', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
     addLabel(dynGroup, `U profil 40×40 · L=${mm(info.node.tablaLen)} mm`, new V(0, tb - 0.12, 0.05));
   }
   if (info.mid) {
-    addLabel(dynGroup, 'İki parçalı kelepçe Ø223 (70 cm çevre) + keçe · altında M12 kulak', new V(lx + 0.12, T.chordY + 0.08, MID_HANGER_S + 0.35), 'ax');
+    addLabel(dynGroup, 'İki parçalı kelepçe Ø223 (70 cm çevre) + keçe · altında kaynaklı delikli U (M12)', new V(lx + 0.12, T.chordY + 0.08, MID_HANGER_S + 0.35), 'ax');
     addLabel(dynGroup, `Çapraz askı · U profil 40×40 · L=${mm(info.mid.tablaLen)} mm`, new V(0, tb - 0.12, MID_HANGER_S + 0.1));
   }
   addLabel(dynGroup, `Tava ${state.trayW}×${mm(tray.h)} · taban taşıyıcı üstünden ${Math.round(state.h * 100)} cm`, new V(-tray.w / 2 - 0.05, tb + tray.h + 0.08, -2.2));
@@ -397,9 +421,9 @@ function updatePanel() {
     return [
       [`Kelepçe yarısı 50×5, L=${mm(h.bandLen)} (Ø${mm(h.memberR * 2)} boru, kıvrık kulaklı)`, 4, bandKg],
       ['Cıvata M10×45 8.8 + somun (kulak)', 4, 0.045],
-      ['Kaynaklı M12 kulak (kelepçe altı)', 2, 0.1],
+      ['Kaynaklı delikli U parça 50×5 (kelepçe altı, Ø13 delik)', 2, (BOSS.w + 2 * BOSS.d) * LAMA.w * BOSS.t * STEEL],
       [`M12 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 0.89 * TIJ_LEN],
-      ['M12 somun (kulak altı + U profil üstü/altı)', 6, 0.016],
+      ['M12 somun (kelepçe U parçası içi/altı + U profil üstü/altı)', 8, 0.016],
       ['M12 pul', 4, 0.006],
       [`U profil 40×40×3, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø14 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * uKgm],
       ['Tava tespit çenesi', 2, 0.08]
