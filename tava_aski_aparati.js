@@ -1,7 +1,8 @@
 // Çatı makası kablo tavası tij askısı: ayrı 3D çalışma alanı (tava_aski_aparati.html)
-// Ana modeldeki askıyla aynı ölçüler: main.js → buildScoreboardRoofTruss60m 3.E (ALAN 2) ve
-// addRefTrussTrayHangers (ALAN 1-3, ALAN 4). Üst boruyu saran 50×5 lama kelepçe (M10 kulak cıvatası),
-// konik boyun, M16 dişli tij, U profil tabla; tava kenarında çeneler. Delme / kaynak yok (Kalıcı karar).
+// Makas ölçüleri main.js REF_TRUSS ile aynı. Askı (kullanıcı tarifi + kelepçe görseli, 2026-11-15):
+// üst boruyu saran iki parçalı kelepçe (yanlarda kulak + M10), alt yarıda kaynaklı delikli kulak (M12),
+// kulaktan inen M12 dişli tij, iki tij arasında tava taşıyıcısı 40×40 U profil; tava kenarında çeneler.
+// Çatı borusunda delme / kaynak yok (Kalıcı karar). Ana modeldeki (main.js) askı eski halinde.
 //
 // Koordinatlar (m): makas yerel ekseni. Z = makas boyunca s, Y = omurga ekseninden yukarı, X = enine.
 // Düğüm askısı s = 0'daki V istasyonunda, ara askı s = 1.43'te (düğüm ile ara üst düğümün ortası).
@@ -31,18 +32,20 @@ const MID_NODE = T.vStep / 2;          // ara üst düğüm (2.86)
 const MID_HANGER_S = MID_NODE / 2;     // ara askı (1.43)
 const HANGER_SPACING = T.vStep / 4;    // askı aralığı ≈ 1.43 m
 const LAMA = { w: 0.05, t: 0.005, felt: 0.005 }; // 50×5 lama bant, boruyla arasında 5 mm keçe
-const TIJ_R = 0.008;
-const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (fazlası tablanın altından taşar)
-const NUT_H = 0.014 * 0.9;
-// Alt lama (tabla): 80×8 lama; düz askıda 70 cm (kullanıcı isteği), çapraz askıda iki tij ayağını kapsayan
-// 10 cm katı boy. Her 10 cm'de M8 deliği (Ø9), tij geçişlerinde Ø18 delik.
-const TABLA = { w: 0.08, t: 0.008, nodeLen: 0.70, pitch: 0.10, m8D: 0.009, tijD: 0.018 };
+const TIJ_R = 0.006;                   // M12 dişli tij (kullanıcı, 2026-11-15)
+const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (fazlası U profilin altından taşar)
+const NUT_R = 0.011, NUT_H = 0.010;    // M12 somun
+const BOSS = { r: 0.015, h: 0.025 };   // kelepçe altındaki kaynaklı delikli kulak (ölçü varsayım)
+const EAR_GAP = 0.004;                 // iki kelepçe yarısı arasındaki sıkma boşluğu
+// Tava taşıyıcısı: 40×40 U profil (et 3 mm varsayım), sırtı yukarıda (tava düz yüzeye oturur). Düz askıda 70 cm,
+// çapraz askıda iki tij ayağını kapsayan 10 cm katı boy. Sırtta her 10 cm'de M8 deliği (Ø9), tij geçişlerinde Ø14.
+const TABLA = { w: 0.04, hgt: 0.04, t: 0.003, nodeLen: 0.70, pitch: 0.10, m8D: 0.009, tijD: 0.014 };
 const STEEL = 7850, G = 9.81;
 const TRAYS = {
   500: { w: 0.50, h: 0.20, kgm: 9.0 },   // tava öz ağırlığı (galvaniz delikli, kapaksız, tahmini)
   300: { w: 0.30, h: 0.10, kgm: 5.0 }   // Kullanıcı: yalnızca 500×200 ve 300×100 tava kullanılıyor
 };
-const M16_TENS = 0.9 * 800 * 157 / 1.25;   // N, 8.8 çekme dayanımı (Ft,Rd)
+const M12_TENS = 0.9 * 800 * 84.3 / 1.25;  // N, 8.8 çekme dayanımı (Ft,Rd)
 const M10_TENS = 0.9 * 800 * 58 / 1.25;
 const LAMA_TENS = LAMA.w * LAMA.t * 235e6; // N, 50×5 S235 bant (tek kesit)
 
@@ -113,7 +116,7 @@ function pipe(a, b, r, mat, seg = 24) {
   m.quaternion.setFromUnitVectors(new V(0, 1, 0), dir.normalize());
   return m;
 }
-function nut(x, y, z, size = 0.014, mat = M.dark) {
+function nut(x, y, z, size = NUT_R, mat = M.dark) {
   const m = new THREE.Mesh(new THREE.CylinderGeometry(size, size, size * 0.9, 6), mat);
   m.position.set(x, y, z);
   return m;
@@ -199,40 +202,49 @@ function buildClamp(parent, center, memberDir, memberR) {
   felt.quaternion.setFromUnitVectors(new V(0, 0, 1), memberDir);
   parent.add(felt);
 
+  // İki parçalı kelepçe (kullanıcı görseli, 2026-11-15): üst ve alt yarım çember, yanlarda dışa kıvrık kulaklar
+  // M10 ile sıkılır; alt yarının en altında kaynaklı delikli kulak, M12 tij buradan aşağı iner.
   const ringIn = feltOut, ringR = ringIn + LAMA.t;
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, ringR, 0, Math.PI * 2, false);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, ringIn, 0, Math.PI * 2, true);
-  shape.holes.push(hole);
-  const g = new THREE.ExtrudeGeometry(shape, { depth: LAMA.w, bevelEnabled: false, curveSegments: 40 });
-  g.translate(0, 0, -LAMA.w / 2);
-  const ring = new THREE.Mesh(g, M.band);
-  ring.position.copy(center);
-  ring.quaternion.setFromUnitVectors(new V(0, 0, 1), memberDir);
-  parent.add(ring);
   const up = new V(0, 1, 0);
   const perp = new V().crossVectors(memberDir, up).normalize();
+  // Yerel eksenler: X = yana (kulak yönü), Y = aşağı, Z = boru ekseni
   const basis = new THREE.Matrix4().makeBasis(perp, new V().crossVectors(memberDir, perp).normalize(), memberDir);
+  const ga = Math.asin(EAR_GAP / 2 / ringIn);
+  [0, Math.PI].forEach(a0 => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, ringR, a0 + ga, a0 + Math.PI - ga, false);
+    shape.absarc(0, 0, ringIn, a0 + Math.PI - ga, a0 + ga, true);
+    shape.closePath();
+    const g = new THREE.ExtrudeGeometry(shape, { depth: LAMA.w, bevelEnabled: false, curveSegments: 40 });
+    g.translate(0, 0, -LAMA.w / 2);
+    const half = new THREE.Mesh(g, M.band);
+    half.position.copy(center);
+    half.quaternion.setFromRotationMatrix(basis);
+    parent.add(half);
+  });
   [-1, 1].forEach(e => {
     const p = center.clone().addScaledVector(perp, e * (ringR + 0.014));
-    const ear = new THREE.Mesh(new THREE.BoxGeometry(0.03, 2 * LAMA.t + 0.002, LAMA.w), M.band);
-    ear.position.copy(p);
-    ear.quaternion.setFromRotationMatrix(basis);
-    parent.add(ear);
+    [-1, 1].forEach(v => {
+      const ear = new THREE.Mesh(new THREE.BoxGeometry(0.03, LAMA.t, LAMA.w), M.band);
+      ear.position.copy(p).setY(p.y + v * (EAR_GAP + LAMA.t) / 2);
+      ear.quaternion.setFromRotationMatrix(basis);
+      parent.add(ear);
+    });
     parent.add(pipe(p.clone().setY(p.y + 0.022), p.clone().setY(p.y - 0.022), 0.005, M.dark, 8));
+    parent.add(nut(p.x, p.y + 0.012, p.z, 0.0095));
     parent.add(nut(p.x, p.y - 0.014, p.z, 0.0095));
   });
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.009, 0.05, 16), M.steel);
-  neck.position.set(center.x, center.y - ringR - 0.025, center.z);
-  parent.add(neck);
-  parent.add(nut(center.x, center.y - ringR - 0.058, center.z));
-  return { rodTop: center.y - ringR - 0.05, bandLen: 2 * Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
+  const bossY = center.y - ringR - BOSS.h / 2 + 0.001;
+  const boss = new THREE.Mesh(new THREE.CylinderGeometry(BOSS.r, BOSS.r, BOSS.h, 6), M.accent);
+  boss.position.set(center.x, bossY, center.z);
+  parent.add(boss);
+  parent.add(nut(center.x, center.y - ringR - BOSS.h - NUT_H / 2, center.z)); // kontra somun
+  return { rodTop: center.y - ringR - 0.002, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
 }
 
-// Alt lama (tabla) 80×8: üst yüzü tava tabanında. Boy: verilen sabit boy (düz askı 70 cm) ya da iki tij ayağını
-// kapsayan 10 cm katı (çapraz askı). Her 10 cm'de Ø9 (M8) delik, tij geçişlerinde Ø18 delik; tij deliğine 3 cm'den
-// yakın M8 deliği açılmaz. Dönen: { len, m8 (delik sayısı) }
+// Tava taşıyıcısı 40×40 U profil: sırtı yukarıda, üst yüzü tava tabanında. Boy: verilen sabit boy (düz askı 70 cm)
+// ya da iki tij ayağını kapsayan 10 cm katı (çapraz askı). Sırtta her 10 cm'de Ø9 (M8) delik, tij geçişlerinde
+// Ø14 delik; tij deliğine 3 cm'den yakın M8 deliği açılmaz. Dönen: { len, m8 (delik sayısı) }
 function buildTabla(parent, a, b, fixedLen) {
   const span = new V().subVectors(b, a);
   const footDist = Math.hypot(span.x, span.z);
@@ -255,7 +267,10 @@ function buildTabla(parent, a, b, fixedLen) {
   }
   const g = new THREE.ExtrudeGeometry(shape, { depth: TABLA.t, bevelEnabled: false, curveSegments: 16 });
   g.rotateX(Math.PI / 2); // kalınlık aşağı: y 0 → −t
-  const m = new THREE.Mesh(g, M.steel);
+  const m = new THREE.Group();
+  m.add(new THREE.Mesh(g, M.steel));
+  const fh = TABLA.hgt - TABLA.t; // U profilin iki kanadı
+  [-1, 1].forEach(sz => m.add(box(len, fh, TABLA.t, M.steel, 0, -TABLA.t - fh / 2, sz * (TABLA.w - TABLA.t) / 2)));
   m.position.set((a.x + b.x) / 2, a.y, (a.z + b.z) / 2);
   m.rotation.y = -Math.atan2(span.z, span.x);
   parent.add(m);
@@ -282,7 +297,7 @@ function buildHanger(s, k, trayBottom, tray) {
     }
     const c = buildClamp(clampG, new V(xa, T.chordY, topS), memberDir, memberR);
     bandLen = Math.max(bandLen, c.bandLen);
-    // 80 cm tij: üst ucu boyun somununda; tabla altı somun + 1 cm diş payı gerekli, fazlası aşağı taşar
+    // 80 cm tij: üst ucu kelepçe kulağında; U profil sırtının altında somun + 1 cm diş payı gerekli, fazlası aşağı taşar
     const nutBelowY = trayBottom - TABLA.t - NUT_H / 2;
     need = Math.max(need, c.rodTop - (nutBelowY - NUT_H / 2 - 0.01));
     rodG.add(pipe(new V(xa, c.rodTop, topS), new V(xa, c.rodTop - TIJ_LEN, topS), TIJ_R, M.dark, 12));
@@ -326,13 +341,14 @@ function rebuild() {
 
   // Etiketler
   const lx = tray.w / 2 + 0.04;
-  addLabel(dynGroup, `M16 tij · L=${mm(TIJ_LEN)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, info.node ? 0 : MID_HANGER_S));
+  addLabel(dynGroup, `M12 tij · L=${mm(TIJ_LEN)} mm`, new V(lx + 0.08, (T.chordY + tb) / 2, info.node ? 0 : MID_HANGER_S));
   if (info.node) {
-    addLabel(dynGroup, 'Lama kelepçe 50×5 + 5 mm keçe + M10 (Ø115 gergi)', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
-    addLabel(dynGroup, `Alt lama 80×8 · L=${mm(info.node.tablaLen)} mm · ${info.node.m8}×Ø9 (M8)`, new V(0, tb - 0.12, 0.05));
+    addLabel(dynGroup, 'İki parçalı kelepçe Ø115 (36 cm çevre) + keçe · altında M12 kulak', new V(lx + 0.12, T.chordY + 0.08, 0), 'ax');
+    addLabel(dynGroup, `U profil 40×40 · L=${mm(info.node.tablaLen)} mm`, new V(0, tb - 0.12, 0.05));
   }
   if (info.mid) {
-    addLabel(dynGroup, `Çapraz askı · alt lama L=${mm(info.mid.tablaLen)} mm · ${info.mid.m8}×Ø9 (M8)`, new V(0, tb - 0.12, MID_HANGER_S + 0.1));
+    addLabel(dynGroup, 'İki parçalı kelepçe Ø223 (70 cm çevre) + keçe · altında M12 kulak', new V(lx + 0.12, T.chordY + 0.08, MID_HANGER_S + 0.35), 'ax');
+    addLabel(dynGroup, `Çapraz askı · U profil 40×40 · L=${mm(info.mid.tablaLen)} mm`, new V(0, tb - 0.12, MID_HANGER_S + 0.1));
   }
   addLabel(dynGroup, `Tava ${state.trayW}×${mm(tray.h)} · taban taşıyıcı üstünden ${Math.round(state.h * 100)} cm`, new V(-tray.w / 2 - 0.05, tb + tray.h + 0.08, -2.2));
   // Ölçü çizgisi: taşıyıcı üstü → tava tabanı
@@ -367,24 +383,23 @@ function updatePanel() {
   const Fh = w * HANGER_SPACING * G;                      // N / askı
   const Ft = Fh / 2;                                      // N / tij
   lines.push(`<div>Askı başına yük (${tray.kgm} kg/m tava + ${state.cable} kg/m kablo, aralık ${HANGER_SPACING.toFixed(2)} m): <b>${(Fh / 1000).toFixed(2)} kN</b></div>`);
-  lines.push(`<div>Tij başına: <b>${(Ft / 1000).toFixed(2)} kN</b> · M16 8.8 çekme ${(M16_TENS / 1000).toFixed(1)} kN → güvenlik <b class="${cls(M16_TENS / Ft > 3)}">${(M16_TENS / Ft).toFixed(0)}×</b></div>`);
+  lines.push(`<div>Tij başına: <b>${(Ft / 1000).toFixed(2)} kN</b> · M12 8.8 çekme ${(M12_TENS / 1000).toFixed(1)} kN → güvenlik <b class="${cls(M12_TENS / Ft > 3)}">${(M12_TENS / Ft).toFixed(0)}×</b></div>`);
   lines.push(`<div>Kelepçe: lama 50×5 ${(LAMA_TENS / 1000).toFixed(1)} kN, M10 8.8 ${(M10_TENS / 1000).toFixed(1)} kN → güvenlik <b class="${cls(M10_TENS / Ft > 3)}">${(Math.min(LAMA_TENS, M10_TENS) / Ft).toFixed(0)}×</b></div>`);
   lines.push(`<div style="color:#94a3b8;margin-top:4px">Ön tahmin; tava öz ağırlığı tahmini, rüzgar ve dinamik etki yok. Statik hesabın yerine geçmez.</div>`);
   document.getElementById('checks').innerHTML = lines.join('');
 
   // Parça listesi: düz ve çapraz askı ayrı
-  const neckKg = Math.PI * 0.05 / 3 * (0.018 ** 2 + 0.018 * 0.009 + 0.009 ** 2) * STEEL;
+  const uKgm = (TABLA.w + 2 * (TABLA.hgt - TABLA.t)) * TABLA.t * STEEL;
   const kitRows = (h, name) => {
     const bandKg = h.bandLen * LAMA.w * LAMA.t * STEEL;
     return [
-      [`Lama kelepçe 50×5, L=${mm(h.bandLen)} (Ø${mm(h.memberR * 2)} boru, kıvrık kulaklı)`, 2, bandKg],
+      [`Kelepçe yarısı 50×5, L=${mm(h.bandLen)} (Ø${mm(h.memberR * 2)} boru, kıvrık kulaklı)`, 4, bandKg],
       ['Cıvata M10×45 8.8 + somun (kulak)', 4, 0.045],
-      ['Konik boyun Ø36/Ø18, h=50', 2, neckKg],
-      [`M16 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 1.58 * TIJ_LEN],
-      ['M16 somun (boyun altı + lama üstü/altı)', 6, 0.034],
-      ['M16 pul', 4, 0.011],
-      [`Alt lama 80×8, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø18 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * TABLA.w * TABLA.t * STEEL],
-      [`M8 cıvata + somun (alt lama delikleri)`, h.m8, 0.02],
+      ['Kaynaklı M12 kulak (kelepçe altı)', 2, 0.1],
+      [`M12 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 0.89 * TIJ_LEN],
+      ['M12 somun (kulak altı + U profil üstü/altı)', 6, 0.016],
+      ['M12 pul', 4, 0.006],
+      [`U profil 40×40×3, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø14 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * uKgm],
       ['Tava tespit çenesi', 2, 0.08]
     ];
   };
@@ -406,7 +421,7 @@ function updatePanel() {
   const m8Tot = (lastInfo.node ? lastInfo.node.m8 * sN : 0) + (lastInfo.mid ? lastInfo.mid.m8 * sM : 0);
   document.getElementById('qty').innerHTML = `<tr><th>Alan</th><th class="n">Düz</th><th class="n">Çapraz</th><th class="n">Toplam</th></tr>${qRows}`
     + `<tr><td><b>Toplam</b></td><td class="n"><b>${sN}</b></td><td class="n"><b>${sM}</b></td><td class="n"><b>${all}</b></td></tr>`
-    + `<tr><td colspan="4" style="color:#94a3b8">${all * 2} tij (800 mm, toplam ${(all * 2 * TIJ_LEN).toFixed(0)} m), ${all * 2} lama kelepçe, ${all * 4} M10, ${all * 6} M16 somun, ${sN} adet 700 mm ve ${sM} adet ${lastInfo.mid ? mm(lastInfo.mid.tablaLen) : '–'} mm alt lama${state.variant === 'both' ? `, ${m8Tot} M8` : ''}.${state.variant !== 'both' ? ' M8 toplamı için "İkisi"ni seçin.' : ''}</td></tr>`;
+    + `<tr><td colspan="4" style="color:#94a3b8">${all * 2} tij (800 mm, toplam ${(all * 2 * TIJ_LEN).toFixed(0)} m), ${all * 2} iki parçalı kelepçe, ${all * 4} M10, ${all * 6} M12 somun, ${sN} adet 700 mm ve ${sM} adet ${lastInfo.mid ? mm(lastInfo.mid.tablaLen) : '–'} mm U profil${state.variant === 'both' ? `, ${m8Tot} M8` : ''}.${state.variant !== 'both' ? ' M8 toplamı için "İkisi"ni seçin.' : ''}</td></tr>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -444,7 +459,7 @@ const VIEWS = {
 };
 function setView(name) {
   if (name === 'lama') {
-    // Düz askının alt laması: alttan-yandan bakış (M8 delikleri ve tij geçişleri)
+    // Düz askının U profili: üstten-yandan bakış
     const p = new V(0, T.spineR + state.h - (state.explode ? 0.22 : 0), 0);
     controls.target.copy(p);
     camera.position.copy(p).add(new V(0.35, 0.55, 0.75));

@@ -37,7 +37,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Antigravity, 2026-11-15 15:46
+- **Son güncelleyen:** Claude, 2026-11-15 (Tava Ofset sayfası). Aşağıdaki pafta maddeleri Antigravity'nin 15:46 güncellemesinden.
+- **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında M12 delikli kulak) + 80 cm M12 tij + 40×40 U profil. Kullanıcı kelepçenin altının nasıl bağlandığını ayrıca basit bir çizimle gösterecek; kulak geometrisi o çizime göre düzeltilecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
+- **Son commit:** `[Claude] Tava Ofset sayfası: iki parçalı kulaklı kelepçe, M12 tij, 40×40 U profil`
+- **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
   - Kullanıcı isteği: `08_500MM_KABLO_TAVASI_TUM_ALANLAR_KABLO_DOLULUK_KESITLERI_mm.dxf` içindeki KESIT 6 ve KESIT 7'yi 300 mm genişlik 100 mm derinlik olan bir tavada kesit çiz, mevcut görsellere sadık kal şablon değiştirme.
@@ -115,6 +118,22 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Commit:** `abc1234` (veya "commit edilmedi")
 - **Yarım kalan / dikkat:** ...
 ```
+
+---
+
+### 2026-11-15 — Claude — Tava Ofset sayfası: iki parçalı kulaklı kelepçe, M12 tij, 40×40 U profil
+- **Kullanıcı isteği:** (Kelepçe görseli: iki yarım çember, kenarında delikli kulak) "tava ofsetlerimizi güncellememiz lazım. Uzay çatıya dik taşıyıcılar 36 cm çevre, çapraz geçişler 70 cm çevre. Çembere ek yapı kelepçenin altına gelecek, içinde delik var, M12 tij bundan aşağı inecek; bunların 2 tanesinin arasına tava taşıyıcısı olarak 40x40 U profil. Aparatlar sayfasında güncelle, lokalde çalıştır." Kelepçe altı bağlantısı için ayrıca çizim gönderecek.
+- **Değişen dosyalar:**
+  - `tava_aski_aparati.js`:
+    - Boru çapları değişmedi; 2026-11-02'den beri 36 / 70 cm çevreye göre (`T.tieR` Ø115, `T.zigR` Ø223).
+    - `buildClamp()`: tek lama bant + konik boyun yerine üst ve alt yarım çember (50×5, 4 mm sıkma boşluğu, yanlarda ikişer kulak + M10), alt yarının altında altıgen kaynaklı M12 kulak (`BOSS`, turuncu) + kontra somun. 5 mm keçe duruyor.
+    - Tij M16 → M12 (`TIJ_R` 0.006, `NUT_R` / `NUT_H`), boy 80 cm aynı. `M16_TENS` → `M12_TENS`.
+    - `buildTabla()`: 80×8 alt lama yerine 40×40×3 U profil, sırtı yukarıda (tava düz yüzeye oturur). Boylar aynı (düz 700, çapraz 1400), sırtta 10 cm'de bir Ø9 ve tij geçişinde Ø14 delik.
+    - Etiketler ve (gizli) parça listesi satırları güncellendi.
+  - `tava_aski_aparati.html`: açıklama metni, "Alt lama" düğmesi → "U profil".
+- **Varsayımlar (kullanıcıya bildirildi):** kulak tij ekseninde düşey delikli altıgen parça; U profil et kalınlığı 3 mm ve sırtı yukarıda; kelepçe bandı 50×5 ve keçe önceki haliyle; U profilde M8 delikleri önceki alt lamadaki gibi.
+- **Doğrulama:** `npm run build` hatasız. Dev sunucuda (`localhost:5173`) kelepçe yakın planı ve "İkisi" görünümü kontrol edildi, konsol hatası yok. 230 cm'de gereken tij boyu düz 734 mm, çapraz 680 mm (80 cm yetiyor).
+- **Commit:** `[Claude] Tava Ofset sayfası: iki parçalı kulaklı kelepçe, M12 tij, 40×40 U profil`
 
 ---
 
