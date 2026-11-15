@@ -8,7 +8,7 @@
 //   parabolik_kiris eğrisi arasındaki 200'lük banda ortalanır, ON yüzü C'nin içine bakar.
 // - "tava hattı" bloğundaki her "tava yan kesit" → "tavaüst", her AYAK_KONSOL → "konsolüst"; iç eğri üzerinde,
 //   eğrinin teğetine göre dönük.
-//   Bant içinde iç eğriye yakın dizilir: boşluk (--kenar, 5) | tava | konsol | çift bölgede 2. tava.
+//   Bant içinde iç eğriye yakın: tek tavada konsol | tava, çift bölgede tava | konsol | 2. tava; ana tavanın iç kenarı --tavaIc (16).
 // Seçenekler: --kafes8=blok --kafes2=blok --kafesOlcek=0.1 (blok mm ise), --uzat (tava +Y ucuna kadar),
 //   --cift=x0,x1 ("tava hattı" yerel X; tavakesit1'deki cifttava hattının uçları 12923.6675,20165.4080).
 // Dosya latin1 olarak okunup yazılır (baytlar korunur); adlar karşılaştırma için UTF-8'e çevrilir.
@@ -134,9 +134,11 @@ const UZAT = process.argv.includes('--uzat');                                  /
 // Bant içi dizilim (iç eğriden dışa): boşluk | tava | konsol | (çift bölgede) 2. tava
 const tTopBB = bboxOf('tavaüst'), kTopBB = bboxOf('konsolüst');
 const TAVA_T = tTopBB[3] - tTopBB[1], KONSOL_D = kTopBB[3] - kTopBB[1];
-const KENAR = parseFloat(flag('kenar', '5'));
-const D_TAVA1 = KENAR + TAVA_T / 2, D_KONSOL = KENAR + TAVA_T + KONSOL_D / 2, D_TAVA2 = KENAR + TAVA_T + KONSOL_D + TAVA_T / 2;
-console.log(`Bant ici (ic egriden): tava ${D_TAVA1.toFixed(2)}, konsol ${D_KONSOL.toFixed(2)}, 2. tava ${D_TAVA2.toFixed(2)}`);
+// Tek tavalı bölgede: konsol | tava (konsol iç çizgi tarafında). Çift bölgede: tava | konsol | 2. tava.
+const TAVA_IC = parseFloat(flag('tavaIc', String(KONSOL_D))); // ana tavanın iç kenarı, iç eğriden (varsayılan = konsol derinliği)
+const D_TAVA1 = TAVA_IC + TAVA_T / 2, D_KONSOL_TEK = TAVA_IC - KONSOL_D / 2, D_KONSOL_CIFT = TAVA_IC + TAVA_T + KONSOL_D / 2,
+  D_TAVA2 = TAVA_IC + TAVA_T + KONSOL_D + TAVA_T / 2;
+console.log(`Bant ici (ic egriden, merkezler): tava ${D_TAVA1.toFixed(2)}, konsol tek ${D_KONSOL_TEK.toFixed(2)} / cift ${D_KONSOL_CIFT.toFixed(2)}, 2. tava ${D_TAVA2.toFixed(2)}`);
 
 // --- INSERT üretimi: world = ins + R(θ)·(lx·sx·k, ly·k) ------------------------------------------
 const placements = []; // {block, layer, ins, sx, k, rot, info}
@@ -176,7 +178,12 @@ function tavaPiece(t0, t1, d, layerName) { // yay boyu t0..t1 arası bir tava pa
   const p0 = atOff(t0, d).p, p1 = atOff(t1, d).p;
   place('tavaüst', layerName, tavaAnchor, p0, Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / tavaLen, null);
 }
-function konsolAt(t) { const o = atOff(t, D_KONSOL); place('konsolüst', 'UST_KONSOL', konsolAnchor, o.p, o.th, 1, null); }
+const ciftT = CIFT ? [toT(thx + CIFT[0]), toT(thx + CIFT[1])] : null; // çift tava bölgesi (yay boyu)
+let konsolCift = 0;
+function konsolAt(t) {
+  const cift = ciftT && t >= ciftT[0] - 1e-6 && t <= ciftT[1] + 1e-6; if (cift) konsolCift++;
+  const o = atOff(t, cift ? D_KONSOL_CIFT : D_KONSOL_TEK); place('konsolüst', 'UST_KONSOL', konsolAnchor, o.p, o.th, 1, null);
+}
 let tavaN = 0, konsolN = 0, tavaMin = Infinity, tavaMax = -Infinity, konsolLast = -Infinity;
 for (const e of blocks['tava hattı'].ents.filter((q) => q.type === 'INSERT')) {
   const n = name(e), x = N(e, 10), sx = N(e, 41, 1), rot = (N(e, 50) * Math.PI) / 180;
@@ -200,9 +207,9 @@ if (UZAT) {
 }
 // 3c) Çift tava: konsolun dış yanında ikinci tava
 if (CIFT) {
-  const t0 = toT(thx + CIFT[0]), t1 = toT(thx + CIFT[1]); let n = 0;
+  const [t0, t1] = ciftT; let n = 0;
   for (let t = t0; t < t1 - 0.5; t += tavaLen) { tavaPiece(t, Math.min(t1, t + tavaLen), D_TAVA2, 'UST_TAVA_2'); n++; }
-  console.log(`Cift tava: ${n} parca, merkezden ${(t0 - tMid).toFixed(1)} .. ${(t1 - tMid).toFixed(1)} (boy ${(t1 - t0).toFixed(1)}) -> ${fmt(at(t0))} .. ${fmt(at(t1))}`);
+  console.log(`Cift tava: ${n} parca, arada ${konsolCift} konsol, merkezden ${(t0 - tMid).toFixed(1)} .. ${(t1 - tMid).toFixed(1)} (boy ${(t1 - t0).toFixed(1)}) -> ${fmt(at(t0))} .. ${fmt(at(t1))}`);
 }
 console.log(`Tava ana hat: ${fmt(atOff(toT(tavaMin), D_TAVA1).p)} -> ${fmt(atOff(UZAT ? total : toT(tavaMax), D_TAVA1).p)}`);
 placements.filter((p) => p.info).forEach((p) => console.log('  ' + p.info));

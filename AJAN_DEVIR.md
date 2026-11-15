@@ -38,7 +38,7 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Kesit → üst görünüş: tava bant içinde, çift tava, üst uca uzatma, yeni kafes blokları`
+- **Son commit:** `[Claude] Kesit → üst görünüş: tek tavada konsol iç çizgi tarafında, tava 16 içeride`
 - **Kesit → üst görünüş aktarımı (2026-11-15):** Kuzey tribün, `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
   - Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış.
   - Yeniden üretim iki adım: (1) accoreconsole ile `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` `-INSERT` edilip silinir (blok tanımları `buyukkafes` / `kucukkafes` gelsin), DXF kaydedilir; (2) `node scripts/kesit_ust_gorunus_aktar.cjs <o dxf> <cikis> --kafes8=buyukkafes --kafes2=kucukkafes --kafesOlcek=0.1 --uzat --cift=12923.66753407742,20165.40801695846`.
@@ -93,6 +93,18 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Kesit → üst görünüş: konsol tavanın öbür yanında, tavalar içeride
+- **Kullanıcı isteği:** "tek hat olan yerlerde tava konsolunu tavanın diğer tarafına al, ayrıca tüm tavaları C'nin iç çizgisinden 15 cm kadar içeri taşı".
+- **Değişen dosyalar:**
+  - `scripts/kesit_ust_gorunus_aktar.cjs`: `--kenar` yerine `--tavaIc` (ana tavanın iç kenarı, iç eğriden; varsayılan = konsol derinliği 16).
+    - Tek tavalı bölge: konsol (0…16, iç çizgiye dayalı) | tava (16…20.1). Çift bölge: tava (16…20.1) | konsol (20.1…36.1) | 2. tava (36.1…40.2).
+    - `konsolAt(t)` konumun çift bölgede olup olmadığına göre `D_KONSOL_TEK` (8) / `D_KONSOL_CIFT` (28.1) seçiyor; çift bölgede 72 konsol.
+  - Çıktı (git dışı) üzerine yazıldı; adetler aynı (270 INSERT).
+- **Karar:** "15 cm kadar" 16 alındı: tam 15'te 16'lık konsol iç çizginin 1 cm dışına taşıyordu. Kullanıcıya bildirildi; tam 15 için `--tavaIc=15`.
+- **Ayrıca:** Kullanıcı "2 günlüğüne alt ajan kullanıyorsan Fable altında sadece Fable kullan" dedi (2026-11-17'ye kadar; Claude belleğine yazıldı).
+- **Doğrulama:** accoreconsole AUDIT 0 hata; çift tava başlangıcının yakın planı kontrol edildi.
+- **Commit:** `[Claude] Kesit → üst görünüş: tek tavada konsol iç çizgi tarafında, tava 16 içeride`
 
 ### 2026-11-15 — Claude — Kesit → üst görünüş: bant içi tava, çift tava, üst uca uzatma, yeni kafes blokları
 - **Kullanıcı isteği:** "tava hattını C'nin üst ucuna kadar devam ettir"; tava ve konsollar iç çizgi ile dış çizgi ARASINDA, iç çizgiye yakın; "soldan 2. dolaptan en sağdaki dolaba kadar çift tava, bir konsolun iki tarafına takılmış"; kafesler `8lıüst` → `buyukkafes`, `2lıüst` → `kucukkafes` (yerleri doğru).
