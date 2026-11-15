@@ -37,8 +37,9 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Claude Code, 2026-11-13
-- **Son commit:** `[Claude] Pafta 20/21: derinlik ayaklar dahil 2000, ayak aplikasyon ölçüleri`
+- **Son güncelleyen:** Claude Code, 2026-11-15
+- **Son commit:** `[Claude] Kesit → üst görünüş aktarma betiği (kuzey kafes, tava, konsol)`
+- **Kesit → üst görünüş aktarımı (2026-11-15):** `node scripts/kesit_ust_gorunus_aktar.cjs giris.dxf cikis.dxf`. Kuzey tribün: `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
 - **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
@@ -90,6 +91,27 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Kesit → üst görünüş ekipman aktarımı (kuzey tribün)
+- **Kullanıcı isteği:** Yan görünüşte (kesit) yerleştirilmiş kafes, tava ve konsolları üst görünüşe aynı sağ-sol konumda aktar; `kuzey ref` çizgileri referans. Bloklar `2lıüst`, `8lıüst`, hat boyunca `tavaüst`, 1 m'de bir `konsolüst`. Python/ezdxf istendi; makinede Python kurulu değil, Node ile yapıldı (kullanıcıya bildirildi).
+  - Soru yanıtları: yan görünüşün SOL ucu üst görünüşte üst uca (+Y) gelir; tava ve konsollar 200'lük duvar bandının saha tarafı kenarında; tava için `tavaüst` (250 × 4,1) bloğu olduğu gibi.
+- **Dosya:** `DXF_Ciktilari/Milimetre/kesitaktarma.dxf` (AC1032, UTF-8, birim cm). Üst görünüş 90° dönük: yan X → üst Y.
+  - REF: yan X 1394876.365 / 1395608.365, üst Y −374606.083 / −373874.095. Aralık 732.000 / 731.988 → ölçek 0.999984 (1 alındı), merkez X 1395242.365 ↔ Y −374240.089. Dönüşüm `y = cy − (x − cx)`.
+  - Duvar bandı: `2-KOLON` ayakları arası x 1374638.28 … 1374838.28 (200).
+- **Değişen dosyalar:**
+  - YENİ `scripts/kesit_ust_gorunus_aktar.cjs` (`git add -f`). REF'ten dönüşümü hesaplar (ölçek farkı > %0.2 ise durur), modeldeki `8li` / `2li` INSERT'lerinin TABAN dış kenarlarını `8lıüst` / `2lıüst` TABAN'ına eşler, `tava hattı` bloğundaki 57 `tava yan kesit` → `tavaüst`, 142 `AYAK_KONSOL` → `konsolüst`.
+    - Tüm yeni INSERT'ler 270° dönük (blok solu +Y, ON yüzü sahaya / −X). Kafesler bant ortasında (x 1374738.28); tava ve konsol x 1374638.28.
+    - Tava parçaları plan izdüşümüne göre X ölçekli (`sx · cos(eğim)`), uç uca.
+    - Yeni katmanlar: `UST_KAFES` (4), `UST_TAVA` (57), `UST_KONSOL` (142). Dosya latin1 okunup yazılıyor (baytlar korunuyor).
+  - Çıktı (git dışı): `DXF_Ciktilari/Milimetre/kesitaktarma_UST_YERLESIM.dxf`. Özgün dosya değişmedi.
+- **Sonuç (üst görünüş Y):** 2'li −369149.6…−369467.6 ve −379000.5…−379318.5; 8'li −371944.1…−373162.1 ve −375306.1…−376524.1; tava −369169.3…−383335.1.
+- **Doğrulama:** accoreconsole AUDIT 0 hata, DWG'ye kaydedildi. Kontrol görüntülerinde (scratchpad PNG) kafesler bantta, ON yüzü saha tarafında.
+- **Dikkat:**
+  - Kafes blokları TABAN derinliği 208 (eski sürüm); 200'lük banda ortalı, iki yandan 4 taşıyor.
+  - Tava saha tarafı kenarında olduğu için planda kafeslerin ön ayak sırasıyla aynı hatta.
+  - Tava alt ucu (Y −383335) kolon iç yüzünü (−383290) 45 geçiyor; yan görünüşte de öyle.
+  - Özgün dosyada üst görünüş nesneleri iki kez var (18 çift); dokunulmadı.
+- **Commit:** `[Claude] Kesit → üst görünüş aktarma betiği (kuzey kafes, tava, konsol)`
 
 ### 2026-11-13 — Claude — Pafta 20/21: derinlik ayaklar dahil 2000
 - **Kullanıcı isteği:** "ayaklar dahil 2 metre olacak, ayakları nereye atayım ben".
