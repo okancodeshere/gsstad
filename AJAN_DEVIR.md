@@ -38,10 +38,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Devir defteri: kesit → üst görünüş, konsol ve tavalar iç çizgiden 5 içeride`
+- **Son commit:** `[Claude] Devir defteri: kesit → üst görünüş, konsol ve tavalar iç çizgiden 15 içeride`
 - **Kesit → üst görünüş aktarımı (2026-11-15):** Kuzey tribün, `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
   - Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış.
-  - Yeniden üretim iki adım: (1) accoreconsole ile `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` `-INSERT` edilip silinir (blok tanımları `buyukkafes` / `kucukkafes` gelsin), DXF kaydedilir; (2) `node scripts/kesit_ust_gorunus_aktar.cjs <o dxf> <cikis> --kafes8=buyukkafes --kafes2=kucukkafes --kafesOlcek=0.1 --uzat --cift=12923.66753407742,20165.40801695846 --tavaIc=21`.
+  - Yeniden üretim iki adım: (1) accoreconsole ile `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` `-INSERT` edilip silinir (blok tanımları `buyukkafes` / `kucukkafes` gelsin), DXF kaydedilir; (2) `node scripts/kesit_ust_gorunus_aktar.cjs <o dxf> <cikis> --kafes8=buyukkafes --kafes2=kucukkafes --kafesOlcek=0.1 --uzat --cift=12923.66753407742,20165.40801695846 --tavaIc=31`.
 - **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
@@ -93,6 +93,13 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Kesit → üst görünüş: konsollar 10 cm daha içeride
+- **Kullanıcı isteği:** "konsolları bir 10cm daha kaydır".
+- **Yapılan:** Betik değişmedi; çıktı `--tavaIc=31` ile yeniden üretildi. Konsol tavaya bağlı olduğu için tavalar da birlikte 10 kaydı (yalnız konsol kaysa tek tavalı bölgede tavanın üstüne binerdi); kullanıcıya bildirildi.
+  - Tek tavalı bölge: 15 boşluk | konsol 15…31 | tava 31…35.1. Çift bölge: tava 31…35.1 | konsol 35.1…51.1 | 2. tava 51.1…55.2.
+- **Doğrulama:** accoreconsole AUDIT 0 hata.
+- **Commit:** `[Claude] Devir defteri: kesit → üst görünüş, konsol ve tavalar iç çizgiden 15 içeride`
 
 ### 2026-11-15 — Claude — Kesit → üst görünüş: konsollar da sınırdan içeride
 - **Kullanıcı isteği:** "konsolları da tavalara uygun olarak kaydır, onlar da sınırdan biraz içerde".
