@@ -38,7 +38,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Kesit → üst görünüş betiği genelleştirildi, doğu tribün yerleşimi`
+- **Son commit:** `[Claude] Pafta 22: 500x200 perfore tava L7300 DXF (üst, yan, kesit)`
+- **Pafta 22 (2026-11-15):** `node generate_tava_500x200_L7300_dxf.cjs` → `22_TAVA_500x200_L7300_mm.dxf`. Perfore/sac ölçüleri varsayım. Görsel kontrol YAPILMADI (kota bitti).
 - **Kesit → üst görünüş aktarımı (2026-11-15):** `scripts/kesit_ust_gorunus_aktar.cjs`. Kullanıcı sonuçları orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı. Çıktılar git dışı.
   - Kurallar (kullanıcı kararları): yan görünüş AÇILIM (yay boyu, ref merkezinden), eğrinin İÇİNDEN bakış; kafes `parabolik_kiris` iç eğrisi ile bir sonraki eğri arasındaki 200'lük banda ortalı, ON içe; tek tavada iç çizgiden 15 boşluk | konsol | tava, çift bölgede tava | konsol | 2. tava (`--tavaIc=31`).
   - Önce accoreconsole ile eksik blok tanımları giriş dosyasına `-INSERT` + `ERASE L` ile alınır, DXF kaydedilir (ara dosya scratchpad'de); betik o dosya üzerinde çalışır.
@@ -95,6 +96,14 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Pafta 22: 500 × 200 tava, L 7300
+- **Kullanıcı isteği:** "boyu 730cm genişliği 50cm olan bir tava üst ve yan kesiti çiz"; kenar yüksekliği sorusuna yanıt 200 mm.
+- **Değişen dosyalar:** YENİ `generate_tava_500x200_L7300_dxf.cjs` (Pafta 14 betiğinden uyarlandı, kapaksız) → YENİ `DXF_Ciktilari/Milimetre/22_TAVA_500x200_L7300_mm.dxf` (mm). Görünüşler: A) üst, B) yan, C) enine kesit.
+- **Varsayımlar (`P` bloğu):** sac 1.5, dudak 10; taban 30×7 oval, adım 50, 9 sıra; yan duvar 20×7 oval, 2 sıra (60 / 140). Tava tek parça çizildi, ek yeri yok.
+- **Doğrulama:** NaN kontrolü geçti; accoreconsole dosyayı açtı ve DWG/PDF kaydetti. AUDIT 54 "PlotstyleName Id Invalid" uyarısı verdi (`dxf_engine.cjs` çıktısının katman kaydından; geometriyle ilgisiz, incelenmedi). PDF önizlemeye BAKILMADI: Claude kullanım limiti bu noktada doldu.
+- **Yarım kalan:** Önizlemenin görsel kontrolü; istenirse 1:10 (cm) sürümü.
+- **Commit:** `[Claude] Pafta 22: 500x200 perfore tava L7300 DXF (üst, yan, kesit)`
 
 ### 2026-11-15 — Claude — Doğu tribün: kesit → üst görünüş yerleşimi, betik genelleştirildi
 - **Kullanıcı isteği:** "kuzey tarafı bitirdik, doğu tarafında da ... onu da yerleştir". Ref katmanı `doguref`, dosya `dogukesit aktarma.dxf`, tava kuzeydeki konumlamayla, bu hatta tek tava. Kafes için soru yanıtı: "aynı dizindeki 21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf içindeki bloğu kullan" (`8lıkafes`, 1728 × 200, cm; yan görünüşteki `350ledçit` ile aynı genişlik).
