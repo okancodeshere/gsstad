@@ -39,7 +39,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 - **Son güncelleyen:** Claude, 2026-11-15 (Tava Ofset sayfası). Aşağıdaki pafta maddeleri Antigravity'nin 15:46 güncellemesinden.
 - **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında M12 delikli kulak) + 80 cm M12 tij + 40×40 U profil. Kullanıcı kelepçenin altının nasıl bağlandığını ayrıca basit bir çizimle gösterecek; kulak geometrisi o çizime göre düzeltilecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
-- **Son commit:** `[Claude] Tava Ofset sayfası: iki parçalı kulaklı kelepçe, M12 tij, 40×40 U profil`
+  - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
+- **Son commit:** `[Claude] Tava Ofset sayfası: U profilin açık tarafı yana bakıyor`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -120,6 +121,12 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Tava Ofset sayfası: U profilin açık tarafı yana
+- **Kullanıcı isteği:** "U'nun açık tarafı yana bakacak". Kelepçe-tij bağlantısı için ikinci bir görsel gönderecek (ilk görseldeki kulak Claude'un yorumuyla çizildi, doğrulanmadı).
+- **Değişen dosyalar:** `tava_aski_aparati.js` → `buildTabla()`: delikli üst kanat + alt kanat + düşey sırt (açıklık makas boyunca +s yönüne; yön Claude'un seçimi). Tij iki kanattan geçiyor; alt somun alt kanadın altında (`nutBelowY = trayBottom − TABLA.hgt − …`). Önceki kayıttaki "sırtı yukarıda" geçersiz.
+- **Doğrulama:** `npm run build` hatasız; dev sunucuda yakın plan kontrol edildi, konsol hatası yok. 230 cm'de düz askıda gereken tij 771 mm (80 cm'lik tijde 29 mm pay).
+- **Commit:** `[Claude] Tava Ofset sayfası: U profilin açık tarafı yana bakıyor`
 
 ### 2026-11-15 — Claude — Tava Ofset sayfası: iki parçalı kulaklı kelepçe, M12 tij, 40×40 U profil
 - **Kullanıcı isteği:** (Kelepçe görseli: iki yarım çember, kenarında delikli kulak) "tava ofsetlerimizi güncellememiz lazım. Uzay çatıya dik taşıyıcılar 36 cm çevre, çapraz geçişler 70 cm çevre. Çembere ek yapı kelepçenin altına gelecek, içinde delik var, M12 tij bundan aşağı inecek; bunların 2 tanesinin arasına tava taşıyıcısı olarak 40x40 U profil. Aparatlar sayfasında güncelle, lokalde çalıştır." Kelepçe altı bağlantısı için ayrıca çizim gönderecek.

@@ -37,8 +37,8 @@ const TIJ_LEN = 0.80;                  // Kullanıcı isteği: tij boyu 80 cm (f
 const NUT_R = 0.011, NUT_H = 0.010;    // M12 somun
 const BOSS = { r: 0.015, h: 0.025 };   // kelepçe altındaki kaynaklı delikli kulak (ölçü varsayım)
 const EAR_GAP = 0.004;                 // iki kelepçe yarısı arasındaki sıkma boşluğu
-// Tava taşıyıcısı: 40×40 U profil (et 3 mm varsayım), sırtı yukarıda (tava düz yüzeye oturur). Düz askıda 70 cm,
-// çapraz askıda iki tij ayağını kapsayan 10 cm katı boy. Sırtta her 10 cm'de M8 deliği (Ø9), tij geçişlerinde Ø14.
+// Tava taşıyıcısı: 40×40 U profil (et 3 mm varsayım), açık tarafı yana bakar (tava üst kanada oturur). Düz askıda
+// 70 cm, çapraz askıda iki tij ayağını kapsayan 10 cm katı boy. Üst kanatta her 10 cm'de M8 deliği (Ø9), tij Ø14.
 const TABLA = { w: 0.04, hgt: 0.04, t: 0.003, nodeLen: 0.70, pitch: 0.10, m8D: 0.009, tijD: 0.014 };
 const STEEL = 7850, G = 9.81;
 const TRAYS = {
@@ -242,7 +242,7 @@ function buildClamp(parent, center, memberDir, memberR) {
   return { rodTop: center.y - ringR - 0.002, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
 }
 
-// Tava taşıyıcısı 40×40 U profil: sırtı yukarıda, üst yüzü tava tabanında. Boy: verilen sabit boy (düz askı 70 cm)
+// Tava taşıyıcısı 40×40 U profil: açık tarafı yana bakar, üst kanadı tava tabanında. Boy: verilen sabit boy (düz askı 70 cm)
 // ya da iki tij ayağını kapsayan 10 cm katı (çapraz askı). Sırtta her 10 cm'de Ø9 (M8) delik, tij geçişlerinde
 // Ø14 delik; tij deliğine 3 cm'den yakın M8 deliği açılmaz. Dönen: { len, m8 (delik sayısı) }
 function buildTabla(parent, a, b, fixedLen) {
@@ -269,8 +269,10 @@ function buildTabla(parent, a, b, fixedLen) {
   g.rotateX(Math.PI / 2); // kalınlık aşağı: y 0 → −t
   const m = new THREE.Group();
   m.add(new THREE.Mesh(g, M.steel));
-  const fh = TABLA.hgt - TABLA.t; // U profilin iki kanadı
-  [-1, 1].forEach(sz => m.add(box(len, fh, TABLA.t, M.steel, 0, -TABLA.t - fh / 2, sz * (TABLA.w - TABLA.t) / 2)));
+  // Kullanıcı (2026-11-15): "U'nun açık tarafı yana bakacak" → delikli üst kanat + alt kanat + düşey sırt;
+  // tij iki kanattan geçer, somunlar üst kanadın üstünde ve alt kanadın altında
+  m.add(box(len, TABLA.t, TABLA.w, M.steel, 0, -TABLA.hgt + TABLA.t / 2, 0));
+  m.add(box(len, TABLA.hgt - 2 * TABLA.t, TABLA.t, M.steel, 0, -TABLA.hgt / 2, -(TABLA.w - TABLA.t) / 2));
   m.position.set((a.x + b.x) / 2, a.y, (a.z + b.z) / 2);
   m.rotation.y = -Math.atan2(span.z, span.x);
   parent.add(m);
@@ -298,7 +300,7 @@ function buildHanger(s, k, trayBottom, tray) {
     const c = buildClamp(clampG, new V(xa, T.chordY, topS), memberDir, memberR);
     bandLen = Math.max(bandLen, c.bandLen);
     // 80 cm tij: üst ucu kelepçe kulağında; U profil sırtının altında somun + 1 cm diş payı gerekli, fazlası aşağı taşar
-    const nutBelowY = trayBottom - TABLA.t - NUT_H / 2;
+    const nutBelowY = trayBottom - TABLA.hgt - NUT_H / 2;
     need = Math.max(need, c.rodTop - (nutBelowY - NUT_H / 2 - 0.01));
     rodG.add(pipe(new V(xa, c.rodTop, topS), new V(xa, c.rodTop - TIJ_LEN, topS), TIJ_R, M.dark, 12));
     tablaG.add(nut(xa, trayBottom + NUT_H / 2, topS));
