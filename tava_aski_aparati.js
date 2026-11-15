@@ -123,6 +123,22 @@ function nut(x, y, z, size = NUT_R, mat = M.dark) {
   m.position.set(x, y, z);
   return m;
 }
+// Tij bağlantı takımı (kullanıcı, 2026-11-15: "somun pul ve rondela da koy, en altta 2 somun olacak"):
+// yüzeyden dir yönünde (+1 yukarı, −1 aşağı) pul → (yaylı rondela) → n somun. Dönen: takımın uç kotu
+const PUL = { r: 0.012, h: 0.0025 }, RONDELA = { r: 0.010, h: 0.003 };
+function nutStack(parent, x, yFace, z, dir, spring = false, nuts = 1) {
+  let y = yFace;
+  const disc = (w, mat) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(w.r, w.r, w.h, 20), mat);
+    m.position.set(x, y + dir * w.h / 2, z);
+    parent.add(m);
+    y += dir * w.h;
+  };
+  disc(PUL, M.band);
+  if (spring) disc(RONDELA, M.accent);
+  for (let i = 0; i < nuts; i++) { parent.add(nut(x, y + dir * NUT_H / 2, z)); y += dir * NUT_H; }
+  return y;
+}
 const labels = [];
 function addLabel(parent, text, pos, cls = '') {
   const el = document.createElement('div');
@@ -261,9 +277,9 @@ function buildClamp(parent, center, memberDir, memberR) {
   plate.position.set(center.x, botY + BOSS.t, center.z);
   plate.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(perp, up, new V().crossVectors(perp, up)));
   parent.add(plate);
-  parent.add(nut(center.x, botY + BOSS.t + NUT_H / 2, center.z)); // U parçanın içinde, yükü taşıyan somun
-  parent.add(nut(center.x, botY - NUT_H / 2, center.z));          // alttan kontra somun
-  return { rodTop: botY + BOSS.t + NUT_H + 0.004, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
+  const inTop = nutStack(parent, center.x, botY + BOSS.t, center.z, 1); // U parçanın içinde: pul + taşıyıcı somun
+  nutStack(parent, center.x, botY, center.z, -1, true);                 // altta: pul + rondela + kontra somun
+  return { rodTop: inTop + 0.004, bandLen: Math.PI * (ringIn + LAMA.t / 2) + 2 * 0.03 };
 }
 
 // Tava taşıyıcısı 40×40 U profil: açık tarafı yana bakar, üst kanadı tava tabanında. Boy: verilen sabit boy (düz askı 70 cm)
@@ -324,11 +340,11 @@ function buildHanger(s, k, trayBottom, tray) {
     const c = buildClamp(clampG, new V(xa, T.chordY, topS), memberDir, memberR);
     bandLen = Math.max(bandLen, c.bandLen);
     // 80 cm tij: üst ucu kelepçe kulağında; U profil sırtının altında somun + 1 cm diş payı gerekli, fazlası aşağı taşar
-    const nutBelowY = trayBottom - TABLA.hgt - NUT_H / 2;
-    need = Math.max(need, c.rodTop - (nutBelowY - NUT_H / 2 - 0.01));
+    // U profil üstünde pul + somun; en altta pul + rondela + 2 somun
+    nutStack(tablaG, xa, trayBottom, topS, 1);
+    const stackBot = nutStack(tablaG, xa, trayBottom - TABLA.hgt, topS, -1, true, 2);
+    need = Math.max(need, c.rodTop - (stackBot - 0.01));
     rodG.add(pipe(new V(xa, c.rodTop, topS), new V(xa, c.rodTop - TIJ_LEN, topS), TIJ_R, M.dark, 12));
-    tablaG.add(nut(xa, trayBottom + NUT_H / 2, topS));
-    tablaG.add(nut(xa, nutBelowY, topS));
     feet.push(new V(xa, trayBottom, topS));
   });
   const tb = buildTabla(tablaG, feet[0], feet[1], k === null ? TABLA.nodeLen : null);
@@ -423,8 +439,9 @@ function updatePanel() {
       ['Cıvata M10×45 8.8 + somun (kulak)', 4, 0.045],
       ['Kaynaklı delikli U parça 50×5 (kelepçe altı, Ø13 delik)', 2, (BOSS.w + 2 * BOSS.d) * LAMA.w * BOSS.t * STEEL],
       [`M12 dişli tij 8.8, L=${mm(TIJ_LEN)}`, 2, 0.89 * TIJ_LEN],
-      ['M12 somun (kelepçe U parçası içi/altı + U profil üstü/altı)', 8, 0.016],
-      ['M12 pul', 4, 0.006],
+      ['M12 somun (kelepçe U parçası içi/altı + U profil üstü + en altta çift)', 10, 0.016],
+      ['M12 pul', 8, 0.006],
+      ['M12 yaylı rondela', 4, 0.004],
       [`U profil 40×40×3, L=${mm(h.tablaLen)}, ${h.m8}×Ø9 (M8) + 2×Ø14 delik${name === 'Çapraz' ? ' (çapraz)' : ''}`, 1, h.tablaLen * uKgm]
     ];
   };

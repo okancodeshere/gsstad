@@ -41,7 +41,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Tava Ofset sayfası (2026-11-15):** `tava_aski_aparati.js/.html` askısı artık iki parçalı kelepçe (altında saha fotoğrafındaki kaynaklı delikli U parça) + 80 cm M12 tij + 40×40 U profil. U parça ölçüleri (45 × 40) fotoğraf oranından; kullanıcı ölçü verirse `BOSS` güncellenecek. `main.js` askıları eski halinde (lama + konik boyun + M16, gergi Ø100, zikzak Ø70).
   - U profilin açık tarafı yana bakıyor (kullanıcı kararı); tij üst ve alt kanattan geçiyor.
   - Tava kenarı tespit çenesi (takoz) yok (kullanıcı kararı).
-- **Son commit:** `[Claude] Tava Ofset sayfası: tava kenarı takozları kaldırıldı`
+  - Tij bağlantılarında pul + rondela; U profilin altında çift somun (kullanıcı kararı).
+- **Son commit:** `[Claude] Tava Ofset sayfası: tij bağlantılarında pul, rondela ve en altta çift somun`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -122,6 +123,13 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Tava Ofset sayfası: pul, rondela ve en altta çift somun
+- **Kullanıcı isteği:** "somun pul ve rondela da koy, en altta 2 somun olacak".
+- **Değişen dosyalar:** `tava_aski_aparati.js` → YENİ `nutStack(parent, x, yFace, z, dir, spring, nuts)` (pul Ø24×2.5 → yaylı rondela Ø20×3, turuncu → somunlar). `buildClamp()`: U parçanın içinde pul + somun, altında pul + rondela + somun. `buildHanger()`: U profil üstünde pul + somun, alt kanadın altında pul + rondela + 2 somun. Parça listesi: 10 somun, 8 pul, 4 rondela (bir askı).
+- **Varsayım:** rondela yalnızca alttan sıkılan (kontra) taraflara kondu; pul her somunun altında.
+- **Doğrulama:** `npm run build` hatasız; dev sunucuda alt bağlantı yakın planı kontrol edildi, konsol hatası yok. 230 cm'de düz askıda gereken tij 770 mm (80 cm'lik tijde 30 mm pay).
+- **Commit:** `[Claude] Tava Ofset sayfası: tij bağlantılarında pul, rondela ve en altta çift somun`
 
 ### 2026-11-15 — Claude — Tava Ofset sayfası: tava kenarı takozları kaldırıldı
 - **Kullanıcı isteği:** "tij ile U profilin orada takoz gibi bir şey var, onları kaldır, öyle bir şey kullanmayacağım".
