@@ -37,19 +37,21 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
-- **Son güncelleyen:** Antigravity, 2026-11-15 14:00
-- **Son commit:** `[Antigravity] Pafta 23: 500x200 dikey kablo merdiveni H7300 DXF/DWG/PDF (arka, yan, kesit)`
+- **Son güncelleyen:** Antigravity, 2026-11-15 14:12
+- **Son commit:** `[Antigravity] Pafta 24: 300x200 dikey kablo merdiveni H7300 DXF/DWG/PDF (arka, yan, kesit)`
+- **Pafta 24 (2026-11-15):** `node generate_dikey_kablo_merdiveni_300x200_H7300_dxf.cjs` → `DXF_Ciktilari/Milimetre/24_DIKEY_KABLO_MERDIVENI_300x200_H7300_ARKA_GORUNUS_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
+  - Kullanıcı isteği: "bir de 30cm olanını yapsana" (Genişlik 30 cm = 300 mm, Derinlik 20 cm = 200 mm, Yükseklik 730 cm = 7300 mm, arkadan bakış).
+  - Görünüşler:
+    - A) DİKEY ARKA GÖRÜNÜŞ (W=300 mm, H=7300 mm): Basamaklar ön planda, 2'li oval slotlar (±45 mm), yan ray flanşları (35 mm) ve 10 mm iç emniyet dudakları, 29 basamak (adım 250 mm), tespit konsolları.
+    - B) DİKEY YAN GÖRÜNÜŞ (D=200 mm, H=7300 mm): Sol taraf ARKA (kullanıcı bakış yönü oku), sağ taraf ÖN; yan perfore slotları, basamak kesitleri.
+    - C) ENİNE KESİT A-A (Ölçek 1:5): 300 x 200 mm tam C-profil et kalınlıklı poligonları, 40x30 basamak profili, net hazne (210 x 135 mm), büyük bakış yönü oku.
+    - D) BÜYÜTÜLMÜŞ DETAY 1 (Ölçek 3:1) ve DETAY 2 (Ölçek 2.5:1): Travers birleşim kaynağı ve C-profil büküm detayları.
+    - F) YATAY ARKA GÖRÜNÜŞ: Yatay pafta projeksiyonu için L=7300 mm x W=300 mm 1:1 kopya.
+    - BOM ve imalat/montaj notları paftaya işlendi.
+  - Doğrulama: NaN taraması temiz (195 KB DXF), accoreconsole ile DWG (58 KB) ve PDF (240 KB) üretildi; görsel kontrol yapıldı.
 - **Pafta 23 (2026-11-15):** `node generate_dikey_kablo_merdiveni_500x200_H7300_dxf.cjs` → `DXF_Ciktilari/Milimetre/23_DIKEY_KABLO_MERDIVENI_500x200_H7300_ARKA_GORUNUS_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
   - Kullanıcı isteği: Dikey kablo merdiveni, Yükseklik 7300 mm (730 cm), Genişlik 500 mm (50 cm), Derinlik 200 mm (20 cm), "arkadan bakacağım ona göre çiz".
-  - Görünüşler:
-    - A) DİKEY ARKA GÖRÜNÜŞ (Ana Görünüş - Arkadan Bakış): Basamaklar ön planda (arka yüzde), 4'lü oval slotlar, yan ray flanşları (35 mm) ve iç emniyet dudakları (10 mm), 200 mm derinlikteki ön flanşların izdüşümü, 29 basamak (adım 250 mm, uç payı 135 mm simetrik), duvar/kolon tespit konsolları (1.5 m aralıklı).
-    - B) DİKEY YAN GÖRÜNÜŞ (Düşey): 200 mm derinlik, 7300 mm boy; sol taraf ARKA (kullanıcı bakış yönü oku), sağ taraf ÖN (kablo açık haznesi); yan perfore delikleri, basamak kesitleri.
-    - C) ENİNE KESİT A-A (Ölçek 1:5): 500 x 200 mm tam C-profil et kalınlıklı poligonları, 40x30 basamak profili, net kablo dolum haznesi (400 x 135 mm), büyük bakış yönü oku.
-    - D) BÜYÜTÜLMÜŞ DETAY 1 (Ölçek 3:1): Basamak - ray birleşimi, perfore slotlar, kaynak/kenet dikişi.
-    - E) BÜYÜTÜLMÜŞ DETAY 2 (Ölçek 2.5:1): 200x35x10x2 mm C-profil rulo büküm ve delik detayı.
-    - F) YATAY ARKA GÖRÜNÜŞ: Yatay pafta projeksiyonu için L=7300 mm x W=500 mm 1:1 kopya.
-    - BOM (Malzeme Listesi) ve imalat/montaj notları paftaya işlendi.
-  - Doğrulama: NaN kontrolü geçti (246 KB DXF), accoreconsole ile DWG (64 KB) ve PDF (243 KB) başarıyla üretildi; PDF önizleme görsel kontrolü yapıldı (çakışmasız, ortalanmış başlıklar).
+  - Görünüşler: A) Dikey Arka Görünüş (W=500, H=7300), B) Dikey Yan Görünüş (D=200, H=7300), C) Enine Kesit A-A (500x200), D) Detay 1 (3:1), E) Detay 2 (2.5:1), F) Yatay Arka Görünüş (7300x500), BOM ve notlar. Doğrulama: accoreconsole DWG/PDF üretildi, görsel kontrol temiz.
 - **Pafta 22 (2026-11-15):** `node generate_tava_500x200_L7300_dxf.cjs` → `22_TAVA_500x200_L7300_mm.dxf`. Perfore/sac ölçüleri varsayım. Görsel kontrol YAPILMADI (kota bitti).
 - **Kesit → üst görünüş aktarımı (2026-11-15):** `scripts/kesit_ust_gorunus_aktar.cjs`. Kullanıcı sonuçları orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı. Çıktılar git dışı.
   - Kurallar (kullanıcı kararları): yan görünüş AÇILIM (yay boyu, ref merkezinden), eğrinin İÇİNDEN bakış; kafes `parabolik_kiris` iç eğrisi ile bir sonraki eğri arasındaki 200'lük banda ortalı, ON içe; tek tavada iç çizgiden 15 boşluk | konsol | tava, çift bölgede tava | konsol | 2. tava (`--tavaIc=31`).
@@ -105,6 +107,23 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 - **Commit:** `abc1234` (veya "commit edilmedi")
 - **Yarım kalan / dikkat:** ...
 ```
+
+---
+
+### 2026-11-15 14:12 — Antigravity — Pafta 24: 300x200 dikey kablo merdiveni, H 7300, arkadan görünüş
+- **Kullanıcı isteği:** "bir de 30cm olanını yapsana" (genişlik 30 cm = 300 mm, derinlik 20 cm = 200 mm, yükseklik 730 cm = 7300 mm, arkadan görünüş).
+- **Değişen dosyalar:**
+  - YENİ `generate_dikey_kablo_merdiveni_300x200_H7300_dxf.cjs` → YENİ `DXF_Ciktilari/Milimetre/24_DIKEY_KABLO_MERDIVENI_300x200_H7300_ARKA_GORUNUS_mm.dxf` (195 KB).
+  - AutoCAD 2023 `accoreconsole` ile YENİ `24_DIKEY_KABLO_MERDIVENI_300x200_H7300_ARKA_GORUNUS_mm.dwg` (58 KB) ve `24_DIKEY_KABLO_MERDIVENI_300x200_H7300_ARKA_GORUNUS_onizleme.pdf` (240 KB).
+- **Tasarım ve Geometri Kararları:**
+  - Ana boyutlar: Yükseklik = 7300 mm (730 cm), Genişlik = 300 mm (30 cm), Derinlik = 200 mm (20 cm).
+  - Görünüş yönü: Arkadan bakış; kablo traversleri ön planda, W=300 mm için 2 adet simetrik unistrut kablo kelepçesi slotu (±45 mm), yan raylar 200x35x10x2 mm C-profil, net iç genişlik 230 mm.
+  - 29 travers (adım 250 mm), her 1.5 m'de tespit L-konsolları, yan görünüş B (200x7300), enine kesit C (300x200), Detay 1 (3:1), Detay 2 (2.5:1), Yatay Arka Görünüş F (7300x300), BOM ve imalat notları paftaya işlendi.
+- **Doğrulama:**
+  - NaN taraması temiz.
+  - `npm run build` hatasız (1.76s).
+  - AutoCAD `accoreconsole` DWG ve A0 PDF önizlemeyi üretti; PDF önizleme doğrudan görsel olarak incelendi ve doğrulandı.
+- **Commit:** `[Antigravity] Pafta 24: 300x200 dikey kablo merdiveni H7300 DXF/DWG/PDF (arka, yan, kesit)`
 
 ---
 
