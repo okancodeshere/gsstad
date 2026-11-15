@@ -9,8 +9,9 @@
 // - "tava hattı" bloğundaki her "tava yan kesit" → "tavaüst", her AYAK_KONSOL → "konsolüst"; iç eğri üzerinde,
 //   eğrinin teğetine göre dönük.
 //   Bant içinde iç eğriye yakın: tek tavada konsol | tava, çift bölgede tava | konsol | 2. tava; ana tavanın iç kenarı --tavaIc (16).
-// Seçenekler: --kafes8=blok --kafes2=blok --kafesOlcek=0.1 (blok mm ise), --uzat (tava +Y ucuna kadar),
-//   --cift=x0,x1 ("tava hattı" yerel X; tavakesit1'deki cifttava hattının uçları 12923.6675,20165.4080).
+// Seçenekler: --ref=katman (kuzey ref), --egri=katman (parabolik_kiris), --kafes=yanBlok:üstBlok:ölçek,... (üst blok mm ise 0.1),
+//   --tavaHatti=blok, --tava=blok, --konsol=blok, --tavaIc=n, --uzat (tava eğrinin sağ ucuna kadar),
+//   --cift=x0,x1 (tava hattı yerel X; tavakesit1 cifttava hattının uçları 12923.6675,20165.4080).
 // Dosya latin1 olarak okunup yazılır (baytlar korunur); adlar karşılaştırma için UTF-8'e çevrilir.
 const fs = require('fs');
 const [inp, outp] = process.argv.slice(2);
@@ -61,22 +62,12 @@ function bboxOf(block, layerName) {
   return bb;
 }
 
-// --- 1) REF çizgileri: ölçek ve merkez ----------------------------------------------------------
-const refs = ms.filter((e) => e.type === 'LINE' && layer(e) === 'kuzey ref')
-  .map((e) => ({ x1: N(e, 10), y1: N(e, 20), x2: N(e, 11), y2: N(e, 21) }));
-const uniq = (arr) => arr.filter((v, i) => arr.findIndex((w) => Math.abs(w - v) < 1e-3) === i).sort((p, q) => p - q);
-const sideX = uniq(refs.filter((r) => Math.abs(r.x1 - r.x2) < Math.abs(r.y1 - r.y2)).map((r) => (r.x1 + r.x2) / 2));
-const topY = uniq(refs.filter((r) => Math.abs(r.x1 - r.x2) >= Math.abs(r.y1 - r.y2)).map((r) => (r.y1 + r.y2) / 2));
-if (sideX.length !== 2 || topY.length !== 2) throw new Error(`REF cizgileri beklenen gibi degil: yan ${sideX.length}, ust ${topY.length}`);
-const scale = (topY[1] - topY[0]) / (sideX[1] - sideX[0]);
-const cx = (sideX[0] + sideX[1]) / 2, cy = (topY[0] + topY[1]) / 2;
-console.log(`REF yan gorunus X: ${sideX.map((v) => v.toFixed(3)).join(' / ')}  (aralik ${(sideX[1] - sideX[0]).toFixed(3)})`);
-console.log(`REF ust gorunus Y: ${topY.map((v) => v.toFixed(3)).join(' / ')}  (aralik ${(topY[1] - topY[0]).toFixed(3)})`);
-console.log(`Olcek ${scale.toFixed(6)}  merkez yan X ${cx.toFixed(3)} <-> ust Y ${cy.toFixed(3)}`);
-if (Math.abs(scale - 1) > 0.002) throw new Error('Olcek 1 degil (fark > %0.2): durduruldu, kullaniciya sor.');
-// Ölçek farkı REF çizgilerinin çizim hassasiyeti kadar (≈1e-5); 1 alınır, merkezler eşlenir.
+// --- Seçenekler ---------------------------------------------------------------------------------
+const flag = (k, d) => { const a = process.argv.find((v) => v.startsWith('--' + k + '=')); return a ? a.slice(k.length + 3) : d; };
+const REF = flag('ref', 'kuzey ref');                 // referans çizgilerinin katmanı
+const EGRI = flag('egri', 'parabolik_kiris');         // plandaki duvar eğrilerinin katmanı
 
-// --- C eğrisi: parabolik_kiris iç eğrisi (iki yarım, yay parçalı LWPOLYLINE) ----------------------
+// --- 1) Plan eğrisi: EGRI katmanındaki yay parçalı LWPOLYLINE'lar -------------------------------
 function samplePoly(e) {
   const V = []; let cur = null;
   for (const g of e.g) {
@@ -94,45 +85,88 @@ function samplePoly(e) {
   out.push([V[V.length - 1].x, V[V.length - 1].y]);
   return out;
 }
-const curves = ms.filter((e) => e.type === 'LWPOLYLINE' && layer(e) === 'parabolik_kiris' && A(e, 10).length > 2).map(samplePoly);
-const maxStartX = Math.max(...curves.map((c) => c[0][0]));
-const inner = curves.filter((c) => Math.abs(c[0][0] - maxStartX) < 1); // iç eğri: ortada x'i büyük olan
-const up = inner.find((c) => c[c.length - 1][1] > c[0][1]), down = inner.find((c) => c[c.length - 1][1] < c[0][1]);
-if (!up || !down) throw new Error('parabolik_kiris ic egrisinin iki yarisi bulunamadi');
-const curve = [...down.slice().reverse(), ...up]; // −Y ucundan +Y ucuna
-const cum = [0];
-for (let i = 1; i < curve.length; i++) cum.push(cum[i - 1] + Math.hypot(curve[i][0] - curve[i - 1][0], curve[i][1] - curve[i - 1][1]));
-const total = cum[cum.length - 1];
-let tMid = null; // ref merkezi (üst görünüş Y = cy) eğri üzerinde hangi yay boyunda
-for (let i = 0; i + 1 < curve.length; i++) {
-  const p = curve[i], q = curve[i + 1];
-  if ((p[1] - cy) * (q[1] - cy) <= 0 && p[1] !== q[1]) { tMid = cum[i] + ((cy - p[1]) / (q[1] - p[1])) * (cum[i + 1] - cum[i]); break; }
+const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+const end = (c) => c[c.length - 1];
+// Aynı eğrinin kopyalarını at, uçları 20'den yakın parçaları (ör. iki yarım) zincirle
+let chains = [];
+for (const c of ms.filter((e) => e.type === 'LWPOLYLINE' && layer(e) === EGRI && A(e, 10).length > 2).map(samplePoly)) {
+  if (!chains.some((d) => dist(d[0], c[0]) < 0.01 && dist(end(d), end(c)) < 0.01)) chains.push(c);
 }
-console.log(`Ic egri boyu ${total.toFixed(1)}; ref merkezinden -Y ucuna ${tMid.toFixed(1)}, +Y ucuna ${(total - tMid).toFixed(1)}`);
+for (let merged = true; merged;) {
+  merged = false;
+  for (let i = 0; i < chains.length && !merged; i++) for (let j = i + 1; j < chains.length && !merged; j++) {
+    const p = chains[i], q = chains[j]; let m = null;
+    if (dist(end(p), q[0]) < 20) m = [...p, ...q];
+    else if (dist(p[0], q[0]) < 20) m = [...p.slice().reverse(), ...q];
+    else if (dist(end(p), end(q)) < 20) m = [...p, ...q.slice().reverse()];
+    else if (dist(p[0], end(q)) < 20) m = [...q, ...p];
+    if (m) { chains[i] = m; chains.splice(j, 1); merged = true; }
+  }
+}
+const lenOf = (c) => c.slice(1).reduce((s, p, i) => s + dist(p, c[i]), 0);
+const maxLen = Math.max(...chains.map(lenOf));
+chains = chains.filter((c) => lenOf(c) > maxLen * 0.8); // kısa parçaları at
+const midOf = (c) => { const h = lenOf(c) / 2; let s = 0; for (let i = 1; i < c.length; i++) { const d = dist(c[i], c[i - 1]); if (s + d >= h) { const k = (h - s) / d; return [c[i - 1][0] + k * (c[i][0] - c[i - 1][0]), c[i - 1][1] + k * (c[i][1] - c[i - 1][1])]; } s += d; } return end(c); };
+// Dışbükey yön v (eğrinin sırtı): kiriş ortasından eğri ortasına
+const c0 = chains[0], m0 = midOf(c0), k0 = [(c0[0][0] + end(c0)[0]) / 2, (c0[0][1] + end(c0)[1]) / 2];
+const vLen = dist(m0, k0), v = [(m0[0] - k0[0]) / vLen, (m0[1] - k0[1]) / vLen];
+// İç eğri: sırt yönünde en geride olan
+chains.sort((p, q) => (midOf(p)[0] * v[0] + midOf(p)[1] * v[1]) - (midOf(q)[0] * v[0] + midOf(q)[1] * v[1]));
+let curve = chains[0];
+const BAND = chains.length > 1 ? dist(midOf(chains[0]), midOf(chains[1])) : 200; // iç eğri ile bir sonraki eğri arası
+// Yan görünüş eğrinin İÇİNDEN bakış: bakanın sağı R = (v.y, −v.x). Eğri soldan sağa yönlendirilir.
+const R = [v[1], -v[0]];
+const dotR = (p) => p[0] * R[0] + p[1] * R[1];
+if (dotR(curve[0]) > dotR(end(curve))) curve = curve.slice().reverse();
+const cum = [0];
+for (let i = 1; i < curve.length; i++) cum.push(cum[i - 1] + dist(curve[i], curve[i - 1]));
+const total = cum[cum.length - 1];
+
+// --- 2) REF çizgileri: ölçek ve merkez ----------------------------------------------------------
+const bbC = [Infinity, Infinity, -Infinity, -Infinity];
+chains.forEach((c) => c.forEach((p) => { bbC[0] = Math.min(bbC[0], p[0]); bbC[1] = Math.min(bbC[1], p[1]); bbC[2] = Math.max(bbC[2], p[0]); bbC[3] = Math.max(bbC[3], p[1]); }));
+const refs = ms.filter((e) => e.type === 'LINE' && layer(e) === REF).map((e) => [(N(e, 10) + N(e, 11)) / 2, (N(e, 20) + N(e, 21)) / 2]);
+const nearPlan = (p) => p[0] > bbC[0] - 1000 && p[0] < bbC[2] + 1000 && p[1] > bbC[1] - 1000 && p[1] < bbC[3] + 1000;
+const uniq = (arr) => arr.filter((x, i) => arr.findIndex((w) => Math.abs(w - x) < 1e-3) === i).sort((p, q) => p - q);
+const sideX = uniq(refs.filter((p) => !nearPlan(p)).map((p) => p[0]));   // yan görünüş: X
+const topS = uniq(refs.filter(nearPlan).map(dotR));                       // üst görünüş: hat boyunca (R yönünde) konum
+if (sideX.length !== 2 || topS.length !== 2) throw new Error('REF cizgileri beklenen gibi degil: yan ' + sideX.length + ', ust ' + topS.length);
+const scale = (topS[1] - topS[0]) / (sideX[1] - sideX[0]);
+const cx = (sideX[0] + sideX[1]) / 2, cS = (topS[0] + topS[1]) / 2;
+console.log('REF (' + REF + ') yan gorunus X: ' + sideX.map((x) => x.toFixed(3)).join(' / ') + '  (aralik ' + (sideX[1] - sideX[0]).toFixed(3) + ')');
+console.log('REF ust gorunus araligi ' + (topS[1] - topS[0]).toFixed(3) + '  olcek ' + scale.toFixed(6));
+if (Math.abs(scale - 1) > 0.002) throw new Error('Olcek 1 degil (fark > %0.2): durduruldu, kullaniciya sor.');
+// Ölçek farkı REF çizgilerinin çizim hassasiyeti kadar; 1 alınır, merkezler eşlenir.
+let tMid = null; // ref merkezi eğri üzerinde hangi yay boyunda
+for (let i = 0; i + 1 < curve.length; i++) {
+  const p = dotR(curve[i]), q = dotR(curve[i + 1]);
+  if ((p - cS) * (q - cS) <= 0 && p !== q) { tMid = cum[i] + ((cS - p) / (q - p)) * (cum[i + 1] - cum[i]); break; }
+}
+if (tMid === null) throw new Error('REF merkezi egri uzerinde bulunamadi');
+console.log('Ic egri boyu ' + total.toFixed(1) + ', bant ' + BAND.toFixed(1) + '; ref merkezinden sol uca ' + tMid.toFixed(1) + ', sag uca ' + (total - tMid).toFixed(1));
 function at(t) { // yay boyu → nokta
-  if (t < -1e-6 || t > total + 1e-6) throw new Error(`Egri disina tasiyor: yay boyu ${t.toFixed(1)} (0..${total.toFixed(1)})`);
+  if (t < -1e-6 || t > total + 1e-6) throw new Error('Egri disina tasiyor: yay boyu ' + t.toFixed(1) + ' (0..' + total.toFixed(1) + ')');
   let lo = 0, hi = cum.length - 1;
   while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= t) lo = m; else hi = m; }
   const k = (t - cum[lo]) / (cum[hi] - cum[lo] || 1);
   return [curve[lo][0] + k * (curve[hi][0] - curve[lo][0]), curve[lo][1] + k * (curve[hi][1] - curve[lo][1])];
 }
-const toT = (xs) => tMid + (xs - cx); // yan görünüş solu → −Y ucu
-const BAND = 200; // iki parabolik_kiris eğrisi arası (eş merkezli)
+const toT = (xs) => tMid + (xs - cx); // yan görünüş solu → eğrinin sol ucu (içeriden bakışa göre)
 // İç eğriden d kadar DIŞA (bandın içine) ötelenmiş nokta + teğet açısı
 function atOff(t, d) {
   const p = at(t), a = at(Math.max(0, t - 0.5)), c2 = at(Math.min(total, t + 0.5));
   const th = Math.atan2(c2[1] - a[1], c2[0] - a[0]);
-  return { p: [p[0] - Math.sin(th) * d, p[1] + Math.cos(th) * d], th }; // yönün solu = C'nin sırtı (dış)
+  return { p: [p[0] - Math.sin(th) * d, p[1] + Math.cos(th) * d], th }; // yönün solu = eğrinin sırtı (dış)
 }
 
-// --- Seçenekler ---------------------------------------------------------------------------------
-const flag = (k, d) => { const a = process.argv.find((v) => v.startsWith(`--${k}=`)); return a ? a.slice(k.length + 3) : d; };
-const KAFES8 = flag('kafes8', '8lıüst'), KAFES2 = flag('kafes2', '2lıüst');   // üst görünüş kafes blokları
-const KAFES_OLCEK = parseFloat(flag('kafesOlcek', '1'));                       // blok mm ise 0.1
-const CIFT = flag('cift', '') ? flag('cift').split(',').map(parseFloat) : null; // çift tava: "tava hattı" yerel X başı,sonu
-const UZAT = process.argv.includes('--uzat');                                  // tavayı C'nin +Y ucuna kadar sürdür
+// Kafes eşleşmeleri: yanBlok:üstBlok:ölçek (üst blok mm ise 0.1), virgülle
+const KAFESLER = {}; flag('kafes', '8li:8lıüst:1,2li:2lıüst:1').split(',').forEach((s) => { const [a, b, k] = s.split(':'); KAFESLER[a] = { top: b, k: parseFloat(k || '1') }; });
+const TAVA_HATTI = flag('tavaHatti', 'tava hattı');   // yan görünüşte tava + konsolları içeren blok
+const TAVA_UST = flag('tava', 'tavaüst'), KONSOL_UST = flag('konsol', 'konsolüst'); // üst görünüş blokları
+const CIFT = flag('cift', '') ? flag('cift').split(',').map(parseFloat) : null; // çift tava: tava hattı yerel X başı,sonu
+const UZAT = process.argv.includes('--uzat');          // tavayı eğrinin sağ ucuna kadar sürdür
 // Bant içi dizilim (iç eğriden dışa): boşluk | tava | konsol | (çift bölgede) 2. tava
-const tTopBB = bboxOf('tavaüst'), kTopBB = bboxOf('konsolüst');
+const tTopBB = bboxOf(TAVA_UST), kTopBB = bboxOf(KONSOL_UST);
 const TAVA_T = tTopBB[3] - tTopBB[1], KONSOL_D = kTopBB[3] - kTopBB[1];
 // Tek tavalı bölgede: konsol | tava (konsol iç çizgi tarafında). Çift bölgede: tava | konsol | 2. tava.
 const TAVA_IC = parseFloat(flag('tavaIc', String(KONSOL_D))); // ana tavanın iç kenarı, iç eğriden (varsayılan = konsol derinliği)
@@ -150,42 +184,41 @@ function place(block, layerName, localPt, worldPt, th, sx, info, k = 1) {
 const fmt = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
 
 // 2) Kafesler: taban plakası uçları iç eğride (kiriş), gövde bandın ortasında; ON (yerel −Y) C'nin içine
-const PAIRS = { '8li': KAFES8, '2li': KAFES2 };
-for (const e of ms.filter((q) => q.type === 'INSERT' && PAIRS[name(q)])) {
-  const side = name(e), top = PAIRS[side];
+for (const e of ms.filter((q) => q.type === 'INSERT' && KAFESLER[name(q)])) {
+  const side = name(e), top = KAFESLER[side].top, K = KAFESLER[side].k;
   const s = N(e, 41, 1);
   const sb = bboxOf(side, 'TABAN'), tb = bboxOf(top, 'TABAN');
   const xsL = N(e, 10) + s * sb[0], xsR = N(e, 10) + s * sb[2];
-  const wTop = (tb[2] - tb[0]) * KAFES_OLCEK, dTop = (tb[3] - tb[1]) * KAFES_OLCEK;
-  if (Math.abs(xsR - xsL - wTop) > 0.5) console.log(`  UYARI: ${side} genislik ${(xsR - xsL).toFixed(2)} != ${top} ${wTop.toFixed(2)}`);
+  const wTop = (tb[2] - tb[0]) * K, dTop = (tb[3] - tb[1]) * K;
+  if (Math.abs(xsR - xsL - wTop) > 0.5) console.log('  UYARI: ' + side + ' genislik ' + (xsR - xsL).toFixed(2) + ' != ' + top + ' ' + wTop.toFixed(2));
   const pL = at(toT(xsL)), pR = at(toT(xsR));
   const th = Math.atan2(pR[1] - pL[1], pR[0] - pL[0]);
-  const nx = -Math.sin(th), ny = Math.cos(th); // yönün solu = C'nin sırtı (dış)
+  const nx = -Math.sin(th), ny = Math.cos(th); // yönün solu = eğrinin sırtı (dış)
   const mx = (pL[0] + pR[0]) / 2, my = (pL[1] + pR[1]) / 2;
   place(top, 'UST_KAFES', [(tb[0] + tb[2]) / 2, (tb[1] + tb[3]) / 2], [mx + nx * (BAND / 2), my + ny * (BAND / 2)], th, 1,
-    `${side} -> ${top} (${wTop.toFixed(0)} x ${dTop.toFixed(0)}): merkezden ${(xsL - cx).toFixed(1)} .. ${(xsR - cx).toFixed(1)} -> ic egri ${fmt(pL)} .. ${fmt(pR)}  aci ${((th * 180) / Math.PI).toFixed(2)}`, KAFES_OLCEK);
+    side + ' -> ' + top + ' (' + wTop.toFixed(0) + ' x ' + dTop.toFixed(0) + '): merkezden ' + (xsL - cx).toFixed(1) + ' .. ' + (xsR - cx).toFixed(1) + ' -> ic egri ' + fmt(pL) + ' .. ' + fmt(pR) + '  aci ' + ((th * 180) / Math.PI).toFixed(2), K);
 }
 
 // 3) Tava ve konsollar ("tava hattı" bloğunun içinden), bandın içinde iç eğriye yakın
-const thI = ms.find((q) => q.type === 'INSERT' && name(q) === 'tava hattı');
-if (!thI) throw new Error('"tava hattı" INSERT bulunamadi');
-if (N(thI, 41, 1) !== 1 || N(thI, 50) !== 0) throw new Error('"tava hattı" olcekli/donuk: desteklenmiyor');
+const thI = ms.find((q) => q.type === 'INSERT' && name(q) === TAVA_HATTI);
+if (!thI) throw new Error('"' + TAVA_HATTI + '" INSERT bulunamadi');
+if (N(thI, 41, 1) !== 1 || N(thI, 50) !== 0) throw new Error('"' + TAVA_HATTI + '" olcekli/donuk: desteklenmiyor');
 const thx = N(thI, 10);
 const tySide = bboxOf('tava yan kesit'), tTop = tTopBB, kTop = kTopBB;
 const tavaLen = tySide[2] - tySide[0];
 const tavaAnchor = [tTop[0], (tTop[1] + tTop[3]) / 2], konsolAnchor = [(kTop[0] + kTop[2]) / 2, (kTop[1] + kTop[3]) / 2];
 function tavaPiece(t0, t1, d, layerName) { // yay boyu t0..t1 arası bir tava parçası (kirişe göre dönük ve ölçekli)
   const p0 = atOff(t0, d).p, p1 = atOff(t1, d).p;
-  place('tavaüst', layerName, tavaAnchor, p0, Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / tavaLen, null);
+  place(TAVA_UST, layerName, tavaAnchor, p0, Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / tavaLen, null);
 }
 const ciftT = CIFT ? [toT(thx + CIFT[0]), toT(thx + CIFT[1])] : null; // çift tava bölgesi (yay boyu)
 let konsolCift = 0;
 function konsolAt(t) {
   const cift = ciftT && t >= ciftT[0] - 1e-6 && t <= ciftT[1] + 1e-6; if (cift) konsolCift++;
-  const o = atOff(t, cift ? D_KONSOL_CIFT : D_KONSOL_TEK); place('konsolüst', 'UST_KONSOL', konsolAnchor, o.p, o.th, 1, null);
+  const o = atOff(t, cift ? D_KONSOL_CIFT : D_KONSOL_TEK); place(KONSOL_UST, 'UST_KONSOL', konsolAnchor, o.p, o.th, 1, null);
 }
 let tavaN = 0, konsolN = 0, tavaMin = Infinity, tavaMax = -Infinity, konsolLast = -Infinity;
-for (const e of blocks['tava hattı'].ents.filter((q) => q.type === 'INSERT')) {
+for (const e of blocks[TAVA_HATTI].ents.filter((q) => q.type === 'INSERT')) {
   const n = name(e), x = N(e, 10), sx = N(e, 41, 1), rot = (N(e, 50) * Math.PI) / 180;
   if (n === 'tava yan kesit') {
     // Parçanın yan görünüşteki yatay başlangıcı ve yatay boyu (eğim izdüşümü)
@@ -195,6 +228,14 @@ for (const e of blocks['tava hattı'].ents.filter((q) => q.type === 'INSERT')) {
     tavaMin = Math.min(tavaMin, xs0); tavaMax = Math.max(tavaMax, xs1); tavaN++;
   } else if (n === 'AYAK_KONSOL') {
     konsolAt(toT(thx + x)); konsolLast = Math.max(konsolLast, thx + x); konsolN++;
+  }
+}
+{ // Son (kesik) parça blok içinde patlatılmışsa INSERT olarak görünmez: hattın (SPLINE) ucuna kadar tamamla
+  const sEnd = Math.max(...blocks[TAVA_HATTI].ents.filter((q) => q.type === 'SPLINE').map((q) => Math.max(...A(q, 10))), -Infinity) + thx;
+  if (sEnd - tavaMax > 0.5 && sEnd - tavaMax < tavaLen) {
+    tavaPiece(toT(tavaMax), toT(sEnd), D_TAVA1, 'UST_TAVA');
+    console.log('Patlatilmis son tava parcasi eklendi: ' + (sEnd - tavaMax).toFixed(1));
+    tavaMax = sEnd; tavaN++;
   }
 }
 console.log(`Tava (yan gorunusten): ${tavaN} parca, merkezden ${(tavaMin - cx).toFixed(1)} .. ${(tavaMax - cx).toFixed(1)}; konsol ${konsolN}`);

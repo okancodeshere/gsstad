@@ -38,10 +38,12 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Devir defteri: kesit → üst görünüş, konsol ve tavalar iç çizgiden 15 içeride`
-- **Kesit → üst görünüş aktarımı (2026-11-15):** Kuzey tribün, `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
-  - Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış.
-  - Yeniden üretim iki adım: (1) accoreconsole ile `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` `-INSERT` edilip silinir (blok tanımları `buyukkafes` / `kucukkafes` gelsin), DXF kaydedilir; (2) `node scripts/kesit_ust_gorunus_aktar.cjs <o dxf> <cikis> --kafes8=buyukkafes --kafes2=kucukkafes --kafesOlcek=0.1 --uzat --cift=12923.66753407742,20165.40801695846 --tavaIc=31`.
+- **Son commit:** `[Claude] Kesit → üst görünüş betiği genelleştirildi, doğu tribün yerleşimi`
+- **Kesit → üst görünüş aktarımı (2026-11-15):** `scripts/kesit_ust_gorunus_aktar.cjs`. Kullanıcı sonuçları orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı. Çıktılar git dışı.
+  - Kurallar (kullanıcı kararları): yan görünüş AÇILIM (yay boyu, ref merkezinden), eğrinin İÇİNDEN bakış; kafes `parabolik_kiris` iç eğrisi ile bir sonraki eğri arasındaki 200'lük banda ortalı, ON içe; tek tavada iç çizgiden 15 boşluk | konsol | tava, çift bölgede tava | konsol | 2. tava (`--tavaIc=31`).
+  - Önce accoreconsole ile eksik blok tanımları giriş dosyasına `-INSERT` + `ERASE L` ile alınır, DXF kaydedilir (ara dosya scratchpad'de); betik o dosya üzerinde çalışır.
+  - Kuzey: `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf`. `--kafes=8li:buyukkafes:0.1,2li:kucukkafes:0.1 --uzat --cift=12923.66753407742,20165.40801695846 --tavaIc=31` (bloklar Pafta 20 DWG'sinden).
+  - Doğu: `dogukesit aktarma.dxf` → `dogukesit aktarma_UST_YERLESIM.dxf`. `--ref=doguref --kafes=350ledçit:8lıkafes:1 --tavaHatti=çitbatıdogu --tavaIc=31` (`8lıkafes` Pafta 21 DXF'inden; `tavaüst` / `konsolüst` kuzey dosyasından WBLOCK ile).
 - **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
@@ -93,6 +95,23 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Doğu tribün: kesit → üst görünüş yerleşimi, betik genelleştirildi
+- **Kullanıcı isteği:** "kuzey tarafı bitirdik, doğu tarafında da ... onu da yerleştir". Ref katmanı `doguref`, dosya `dogukesit aktarma.dxf`, tava kuzeydeki konumlamayla, bu hatta tek tava. Kafes için soru yanıtı: "aynı dizindeki 21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf içindeki bloğu kullan" (`8lıkafes`, 1728 × 200, cm; yan görünüşteki `350ledçit` ile aynı genişlik).
+- **Dosya yapısı (kuzeyden farkları):** üst görünüş dönük değil (hat X boyunca); 4 ref çizgisinin hepsi düşey (yan y < 0, üst y > 0), aralık 10 580 / 10 580, ölçek 1.000000; eğriler tek parça (iç eğri orta y 1420.98, boy 10 584.3; sonraki 1620.98); tava + konsollar `çitbatıdogu` bloğunda (32 tava INSERT + patlatılmış 225.7'lik son parça, 82 konsol).
+- **Değişen dosyalar:**
+  - `scripts/kesit_ust_gorunus_aktar.cjs` genelleştirildi:
+    - YENİ seçenekler `--ref`, `--egri`, `--kafes=yan:üst:ölçek,...` (eski `--kafes8/--kafes2/--kafesOlcek` kalktı), `--tavaHatti`, `--tava`, `--konsol`.
+    - Eğriler: kopyalar atılır, uçları 20'den yakın parçalar zincirlenir (kuzeydeki iki yarım). Sırt yönü `v` kiriş ortasından eğri ortasına; iç eğri = sırt yönünde en gerideki; `BAND` = sonraki eğriye mesafe. Eğri, içeriden bakanın soluna → sağına yönlendirilir (`R = (v.y, −v.x)`).
+    - Ref: plan eğrisine yakın olanlar üst görünüş (konum `R` yönünde), diğerleri yan görünüş (X). Merkez eşlenir.
+    - Patlatılmış son tava parçası: blok içindeki SPLINE ucu tavadan uzunsa aradaki parça eklenir.
+  - Regresyon: kuzey çıktısı yeni betikle yeniden üretildi; 270 INSERT, önceki dosyayla en büyük fark 0.004.
+  - YENİ çıktı (git dışı): `DXF_Ciktilari/Milimetre/dogukesit aktarma_UST_YERLESIM.dxf`. 117 INSERT: `UST_KAFES` 2, `UST_TAVA` 33, `UST_KONSOL` 82.
+- **Sonuç (iç eğri üzerindeki uçlar):** LED'li kafesler (58584.0, 1318.7)…(60309.7, 1404.9) açı 2.86° ve (62801.6, 1404.9)…(64527.4, 1318.7) açı −2.86°; tava (56296.5, 1145.4) → (64507.6, 1353.3), ref merkezinden −5267.3 … +2951.6.
+- **Doğrulama:** accoreconsole AUDIT 0 hata; kontrol görüntülerinde kafesler bantta, konsol ve tava iç çizgiye yakın.
+- **Varsayım:** Bakış yönü kuzeydeki gibi eğrinin içinden alındı (sol uç −X). Tava yan görünüşte bittiği yerde bırakıldı (sağ LED'li kafesin sağ kenarı), uzatılmadı. Kullanıcıya bildirildi.
+- **Not:** accoreconsole `-INSERT`: iç içe blok içeren dosyada tek ölçek sorusu, WBLOCK ile yazılmış dosyada X ve Y ölçek ayrı sorulur. Script'te Türkçe karakterli blok adı için `Out-File -Encoding Default` gerekir.
+- **Commit:** `[Claude] Kesit → üst görünüş betiği genelleştirildi, doğu tribün yerleşimi`
 
 ### 2026-11-15 — Claude — Kesit → üst görünüş: konsollar 10 cm daha içeride
 - **Kullanıcı isteği:** "konsolları bir 10cm daha kaydır".
