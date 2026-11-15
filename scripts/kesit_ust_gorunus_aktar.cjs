@@ -8,6 +8,9 @@
 //   parabolik_kiris eğrisi arasındaki 200'lük banda ortalanır, ON yüzü C'nin içine bakar.
 // - "tava hattı" bloğundaki her "tava yan kesit" → "tavaüst", her AYAK_KONSOL → "konsolüst"; iç eğri üzerinde,
 //   eğrinin teğetine göre dönük.
+//   Bant içinde iç eğriye yakın dizilir: boşluk (--kenar, 5) | tava | konsol | çift bölgede 2. tava.
+// Seçenekler: --kafes8=blok --kafes2=blok --kafesOlcek=0.1 (blok mm ise), --uzat (tava +Y ucuna kadar),
+//   --cift=x0,x1 ("tava hattı" yerel X; tavakesit1'deki cifttava hattının uçları 12923.6675,20165.4080).
 // Dosya latin1 olarak okunup yazılır (baytlar korunur); adlar karşılaştırma için UTF-8'e çevrilir.
 const fs = require('fs');
 const [inp, outp] = process.argv.slice(2);
@@ -115,57 +118,93 @@ function at(t) { // yay boyu → nokta
 }
 const toT = (xs) => tMid + (xs - cx); // yan görünüş solu → −Y ucu
 const BAND = 200; // iki parabolik_kiris eğrisi arası (eş merkezli)
+// İç eğriden d kadar DIŞA (bandın içine) ötelenmiş nokta + teğet açısı
+function atOff(t, d) {
+  const p = at(t), a = at(Math.max(0, t - 0.5)), c2 = at(Math.min(total, t + 0.5));
+  const th = Math.atan2(c2[1] - a[1], c2[0] - a[0]);
+  return { p: [p[0] - Math.sin(th) * d, p[1] + Math.cos(th) * d], th }; // yönün solu = C'nin sırtı (dış)
+}
 
-// --- INSERT üretimi: world = ins + R(θ)·(lx·sx, ly) ---------------------------------------------
-const placements = []; // {block, layer, ins, sx, rot, info}
-function place(block, layerName, localPt, worldPt, th, sx, info) {
-  const c = Math.cos(th), s = Math.sin(th), lx = localPt[0] * sx, ly = localPt[1];
-  placements.push({ block, layer: layerName, ins: [worldPt[0] - (c * lx - s * ly), worldPt[1] - (s * lx + c * ly)], sx, rot: (th * 180) / Math.PI, info });
+// --- Seçenekler ---------------------------------------------------------------------------------
+const flag = (k, d) => { const a = process.argv.find((v) => v.startsWith(`--${k}=`)); return a ? a.slice(k.length + 3) : d; };
+const KAFES8 = flag('kafes8', '8lıüst'), KAFES2 = flag('kafes2', '2lıüst');   // üst görünüş kafes blokları
+const KAFES_OLCEK = parseFloat(flag('kafesOlcek', '1'));                       // blok mm ise 0.1
+const CIFT = flag('cift', '') ? flag('cift').split(',').map(parseFloat) : null; // çift tava: "tava hattı" yerel X başı,sonu
+const UZAT = process.argv.includes('--uzat');                                  // tavayı C'nin +Y ucuna kadar sürdür
+// Bant içi dizilim (iç eğriden dışa): boşluk | tava | konsol | (çift bölgede) 2. tava
+const tTopBB = bboxOf('tavaüst'), kTopBB = bboxOf('konsolüst');
+const TAVA_T = tTopBB[3] - tTopBB[1], KONSOL_D = kTopBB[3] - kTopBB[1];
+const KENAR = parseFloat(flag('kenar', '5'));
+const D_TAVA1 = KENAR + TAVA_T / 2, D_KONSOL = KENAR + TAVA_T + KONSOL_D / 2, D_TAVA2 = KENAR + TAVA_T + KONSOL_D + TAVA_T / 2;
+console.log(`Bant ici (ic egriden): tava ${D_TAVA1.toFixed(2)}, konsol ${D_KONSOL.toFixed(2)}, 2. tava ${D_TAVA2.toFixed(2)}`);
+
+// --- INSERT üretimi: world = ins + R(θ)·(lx·sx·k, ly·k) ------------------------------------------
+const placements = []; // {block, layer, ins, sx, k, rot, info}
+function place(block, layerName, localPt, worldPt, th, sx, info, k = 1) {
+  if (!blocks[block]) throw new Error(`"${block}" blogu dosyada yok`);
+  const c = Math.cos(th), s = Math.sin(th), lx = localPt[0] * sx * k, ly = localPt[1] * k;
+  placements.push({ block, layer: layerName, ins: [worldPt[0] - (c * lx - s * ly), worldPt[1] - (s * lx + c * ly)], sx, k, rot: (th * 180) / Math.PI, info });
 }
 const fmt = (p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
 
 // 2) Kafesler: taban plakası uçları iç eğride (kiriş), gövde bandın ortasında; ON (yerel −Y) C'nin içine
-const PAIRS = { '8li': '8lıüst', '2li': '2lıüst' };
+const PAIRS = { '8li': KAFES8, '2li': KAFES2 };
 for (const e of ms.filter((q) => q.type === 'INSERT' && PAIRS[name(q)])) {
   const side = name(e), top = PAIRS[side];
   const s = N(e, 41, 1);
   const sb = bboxOf(side, 'TABAN'), tb = bboxOf(top, 'TABAN');
   const xsL = N(e, 10) + s * sb[0], xsR = N(e, 10) + s * sb[2];
-  if (Math.abs(xsR - xsL - (tb[2] - tb[0])) > 0.5) console.log(`  UYARI: ${side} genislik ${(xsR - xsL).toFixed(2)} != ${top} ${(tb[2] - tb[0]).toFixed(2)}`);
+  const wTop = (tb[2] - tb[0]) * KAFES_OLCEK, dTop = (tb[3] - tb[1]) * KAFES_OLCEK;
+  if (Math.abs(xsR - xsL - wTop) > 0.5) console.log(`  UYARI: ${side} genislik ${(xsR - xsL).toFixed(2)} != ${top} ${wTop.toFixed(2)}`);
   const pL = at(toT(xsL)), pR = at(toT(xsR));
   const th = Math.atan2(pR[1] - pL[1], pR[0] - pL[0]);
   const nx = -Math.sin(th), ny = Math.cos(th); // yönün solu = C'nin sırtı (dış)
   const mx = (pL[0] + pR[0]) / 2, my = (pL[1] + pR[1]) / 2;
   place(top, 'UST_KAFES', [(tb[0] + tb[2]) / 2, (tb[1] + tb[3]) / 2], [mx + nx * (BAND / 2), my + ny * (BAND / 2)], th, 1,
-    `${side}: merkezden ${(xsL - cx).toFixed(1)} .. ${(xsR - cx).toFixed(1)} -> ic egri ${fmt(pL)} .. ${fmt(pR)}  aci ${((th * 180) / Math.PI).toFixed(2)}`);
+    `${side} -> ${top} (${wTop.toFixed(0)} x ${dTop.toFixed(0)}): merkezden ${(xsL - cx).toFixed(1)} .. ${(xsR - cx).toFixed(1)} -> ic egri ${fmt(pL)} .. ${fmt(pR)}  aci ${((th * 180) / Math.PI).toFixed(2)}`, KAFES_OLCEK);
 }
 
-// 3) Tava ve konsollar ("tava hattı" bloğunun içinden), iç eğri üzerinde
+// 3) Tava ve konsollar ("tava hattı" bloğunun içinden), bandın içinde iç eğriye yakın
 const thI = ms.find((q) => q.type === 'INSERT' && name(q) === 'tava hattı');
 if (!thI) throw new Error('"tava hattı" INSERT bulunamadi');
 if (N(thI, 41, 1) !== 1 || N(thI, 50) !== 0) throw new Error('"tava hattı" olcekli/donuk: desteklenmiyor');
 const thx = N(thI, 10);
-const tySide = bboxOf('tava yan kesit'), tTop = bboxOf('tavaüst'), kTop = bboxOf('konsolüst');
+const tySide = bboxOf('tava yan kesit'), tTop = tTopBB, kTop = kTopBB;
 const tavaLen = tySide[2] - tySide[0];
-let tavaN = 0, konsolN = 0, tavaMin = Infinity, tavaMax = -Infinity;
+const tavaAnchor = [tTop[0], (tTop[1] + tTop[3]) / 2], konsolAnchor = [(kTop[0] + kTop[2]) / 2, (kTop[1] + kTop[3]) / 2];
+function tavaPiece(t0, t1, d, layerName) { // yay boyu t0..t1 arası bir tava parçası (kirişe göre dönük ve ölçekli)
+  const p0 = atOff(t0, d).p, p1 = atOff(t1, d).p;
+  place('tavaüst', layerName, tavaAnchor, p0, Math.atan2(p1[1] - p0[1], p1[0] - p0[0]), Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / tavaLen, null);
+}
+function konsolAt(t) { const o = atOff(t, D_KONSOL); place('konsolüst', 'UST_KONSOL', konsolAnchor, o.p, o.th, 1, null); }
+let tavaN = 0, konsolN = 0, tavaMin = Infinity, tavaMax = -Infinity, konsolLast = -Infinity;
 for (const e of blocks['tava hattı'].ents.filter((q) => q.type === 'INSERT')) {
   const n = name(e), x = N(e, 10), sx = N(e, 41, 1), rot = (N(e, 50) * Math.PI) / 180;
   if (n === 'tava yan kesit') {
     // Parçanın yan görünüşteki yatay başlangıcı ve yatay boyu (eğim izdüşümü)
     const xs0 = thx + x + Math.cos(rot) * sx * tySide[0] - Math.sin(rot) * tySide[1];
     const xs1 = xs0 + tavaLen * sx * Math.cos(rot);
-    const p0 = at(toT(xs0)), p1 = at(toT(xs1));
-    const th = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
-    place('tavaüst', 'UST_TAVA', [tTop[0], (tTop[1] + tTop[3]) / 2], p0, th, Math.hypot(p1[0] - p0[0], p1[1] - p0[1]) / tavaLen, null);
+    tavaPiece(toT(xs0), toT(xs1), D_TAVA1, 'UST_TAVA');
     tavaMin = Math.min(tavaMin, xs0); tavaMax = Math.max(tavaMax, xs1); tavaN++;
   } else if (n === 'AYAK_KONSOL') {
-    const t = toT(thx + x), p = at(t), a = at(Math.max(0, t - 1)), c2 = at(Math.min(total, t + 1));
-    place('konsolüst', 'UST_KONSOL', [(kTop[0] + kTop[2]) / 2, (kTop[1] + kTop[3]) / 2], p, Math.atan2(c2[1] - a[1], c2[0] - a[0]), 1, null);
-    konsolN++;
+    konsolAt(toT(thx + x)); konsolLast = Math.max(konsolLast, thx + x); konsolN++;
   }
 }
-console.log(`Tava: ${tavaN} parca, merkezden ${(tavaMin - cx).toFixed(1)} .. ${(tavaMax - cx).toFixed(1)} -> ${fmt(at(toT(tavaMin)))} .. ${fmt(at(toT(tavaMax)))}`);
-console.log(`Konsol: ${konsolN} adet`);
+console.log(`Tava (yan gorunusten): ${tavaN} parca, merkezden ${(tavaMin - cx).toFixed(1)} .. ${(tavaMax - cx).toFixed(1)}; konsol ${konsolN}`);
+// 3b) Uzatma: tava C'nin +Y ucuna kadar, konsollar aynı aralıkla
+if (UZAT) {
+  let n = 0, k = 0;
+  for (let t = toT(tavaMax); t < total - 0.5; t += tavaLen) { tavaPiece(t, Math.min(total, t + tavaLen), D_TAVA1, 'UST_TAVA'); n++; }
+  for (let t = toT(konsolLast) + 100; t <= total; t += 100) { konsolAt(t); k++; }
+  console.log(`Uzatma: +${n} tava, +${k} konsol (merkezden ${(tavaMax - cx).toFixed(1)} .. ${(total - tMid).toFixed(1)}) -> ${fmt(at(total))}`);
+}
+// 3c) Çift tava: konsolun dış yanında ikinci tava
+if (CIFT) {
+  const t0 = toT(thx + CIFT[0]), t1 = toT(thx + CIFT[1]); let n = 0;
+  for (let t = t0; t < t1 - 0.5; t += tavaLen) { tavaPiece(t, Math.min(t1, t + tavaLen), D_TAVA2, 'UST_TAVA_2'); n++; }
+  console.log(`Cift tava: ${n} parca, merkezden ${(t0 - tMid).toFixed(1)} .. ${(t1 - tMid).toFixed(1)} (boy ${(t1 - t0).toFixed(1)}) -> ${fmt(at(t0))} .. ${fmt(at(t1))}`);
+}
+console.log(`Tava ana hat: ${fmt(atOff(toT(tavaMin), D_TAVA1).p)} -> ${fmt(atOff(UZAT ? total : toT(tavaMax), D_TAVA1).p)}`);
 placements.filter((p) => p.info).forEach((p) => console.log('  ' + p.info));
 
 // --- Yazım -----------------------------------------------------------------------------------
@@ -177,7 +216,7 @@ for (const p of placements) {
   out.push('  0', 'INSERT', '  5', (h++).toString(16).toUpperCase(), '330', owner, '100', 'AcDbEntity', '  8', p.layer,
     '100', 'AcDbBlockReference', '  2', b(p.block),
     ' 10', p.ins[0].toFixed(6), ' 20', p.ins[1].toFixed(6), ' 30', '0.0',
-    ' 41', p.sx.toFixed(9), ' 42', '1.0', ' 43', '1.0', ' 50', ((p.rot % 360) + 360) % 360 === 0 ? '0.0' : (((p.rot % 360) + 360) % 360).toFixed(6));
+    ' 41', (p.sx * p.k).toFixed(9), ' 42', String(p.k), ' 43', String(p.k), ' 50', ((p.rot % 360) + 360) % 360 === 0 ? '0.0' : (((p.rot % 360) + 360) % 360).toFixed(6));
 }
 // Yeni katmanlar
 const tabs = ents(sec.TABLES + 2, sec.BLOCKS);
@@ -186,7 +225,7 @@ const layTable = tabs.find((e) => e.type === 'TABLE' && G(e, 2) === 'LAYER');
 const layEndtab = tabs.find((e) => e.type === 'ENDTAB' && e.i > layRecs[layRecs.length - 1].i);
 const sample = layRecs[0];
 const layDefs = [];
-const COLORS = { UST_KAFES: 3, UST_TAVA: 30, UST_KONSOL: 6 };
+const COLORS = { UST_KAFES: 3, UST_TAVA: 30, UST_TAVA_2: 40, UST_KONSOL: 6 };
 for (const ln of Object.keys(COLORS)) {
   if (layRecs.some((e) => name(e) === ln)) continue;
   const d = ['  0', 'LAYER', '  5', (h++).toString(16).toUpperCase(), '330', G(sample, 330), '100', 'AcDbSymbolTableRecord', '100', 'AcDbLayerTableRecord',

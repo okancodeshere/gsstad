@@ -38,8 +38,10 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ## 1. GÜNCEL DURUM (her oturum sonunda üzerine yazılır)
 
 - **Son güncelleyen:** Claude Code, 2026-11-15
-- **Son commit:** `[Claude] Kesit → üst görünüş: yerleşim C eğrisi üzerinde, yay boyuyla`
-- **Kesit → üst görünüş aktarımı (2026-11-15):** `node scripts/kesit_ust_gorunus_aktar.cjs giris.dxf cikis.dxf`. Kuzey tribün: `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış. Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
+- **Son commit:** `[Claude] Kesit → üst görünüş: tava bant içinde, çift tava, üst uca uzatma, yeni kafes blokları`
+- **Kesit → üst görünüş aktarımı (2026-11-15):** Kuzey tribün, `kesitaktarma.dxf` → `kesitaktarma_UST_YERLESIM.dxf` (git dışı). Kullanıcı sonucu orijinal DWG'ye PASTEORIG ile alacak. Bu makinede Python yok; iş Node ile yapıldı.
+  - Yerleşim plandaki C eğrisi (`parabolik_kiris` iç eğrisi) üzerinde; yan görünüş açılım (yay boyu), C'nin içinden bakış.
+  - Yeniden üretim iki adım: (1) accoreconsole ile `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` `-INSERT` edilip silinir (blok tanımları `buyukkafes` / `kucukkafes` gelsin), DXF kaydedilir; (2) `node scripts/kesit_ust_gorunus_aktar.cjs <o dxf> <cikis> --kafes8=buyukkafes --kafes2=kucukkafes --kafesOlcek=0.1 --uzat --cift=12923.66753407742,20165.40801695846`.
 - **Pafta 20/21 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dxf`, `21_CIT_KAFES_LEDLI_UST_GORUNUS_D2000_mm.dxf`. Dört taraf kapalı, derinlik AYAKLAR (taban plakaları) DAHİL 2000 → kolon dışı 1920, yanlar 2 × 910. Ayak aplikasyon zinciri çizimde.
 - **Pafta 19 (2026-11-13):** `node generate_cit_panel_dxf.cjs` → `19_CIT_LED_YANLARI_3_PANEL_440_800_440_mm.dxf`. LED arkası çevrilmiyor; iki yanda 3'er standart panel (4600), paneller LED kenarına dayalı, fazla 200 mm dış uçta 440 sınırının dışında (çit dahil toplam 17 200). Eski `19_CIT_LED_EKRAN_DIZILIMI_...` geçersiz (kullanıcıda açıktı, silinmedi).
 - **Pafta 15 (2026-11-13):** `node generate_konsol_uks160dk300_dxf.cjs` → `15_KONSOL_UKS_160_DK_300_20_mm.dxf`. Katalog dışı ölçüler görsel oranından; üretici çizimi gelirse `P` bloğu güncellenecek.
@@ -91,6 +93,22 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Kesit → üst görünüş: bant içi tava, çift tava, üst uca uzatma, yeni kafes blokları
+- **Kullanıcı isteği:** "tava hattını C'nin üst ucuna kadar devam ettir"; tava ve konsollar iç çizgi ile dış çizgi ARASINDA, iç çizgiye yakın; "soldan 2. dolaptan en sağdaki dolaba kadar çift tava, bir konsolun iki tarafına takılmış"; kafesler `8lıüst` → `buyukkafes`, `2lıüst` → `kucukkafes` (yerleri doğru).
+- **Bloklar:** `buyukkafes` / `kucukkafes` `kesitaktarma.dxf` içinde yoktu; kullanıcının 12:37'de kaydettiği `20_CIT_KAFES_8_VE_2_PANEL_UST_GORUNUS_D2000_mm.dwg` içinde bulundu (mm; TABAN 12180 × 2000 ve 3180 × 2000, ayaklar dahil). accoreconsole `-INSERT kafesp20=<dwg>` + `ERASE L` ile tanımlar alındı (ara dosya scratchpad'de). Çizim cm olduğu için 0.1 ölçekle yerleştirildi; derinlik artık banda tam oturuyor (200).
+- **Çift tava sınırı:** bu dosyada `cifttava` hattı yok; `tavakesit1.dxf` içindeki `cifttava` SPLINE'ının uçları kullanıldı (aynı `tava hattı` yerel koordinatı: x 12923.67 → 20165.41, boy 7241.7). Ref merkezinden −2191.2 … +5050.6; sol 8'li kafesin içinden sağ 2'li kafesin sağ kenarına.
+- **Değişen dosyalar:**
+  - `scripts/kesit_ust_gorunus_aktar.cjs`:
+    - YENİ `atOff(t, d)`: iç eğriden d kadar dışa (bandın içine) ötelenmiş nokta + teğet.
+    - YENİ seçenekler `--kafes8`, `--kafes2`, `--kafesOlcek`, `--uzat`, `--cift=x0,x1`, `--kenar` (varsayılan 5).
+    - Bant içi dizilim (iç eğriden): 5 boşluk | tava (merkez 7.05) | konsol (17.10) | çift bölgede 2. tava (27.15, katman `UST_TAVA_2`).
+    - `place()` düzgün ölçek `k` alıyor (41 = sx·k, 42 = 43 = k). Yardımcılar `tavaPiece()`, `konsolAt()`.
+  - Çıktı (git dışı) üzerine yazıldı: 270 INSERT. `UST_KAFES` 4, `UST_TAVA` 57 + 11 uzatma, `UST_TAVA_2` 29 (28 tam + 1 kesik), `UST_KONSOL` 142 + 27 uzatma.
+- **Sonuç:** Ana tava (1369526.6, −379253.3) → C'nin +Y ucu (1374536.8, −365183.2). Kafes konumları ve açıları önceki kayıtla aynı.
+- **Doğrulama:** accoreconsole AUDIT 0 hata. Kontrol görüntülerinde tava ve konsollar iki eğri arasında, çift bölgede konsolun iki yanında tava, hat üst kolonda bitiyor.
+- **Dikkat:** Tek tavalı bölgede tava konsolun iç yanında (hat kesintisiz gitsin diye); çift bölgede ikinci tava konsolun dış yanına ekleniyor. Çıktı AutoCAD'in yeniden kaydettiği DXF'ten üretildiği için özgün dosyayla bayt bayt aynı değil; koordinatlar aynı.
+- **Commit:** `[Claude] Kesit → üst görünüş: tava bant içinde, çift tava, üst uca uzatma, yeni kafes blokları`
 
 ### 2026-11-15 — Claude — Kesit → üst görünüş: düz hat yerine C eğrisi (önceki kayıt düzeltildi)
 - **Kullanıcı isteği:** "düz bir hat üstüne çiz demedim ki, arkasında bulunan C şeklinde duran hat üzerine çizecektin. derinlik yan kesitte görünmediğinden patladın". Aşağıdaki ilk kayıttaki yerleşim (kolon ayakları arası düz bant, x 1374638…1374838, sol uç +Y) YANLIŞTI ve değiştirildi.
