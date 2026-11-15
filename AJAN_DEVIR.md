@@ -44,7 +44,8 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
   - Tij bağlantılarında pul + rondela; U profilin altında çift somun (kullanıcı kararı).
   - Görseller: `Gorseller/11_...png` (düz askı), `Gorseller/12_...png` (çapraz askı); git dışı.
   - Pafta 26: `node generate_tava_aski_kesit_dxf.cjs` → `26_TAVA_ASKISI_DUZ_VE_CAPRAZ_KESIT_mm.dxf` + `_onizleme.svg`. DWG/PDF üretilmedi.
-- **Son commit:** `[Claude] Pafta 26: tava askısı düz ve çapraz kesit DXF`
+- **Pafta 27-30 (2026-11-15):** `node generate_matsing_aski_aparati_dwg.mjs --model=matsing|gammanu --anten=yok|var` → `DXF_Ciktilari/Milimetre/27…30_*_ASKI_APARATI_ANTENSIZ|ANTENLI` (.dxf ölçülü, .dwg, 2 PDF). AutoCAD 2023 `accoreconsole` gerekli. Seçeneksiz çalıştırma Pafta 13'ü yeniden yazar (denenmedi).
+- **Son commit:** `[Claude] Pafta 27-30: Matsing ve Gammanu askı aparatı DXF/DWG/PDF (antensiz ve antenli)`
 - **Önceki güncelleme:** Antigravity, 2026-11-15 15:46
 - **Son commit:** `[Antigravity] Pafta 25: 300x100 kablo tavasi Kesit 6 ve Kesit 7 DXF/DWG/PDF`
 - **Pafta 25 (2026-11-15):** `node generate_tava_300x100_kesit6_7_dxf.cjs` → `DXF_Ciktilari/Milimetre/25_300x100_KABLO_TAVASI_KESIT_6_VE_7_mm.dxf`, `.dwg` ve `_onizleme.pdf`.
@@ -125,6 +126,25 @@ Kullanıcı, birinin kotası bitince diğerine geçer. Ajanlar birbiriyle konuş
 ```
 
 ---
+
+### 2026-11-15 — Claude — Pafta 27-30: Matsing ve Gammanu askı aparatı, antensiz ve antenli
+- **Kullanıcı isteği:** "gammanu ve matsing antenler için yaptığımız aparatlar için de dxf üret, bir de antenli versiyonu lazım".
+- **Değişen dosyalar:**
+  - `generate_matsing_aski_aparati_dwg.mjs` (Pafta 13 betiği) seçenekli hale geldi: `--model=matsing|gammanu --anten=var|yok`. Seçeneksiz çalıştırma yine Pafta 13 (Matsing, anten hayalet, `DXF_Ciktilari/DWG`).
+    - Matsing'e özel sabit metin ve ölçüler `H.C` sabitlerinden üretiliyor (pim, cıvata, flanş, çatal, dil, kelepçe); detay parçaları `C.SLOPE.lugT`, `C.CLEVIS_R`, `C.TONGUE.t` ile bulunuyor; detay ölçüleri görünüş sınırlarından.
+    - `anten=var`: anten ön / yan / üst görünüşte dolu çizgi (YENİ `ANTEN` katmanı, gizli çizgi hesabına dahil ve arkasını örtüyor), kesitlerde hayalet. `anten=yok`: anten çizilmiyor, parça listesinde "anten dahil toplam" satırı yok.
+    - Gammanu: iniş 2000 (ana model ALAN 4 varsayılanı), Detay 7 kesiti lama çemberin ortasından (z = 100). Anten direği boru dönüşümü `C.MAST_PIPE.L`'ye göre (Gammanu direği 900 mm olduğu için eski `> 1.0` koşulu tutmuyordu).
+    - Üst görünüş, ön görünüşün altındaki açıklama satırlarından en az 1000 mm aşağıda (Matsing'de üstüne biniyordu).
+    - Seçenekli çalıştırmada accoreconsole DWG'den sonra `DXFOUT` ile DXF'i ölçüleriyle yeniden kaydediyor (AutoCAD 2018 biçimi, 16 DIMENSION); ham R12 DXF'te ölçü yok.
+  - `anten_aski_modeli.js`: dönen `C` nesnesine `SLOPE, PIN, CLEVIS_R, CLEVIS_T, MAST_X, TILT_BOLT, TILT_SLOT_R, TONGUE, AZ_BUSH_R` eklendi (yalnızca dışa açma; geometri değişmedi).
+  - YENİ `DXF_Ciktilari/Milimetre/`: `27_MATSING_ASKI_APARATI_ANTENSIZ`, `28_MATSING_ASKI_APARATI_ANTENLI`, `29_GAMMANU_ASKI_APARATI_ANTENSIZ`, `30_GAMMANU_ASKI_APARATI_ANTENLI`; her biri `.dxf` (≈ 6 MB), `.dwg`, `_Pafta1.pdf` (A0 1:10 genel montaj), `_Pafta2.pdf` (A1 1:2 parça detayları).
+- **Gösterilen ayar:** azimut 0, tilt 26°, taşıyıcı eğimi 7.66°, Ø420 omurga; iniş Matsing 1800, Gammanu 2000. Aparat 120.2 kg (Matsing) / 57.5 kg (Gammanu).
+- **Doğrulama:** Dört çalıştırmada detay parçalarının altısı da bulundu, DWG / ölçülü DXF / PDF üretildi. PDF'ler görsel kontrol edildi: Gammanu antenli (iki pafta), Matsing antenli ve antensiz (Pafta 1). `npm run build` hatasız.
+- **Dikkat:**
+  - Seçeneksiz (Pafta 13) çalıştırma bu değişiklikten sonra DENENMEDİ; çalıştırılırsa Pafta 13 dosyaları yeni yerleşim ve metinlerle yeniden yazılır.
+  - Betik çıktı klasöründeki `plot.log` / `accc.log` dosyalarını siliyor; `Milimetre/plot.log` (önceki bir accoreconsole çalışmasından kalan, git dışı) bu yüzden silindi.
+  - Gammanu Pafta 2'de küçük parçaların başlıkları ölçü çizgilerine yakın; okunuyor ama sıkışık.
+- **Commit:** `[Claude] Pafta 27-30: Matsing ve Gammanu askı aparatı DXF/DWG/PDF (antensiz ve antenli)`
 
 ### 2026-11-15 — Claude — Pafta 26: tava askısı düz ve çapraz kesit DXF
 - **Kullanıcı isteği:** Görsellerden sonra sorulan "ölçülü DXF kesit de çizeyim mi?" sorusuna "Evet, DXF çiz".

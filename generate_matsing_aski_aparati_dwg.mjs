@@ -22,9 +22,25 @@ import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const { createAntennaHanger } = await import(pathToFileURL(path.join(ROOT, 'anten_aski_modeli.js')).href);
 
-const OUT_DIR = path.join(ROOT, 'DXF_Ciktilari', 'DWG');
+// Seçenekler (2026-11-15): --model=matsing|gammanu  --anten=hayalet|var|yok
+//   Seçeneksiz çalıştırma = Pafta 13 (Matsing, anten hayalet çizgi, DXF_Ciktilari/DWG).
+//   Seçenekli çalıştırma  = Pafta 27-30, DXF_Ciktilari/Milimetre; DXF AutoCAD'den ölçüleriyle yeniden kaydedilir.
+//   anten=var: anten görünüşlerde dolu çizgi (gizli çizgi hesabına dahil), kesitlerde hayalet. anten=yok: anten çizilmez.
+const arg = k => (process.argv.find(a => a.startsWith(`--${k}=`)) || '').split('=')[1];
+const MODEL = arg('model') || 'matsing';
+const ANT_MODE = arg('anten') || 'hayalet';
+const IS_DEFAULT = !arg('model') && !arg('anten');
+const IS_G = MODEL === 'gammanu';
+const MODEL_TR = IS_G ? 'Gammanu' : 'Matsing';
+const VARIANT = { 'matsing|yok': 27, 'matsing|var': 28, 'gammanu|yok': 29, 'gammanu|var': 30 }[`${MODEL}|${ANT_MODE}`];
+if (!IS_DEFAULT && !VARIANT) { console.error('Geçersiz seçenek. --model=matsing|gammanu --anten=var|yok'); process.exit(1); }
+const PAFTA_NO = IS_DEFAULT ? 13 : VARIANT;
+const TARIH = IS_DEFAULT ? '2026-11-10' : '2026-11-15';
+
+const OUT_DIR = path.join(ROOT, 'DXF_Ciktilari', IS_DEFAULT ? 'DWG' : 'Milimetre');
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const BASE = '13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI';
+const BASE = IS_DEFAULT ? '13_MATSING_TEK_KOLLU_ASKI_APARATI_O420_CATI_MAKASI'
+  : `${PAFTA_NO}_${MODEL_TR.toUpperCase()}_ASKI_APARATI_${ANT_MODE === 'var' ? 'ANTENLI' : 'ANTENSIZ'}`;
 const DXF_PATH = path.join(OUT_DIR, BASE + '.dxf');
 const SCR_PATH = path.join(OUT_DIR, BASE + '.scr');
 const DWG_PATH = path.join(OUT_DIR, BASE + '.dwg');
@@ -33,10 +49,13 @@ const ACCORE = 'C:\\Program Files\\Autodesk\\AutoCAD 2023\\accoreconsole.exe';
 // ---------------------------------------------------------------------------
 // MODEL DURUMU (ana modeldeki ALAN 1-3 Ara Bölge varsayılanı; azimut 0 = anten +X'e bakar)
 // ---------------------------------------------------------------------------
-const STATE = { az: 0, tilt: 26, drop: 1.80, slope: 7.66 };
-const H = createAntennaHanger('matsing', { labels: false });
+// Gammanu: ana modeldeki ALAN 4 Spot Beam varsayılan inişi 2.0 m
+const STATE = { az: 0, tilt: 26, drop: IS_G ? 2.00 : 1.80, slope: 7.66 };
+const H = createAntennaHanger(MODEL, { labels: false });
 H.setState(STATE);
 const C = H.C;
+if (ANT_MODE === 'yok') H.antenna.visible = false;
+const mmv = v => +(v * 1000).toFixed(1);   // m → mm (metin için)
 // Taşıyıcı referans borusu kısaltılır (3.2 m → 1.4 m)
 H.carrier.scale.set(1, 1, 1.4 / 3.2);
 H.root.updateMatrixWorld(true);
@@ -55,7 +74,7 @@ H.root.traverse(o => {
   const p = o.geometry.parameters;
   if (!near(p.radiusTop, p.radiusBottom)) return;
   if (near(p.radiusTop, C.DROP_PIPE.D / 2) && p.height > 0.3) hollow(o, C.DROP_PIPE.t);
-  else if (near(p.radiusTop, C.MAST_PIPE.D / 2) && p.height > 1.0) hollow(o, C.MAST_PIPE.t);
+  else if (near(p.radiusTop, C.MAST_PIPE.D / 2) && p.height > C.MAST_PIPE.L - 0.05) hollow(o, C.MAST_PIPE.t);
   else if (near(p.radiusTop, sleeveR)) hollow(o, 0.006);
 });
 H.root.updateMatrixWorld(true);
@@ -71,6 +90,8 @@ function layerOf(m) {
   if (m.material === H.M.dark || m.material === H.M.accent) return 'CIVATA_PIM';
   return 'APARAT';
 }
+// anten=var: görünüşlerde anten dolu çizgi (ANTEN katmanı); kesitlerde yine hayalet
+const viewLayer = m => (ANT_MODE === 'var' && antennaSet.has(m) ? 'ANTEN' : layerOf(m));
 const allMeshes = [];
 H.root.traverse(o => { if (o.isMesh && visibleChain(o)) allMeshes.push(o); });
 
@@ -101,7 +122,7 @@ const LTYPES = {
   KESIT10: [400, -60, 60, -60]
 };
 const LAYERS = {
-  APARAT: 7, CIVATA_PIM: 4, KECE: 8, TASIYICI_REF: 9, ANTEN_HAYALET: 2, GIZLI: 8, EKSEN: 1,
+  APARAT: 7, CIVATA_PIM: 4, KECE: 8, TASIYICI_REF: 9, ANTEN_HAYALET: 2, ANTEN: 2, GIZLI: 8, EKSEN: 1,
   TARAMA: 8, KESIT_HATTI: 1, OLCU: 3, METIN: 7, CERCEVE: 7, ANTET: 7
 };
 function buildDxf() {
@@ -388,8 +409,8 @@ function frame(x, y, W, Hh, k, title, sheetNo, scaleTxt) {
   const t = 3.5 * k;
   TEXT(bx + 3 * k, by + 46 * k, 5 * k, 'GS STAD · ÇATI KEDİ YOLU TELEKOM ALTYAPISI', 'ANTET');
   TEXT(bx + 3 * k, by + 32 * k, t, title, 'ANTET');
-  TEXT(bx + 3 * k, by + 18 * k, t * 0.85, 'Matsing MS-MBA-4.4.2 · tek kollu 2 eksenli askı', 'ANTET');
-  TEXT(bx + 3 * k, by + 4 * k, t * 0.85, `Ölçek ${scaleTxt} · Ölçüler mm · Tarih 2026-11-10`, 'ANTET');
+  TEXT(bx + 3 * k, by + 18 * k, t * 0.85, `${IS_G ? 'Gammanu Spot Beam 30/30' : 'Matsing MS-MBA-4.4.2'} · tek kollu 2 eksenli askı`, 'ANTET');
+  TEXT(bx + 3 * k, by + 4 * k, t * 0.85, `Ölçek ${scaleTxt} · Ölçüler mm · Tarih ${TARIH}`, 'ANTET');
   TEXT(bx + 123 * k, by + 18 * k, t * 0.85, 'anten_aski_modeli.js', 'ANTET');
   TEXT(bx + 123 * k, by + 4 * k, t, `Pafta ${sheetNo} / 2`, 'ANTET');
 }
@@ -398,7 +419,8 @@ function frame(x, y, W, Hh, k, title, sheetNo, scaleTxt) {
 // PAFTA 1 — GENEL MONTAJ (A0 yatay, 1:10)
 // ===========================================================================
 const K1 = 10, W1 = 1189 * K1, H1 = 841 * K1, X1 = 0, Y1 = 0;
-frame(X1, Y1, W1, H1, K1, 'Pafta 13 · Matsing askı aparatı · Ø420 çatı makası · GENEL MONTAJ', 1, '1:10');
+const ANT_TR = ANT_MODE === 'var' ? ' · ANTENLİ' : ANT_MODE === 'yok' ? ' · ANTENSİZ' : '';
+frame(X1, Y1, W1, H1, K1, `Pafta ${PAFTA_NO} · ${MODEL_TR} askı aparatı · Ø420 çatı makası · GENEL MONTAJ${ANT_TR}`, 1, '1:10');
 const th1 = 3.5 * K1;
 
 const vFront = makeView(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0));    // +Z'den bakış, sağ = +X
@@ -418,10 +440,11 @@ const pS = placeView(vSide, colX[1], top1);
 const pA = placeView(vFront, colX[2], top1);
 const pB = placeView(vSide, colX[3], top1);
 
+const viewOcc = ANT_MODE === 'var' ? allMeshes : nonAnt;   // antenli: anten de arkasındakileri örter
 console.log('Ön görünüş…');
-drawView(vFront, allMeshes, nonAnt, pF.ox, pF.oy, { sheet: 10 });
+drawView(vFront, allMeshes, viewOcc, pF.ox, pF.oy, { sheet: 10, layerFn: viewLayer });
 console.log('Yan görünüş…');
-drawView(vSide, allMeshes, nonAnt, pS.ox, pS.oy, { sheet: 10 });
+drawView(vSide, allMeshes, viewOcc, pS.ox, pS.oy, { sheet: 10, layerFn: viewLayer });
 
 // Kesit A-A: z = 0 düzlemi (ön görünüş yönünde, düzlemin arkası görünür)
 const planeA = { o: new THREE.Vector3(0, 0, 0), n: new THREE.Vector3(0, 0, -1).negate().negate() };
@@ -439,9 +462,10 @@ drawSection(vSide, secMeshes, planeB, pB.ox, pB.oy, 8);
 drawView(vSide, allMeshes, nonAnt, pB.ox, pB.oy, { plane: planeB, sheet: 10 });
 
 // Üst görünüş (ön görünüşün altında değil, sağ altta)
-const pT = placeView(vTop, colX[0], Y1 + 3600);
+// Ön görünüşün altındaki açıklama satırlarına binmesin diye en az 1000 mm aşağıda
+const pT = placeView(vTop, colX[0], Math.min(Y1 + 3600, pF.oy + pF.e.y0 - 1000));
 console.log('Üst görünüş…');
-drawView(vTop, allMeshes, nonAnt, pT.ox, pT.oy, { sheet: 10 });
+drawView(vTop, allMeshes, viewOcc, pT.ox, pT.oy, { sheet: 10, layerFn: viewLayer });
 
 // Görünüş başlıkları
 const titleY = v => v.oy + v.e.y0 - 350;
@@ -490,7 +514,7 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   const [ax, ay] = at(vFront, pF, axis0), [px, py] = at(vFront, pF, pinTilt);
   DIM(ax, ay, px, py, pF.ox + pF.e.x0 - 250, (ay + py) / 2, `${Math.round(STATE.drop * 1000)} iniş`);
   const [mx, my] = at(vFront, pF, mastC);
-  DIMALIGNED(px, py, mx, my, (px + mx) / 2 + 120, (py + my) / 2 - 120, '320');
+  DIMALIGNED(px, py, mx, my, (px + mx) / 2 + 120, (py + my) / 2 - 120, String(Math.round(C.MAST_X * 1000)));
   const [fx, fy] = at(vFront, pF, fixTop);
   const R = C.FLANGE_R * 1000;
   DIM(fx - R, fy, fx + R, fy, fx, fy + 260, `Ø${Math.round(R * 2)}`);
@@ -498,17 +522,22 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   CENTERLINE(ax - 400, ay, ax + 400, ay, 10);
   NOTE(ax + 160, ay + 150, ax + 700, ay + 450, 'Taşıyıcı Ø420 (çevre 132 cm) — mevcut çatı makası omurgası', th1);
   const [sx, sy] = at(vFront, pF, pinSlope);
-  NOTE(sx + 60, sy, sx + 650, sy + 120, `Eğim mafsalı: Ø30 pim + M16 kanal kilidi (±${C.SLOPE_MAX}°)`, th1);
-  NOTE(fx + R, fy - 10, fx + 650, fy - 150, 'Eksen 1 azimut: sabit + döner flanş Ø220×15, 4×M16', th1);
+  NOTE(sx + 60, sy, sx + 650, sy + 120, `Eğim mafsalı: Ø${mmv(C.SLOPE.pin.r * 2)} pim + ${C.SLOPE.bolt.name} kanal kilidi (±${C.SLOPE_MAX}°)`, th1);
+  NOTE(fx + R, fy - 10, fx + 650, fy - 150, `Eksen 1 azimut: sabit + döner flanş Ø${mmv(C.FLANGE_R * 2)}×${mmv(C.FLANGE_T)}, 4×${C.AZ_BOLT.name}`, th1);
   const dm = pinTilt.clone().lerp(rotBot, 0.5); const [dx, dy] = at(vFront, pF, dm);
-  NOTE(dx + 57, dy, dx + 650, dy - 100, `İniş borusu Ø${C.DROP_PIPE.D * 1000}×${C.DROP_PIPE.t * 1000}`, th1);
-  NOTE(px - 40, py - 20, px - 450, py - 650, 'Eksen 2 tilt: çatal R100, Ø30 pim, M16 kilit', th1);
+  NOTE(dx + C.DROP_PIPE.D * 500, dy, dx + 650, dy - 100, `İniş borusu Ø${mmv(C.DROP_PIPE.D)}×${mmv(C.DROP_PIPE.t)}`, th1);
+  NOTE(px - 40, py - 20, px - 450, py - 650, `Eksen 2 tilt: çatal R${mmv(C.CLEVIS_R)}, Ø${mmv(C.PIN.r * 2)} pim, ${C.TILT_BOLT.name} kilit`, th1);
   TEXT(px - 450 - th1, py - 650 - th1 * 1.9, th1 * 0.9, `zemine göre öne ${C.TILT_FRONT}° / arkaya ${C.TILT_BACK}°`, 'METIN', 2);
   TEXT(pF.ox + pF.e.x0 - 250, pF.oy + pF.e.y0 - 500, th1 * 0.9, 'İniş: taşıyıcı ekseninden tilt pimine düşey', 'METIN');
   const [ex, ey] = at(vFront, pF, mastC.clone().addScaledVector(mastDir, 0.7));
   NOTE(ex, ey, ex + 650, ey + 250, `Anten direği Ø${(C.MAST_PIPE.D * 1000).toFixed(1)}×${C.MAST_PIPE.t * 1000} L=${C.MAST_PIPE.L * 1000}`, th1);
-  const [qx, qy] = at(vFront, pF, antBox.getCenter(new THREE.Vector3()));
-  NOTE(qx, qy, qx + 500, qy - 900, 'Matsing MS-MBA-4.4.2 (51.5 kg) — hayalet çizgi, aparata dahil değil', th1);
+  if (ANT_MODE !== 'yok') {
+    const [qx, qy] = at(vFront, pF, antBox.getCenter(new THREE.Vector3()));
+    const antName = IS_G ? 'Gammanu Spot Beam 30/30' : 'Matsing MS-MBA-4.4.2';
+    NOTE(qx, qy, qx + 500, qy - (IS_G ? 500 : 900), `${antName} (${C.ANT.mass} kg)${ANT_MODE === 'hayalet' ? ' — hayalet çizgi, aparata dahil değil' : ''}`, th1);
+  } else {
+    TEXT(pF.ox + pF.e.x0, pF.oy + pF.e.y0 - 800, th1, 'Anten gösterilmemiştir (antensiz aparat).', 'METIN');
+  }
   TEXT(pF.ox + pF.e.x0, pF.oy + pF.e.y0 - 650, th1, `Gösterilen ayar: tilt ${STATE.tilt}° (zemine göre öne), azimut 0°, iniş ${STATE.drop * 1000} mm`, 'METIN');
 }
 // Yan görünüş ölçüleri
@@ -522,7 +551,7 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   const [k1x, k1y] = at(vSide, pS, along.clone().multiplyScalar(0.7));
   const [k2x, k2y] = at(vSide, pS, along.clone().multiplyScalar(-0.7));
   CENTERLINE(k1x, k1y, k2x, k2y, 10);
-  TEXT(k2x, k2y + 380, th1, `Taşıyıcı eğimi ${STATE.slope}° (ALAN 1-3; ALAN 2: 5°) — terazi başlığı her zaman yatay`, 'METIN');
+  TEXT(k2x, k2y + 380, th1, `Taşıyıcı eğimi ${STATE.slope}° (${IS_G ? 'ALAN 4' : 'ALAN 1-3; ALAN 2: 5°'}) — terazi başlığı her zaman yatay`, 'METIN');
   const [sx, sy] = at(vSide, pS, pinSlope);
   CENTERLINE(sx, sy + 300, sx, sy - 2600, 10);
   const [m1x, m1y] = at(vSide, pS, mastC.clone().addScaledVector(mastDir, C.MAST_PIPE.L / 2));
@@ -550,7 +579,7 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
   });
   total += aparat;
   y -= rh; line(['', 'Aparat toplamı', '', aparat.toFixed(1)], y, true); LINE(bx, y, bx + totalW, y, 'METIN');
-  y -= rh; line(['', `Anten dahil toplam (anten ${C.ANT.mass} kg)`, '', total.toFixed(1)], y, true); LINE(bx, y, bx + totalW, y, 'METIN');
+  if (ANT_MODE !== 'yok') { y -= rh; line(['', `Anten dahil toplam (anten ${C.ANT.mass} kg)`, '', total.toFixed(1)], y, true); LINE(bx, y, bx + totalW, y, 'METIN'); }
   let x = bx; [0, ...cw].forEach(w => { x += w; LINE(x, y, x, by0 + (rows.length + 1) * rh, 'METIN'); });
   LINE(bx, y, bx, by0 + (rows.length + 1) * rh, 'METIN');
 
@@ -560,8 +589,8 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
     '1. Çatı strüktürüne delme ve kaynak yapılmaz; aparat taşıyıcıya cıvatalı kelepçe ile bağlanır.',
     '2. Taşıyıcı ile eyer / kabuk arasında 5 mm keçe (360°, kelepçe boyundan iki uçta 10 mm taşar).',
     '3. Çelik S235JR, sıcak daldırma galvaniz (EN ISO 1461). Cıvatalar 8.8 HDG, somun + kontra somun.',
-    '4. Eğim mafsalı: montajda pim gevşekken terazi başlığı kendi ağırlığıyla düşeye gelir, M16 kanal kilidi sıkılır.',
-    '5. Azimut: 4×M16 döner flanşa takılı, sabit flanştaki ±25° yay kanallarda kayar; 45° kaydırılmış ikinci delik seti ile 360°.',
+    `4. Eğim mafsalı: montajda pim gevşekken terazi başlığı kendi ağırlığıyla düşeye gelir, ${C.SLOPE.bolt.name} kanal kilidi sıkılır.`,
+    `5. Azimut: 4×${C.AZ_BOLT.name} döner flanşa takılı,` + ' sabit flanştaki ±25° yay kanallarda kayar; 45° kaydırılmış ikinci delik seti ile 360°.',
     '6. Tilt: zemine bakış 0°; öne 70°, arkaya 20°. Kilit cıvatası çatal kanalında.',
     '7. Ölçüler tasarım önerisidir; imalat öncesi statik hesap yapılmalıdır.'
   ];
@@ -575,7 +604,7 @@ const antBox = new THREE.Box3().setFromObject(H.antenna);
 // ===========================================================================
 scr.push('__P2__');
 const K2 = 2, W2 = 841 * K2, H2 = 594 * K2, X2 = W1 + 1000, Y2 = 0;
-frame(X2, Y2, W2, H2, K2, 'Pafta 13 · Matsing askı aparatı · PARÇA DETAYLARI', 2, '1:2');
+frame(X2, Y2, W2, H2, K2, `Pafta ${PAFTA_NO} · ${MODEL_TR} askı aparatı · PARÇA DETAYLARI`, 2, '1:2');
 const th2 = 3.5 * K2;
 
 // Tek parça görünüşü: parçanın kendi yerelinde (nesne dönüşümü sıfırlanmış) izdüşüm, gizli çizgiler kesik
@@ -600,48 +629,51 @@ function partView(meshes, dir, up, cx, cy, title, sub) {
 const extrudes = allMeshes.filter(m => m.geometry.type === 'ExtrudeGeometry' && !antennaSet.has(m));
 const bb = m => { m.geometry.computeBoundingBox(); return m.geometry.boundingBox.getSize(new THREE.Vector3()); };
 const findBy = (pred) => extrudes.find(pred);
-const outerLug = findBy(m => m.parent && H.carrierGroup.children.includes(m.parent) && m.material === H.M.plate && near(bb(m).x, 0.012) && bb(m).y > 0.12);
-const innerLug = findBy(m => m.parent === H.levelHead && near(bb(m).x, 0.012) && bb(m).y > 0.15);
+const LUG_T = C.SLOPE.lugT;
+const outerLug = findBy(m => m.parent && H.carrierGroup.children.includes(m.parent) && m.material === H.M.plate && near(bb(m).x, LUG_T) && bb(m).y > C.SLOPE.outerR);
+const innerLug = findBy(m => m.parent === H.levelHead && near(bb(m).x, LUG_T) && bb(m).y > C.SLOPE.headH);
 const fixFlange = findBy(m => m.parent === H.levelHead && near(bb(m).x, C.FLANGE_R * 2));
 const rotFlange = findBy(m => m.parent === H.azGroup && near(bb(m).x, C.FLANGE_R * 2));
-const clevis = allMeshes.find(m => m.geometry.type === 'ExtrudeGeometry' && m.parent && m.parent.parent === H.azGroup && near(bb(m).x, 0.2));
-const tongue = findBy(m => m.parent === H.tiltGroup && near(bb(m).z, 0.025));
+const clevis = allMeshes.find(m => m.geometry.type === 'ExtrudeGeometry' && m.parent && m.parent.parent === H.azGroup && near(bb(m).x, C.CLEVIS_R * 2));
+const tongue = findBy(m => m.parent === H.tiltGroup && near(bb(m).z, C.TONGUE.t));
 console.log('Detay parçaları:', !!outerLug, !!innerLug, !!fixFlange, !!rotFlange, !!clevis, !!tongue);
+const dimW = d => String(Math.round(d.e.x1 - d.e.x0)), dimHt = d => String(Math.round(d.e.y1 - d.e.y0));
+const PIN_HOLE = mmv(C.SLOPE.pin.r * 2) + 2, FL_D = mmv(C.FLANGE_R * 2), FL_R = C.FLANGE_R * 1000;
 
 const colW = W2 / 4;
 const r1 = Y2 + H2 - 260, r2 = Y2 + H2 - 700;
 // D1 eğim mafsalı dış kulak (YZ düzlemi; kalınlık X)
 if (outerLug) {
-  const d = partView([outerLug], new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), X2 + colW * 0.5, r1, 'DETAY 1 · Eğim dış kulağı (2 ad.)', '12 mm, R90, Ø32 pim deliği, R60 kanal ±52°, plakaya kaynaklı');
-  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, '180');
-  DIM(d.ox + d.e.x1, d.oy + d.e.y1, d.ox + d.e.x1, d.oy + d.e.y0, d.ox + d.e.x1 + 60, (d.oy + d.e.y0 + d.oy + d.e.y1) / 2, '140');
+  const d = partView([outerLug], new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), X2 + colW * 0.5, r1, 'DETAY 1 · Eğim dış kulağı (2 ad.)', `${mmv(LUG_T)} mm, R${mmv(C.SLOPE.outerR)}, Ø${PIN_HOLE} pim deliği, R${mmv(C.SLOPE.slotR)} kanal ±52°, plakaya kaynaklı`);
+  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, dimW(d));
+  DIM(d.ox + d.e.x1, d.oy + d.e.y1, d.ox + d.e.x1, d.oy + d.e.y0, d.ox + d.e.x1 + 60, (d.oy + d.e.y0 + d.oy + d.e.y1) / 2, dimHt(d));
 }
 if (innerLug) {
-  const d = partView([innerLug], new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), X2 + colW * 1.5, r1, 'DETAY 2 · Eğim iç kulağı (2 ad.)', '12 mm, 70 genişlik, R35 üst, Ø32 pim deliği, sabit flanşa kaynaklı');
-  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, '70');
-  DIM(d.ox + d.e.x1, d.oy + d.e.y1, d.ox + d.e.x1, d.oy + d.e.y0, d.ox + d.e.x1 + 60, (d.oy + d.e.y0 + d.oy + d.e.y1) / 2, '165');
+  const d = partView([innerLug], new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, 1, 0), X2 + colW * 1.5, r1, 'DETAY 2 · Eğim iç kulağı (2 ad.)', `${mmv(LUG_T)} mm, ${mmv(C.SLOPE.innerHalf * 2)} genişlik, R${mmv(C.SLOPE.innerHalf)} üst, Ø${PIN_HOLE} pim deliği, sabit flanşa kaynaklı`);
+  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, dimW(d));
+  DIM(d.ox + d.e.x1, d.oy + d.e.y1, d.ox + d.e.x1, d.oy + d.e.y0, d.ox + d.e.x1 + 60, (d.oy + d.e.y0 + d.oy + d.e.y1) / 2, dimHt(d));
 }
 if (fixFlange) {
-  const d = partView([fixFlange], new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1), X2 + colW * 2.5, r1, 'DETAY 3 · Sabit flanş (1 ad.)', `Ø220×15, 4 yay kanal Ø${Math.round(C.AZ_BOLT_R * 2000)} çemberde ±${C.AZ_SLOT_HALF}°, kanal 18 mm`);
+  const d = partView([fixFlange], new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1), X2 + colW * 2.5, r1, 'DETAY 3 · Sabit flanş (1 ad.)', `Ø${FL_D}×${mmv(C.FLANGE_T)}, 4 yay kanal Ø${Math.round(C.AZ_BOLT_R * 2000)} çemberde ±${C.AZ_SLOT_HALF}°, kanal ${mmv(C.AZ_BOLT.r * 2) + 2} mm`);
   const cx = d.ox + (d.e.x0 + d.e.x1) / 2, cy = d.oy + (d.e.y0 + d.e.y1) / 2;
-  CENTERLINE(cx - 140, cy, cx + 140, cy, 2); CENTERLINE(cx, cy - 140, cx, cy + 140, 2);
-  DIM(cx - 110, cy, cx + 110, cy, cx, cy + 150, 'Ø220');
+  CENTERLINE(cx - FL_R - 30, cy, cx + FL_R + 30, cy, 2); CENTERLINE(cx, cy - FL_R - 30, cx, cy + FL_R + 30, 2);
+  DIM(cx - FL_R, cy, cx + FL_R, cy, cx, cy + FL_R + 40, `Ø${FL_D}`);
   CIRCLE(cx, cy, C.AZ_BOLT_R * 1000, 'EKSEN', 'EKSEN2');
   NOTE(cx + C.AZ_BOLT_R * 1000 * 0.7, cy - C.AZ_BOLT_R * 1000 * 0.7, cx + 180, cy - 150, `Kanal ekseni Ø${Math.round(C.AZ_BOLT_R * 2000)}`, th2 * 0.9);
 }
 if (rotFlange) {
-  const d = partView([rotFlange], new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1), X2 + colW * 3.5, r1, 'DETAY 4 · Döner flanş (1 ad.)', `Ø220×15, 8×Ø18 delik 45° ara Ø${Math.round(C.AZ_BOLT_R * 2000)} çemberde, Ø70 burç yuvası`);
+  const d = partView([rotFlange], new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, -1), X2 + colW * 3.5, r1, 'DETAY 4 · Döner flanş (1 ad.)', `Ø${FL_D}×${mmv(C.FLANGE_T)}, 8×Ø${mmv(C.AZ_BOLT.r * 2) + 2} delik 45° ara Ø${Math.round(C.AZ_BOLT_R * 2000)} çemberde, Ø${mmv(C.AZ_BUSH_R * 2)} burç yuvası`);
   const cx = d.ox + (d.e.x0 + d.e.x1) / 2, cy = d.oy + (d.e.y0 + d.e.y1) / 2;
-  CENTERLINE(cx - 140, cy, cx + 140, cy, 2); CENTERLINE(cx, cy - 140, cx, cy + 140, 2);
-  DIM(cx - 110, cy, cx + 110, cy, cx, cy + 150, 'Ø220');
-  NOTE(cx - 25, cy + 25, cx - 150, cy + 170, 'Ø70 burç yuvası', th2 * 0.9);
+  CENTERLINE(cx - FL_R - 30, cy, cx + FL_R + 30, cy, 2); CENTERLINE(cx, cy - FL_R - 30, cx, cy + FL_R + 30, 2);
+  DIM(cx - FL_R, cy, cx + FL_R, cy, cx, cy + FL_R + 40, `Ø${FL_D}`);
+  NOTE(cx - 25, cy + 25, cx - 150, cy + 170, `Ø${mmv(C.AZ_BUSH_R * 2)} burç yuvası`, th2 * 0.9);
 }
 if (clevis) {
-  const d = partView([clevis], new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0), X2 + colW * 0.5, r2, 'DETAY 5 · Çatal levhası (2 ad.)', '12 mm, R100, Ø32 pim deliği, R75 tilt kanalı (−112°…−18°)');
-  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, '200');
+  const d = partView([clevis], new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0), X2 + colW * 0.5, r2, 'DETAY 5 · Çatal levhası (2 ad.)', `${mmv(C.CLEVIS_T)} mm, R${mmv(C.CLEVIS_R)}, Ø${mmv(C.PIN.r * 2) + 2} pim deliği, R${mmv(C.TILT_SLOT_R)} tilt kanalı`);
+  DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, dimW(d));
 }
 if (tongue) {
-  const d = partView([tongue], new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0), X2 + colW * 1.6, r2, 'DETAY 6 · Dil levhası (1 ad.)', '25 mm, Ø80 hafifletme deliği, direk manşonuna kaynaklı');
+  const d = partView([tongue], new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0), X2 + colW * 1.6, r2, 'DETAY 6 · Dil levhası (1 ad.)', `${mmv(C.TONGUE.t)} mm, Ø${mmv(C.TONGUE.holeR * 2)} hafifletme deliği, direk manşonuna kaynaklı`);
   DIM(d.ox + d.e.x0, d.oy + d.e.y0, d.ox + d.e.x1, d.oy + d.e.y0, (d.ox + d.e.x0 + d.ox + d.e.x1) / 2, d.oy + d.e.y0 - 60, String(Math.round(d.e.x1 - d.e.x0)));
   DIM(d.ox + d.e.x1, d.oy + d.e.y1, d.ox + d.e.x1, d.oy + d.e.y0, d.ox + d.e.x1 + 60, (d.oy + d.e.y0 + d.oy + d.e.y1) / 2, String(Math.round(d.e.y1 - d.e.y0)));
 }
@@ -656,7 +688,8 @@ if (tongue) {
   H.carrierGroup.rotation.x = 0; H.root.updateMatrixWorld(true);
   [_triCache, _edgeCache].forEach(c => clampMeshes.forEach(m => c.delete(m)));
   const v = makeView(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 1, 0));
-  const pl = { o: new THREE.Vector3(0, 0, 0), n: new THREE.Vector3(0, 0, -1) };
+  // Gammanu: kesit lama çemberin ortasından (z = 100); Matsing: kelepçe ortasından
+  const pl = { o: new THREE.Vector3(0, 0, IS_G ? C.CLAMP.BAND_Z[1] : 0), n: new THREE.Vector3(0, 0, -1) };
   const e = extents(v, clampMeshes);
   const k7 = 0.4;   // pafta 1:2, detay 1:5
   const cx = X2 + 1250, cy = 560;
@@ -667,10 +700,13 @@ if (tongue) {
   CENTERLINE(ox - 130, oy, ox + 130, oy, 2); CENTERLINE(ox, oy + 120, ox, oy - 170, 2);
   const yb = oy + e.y0 * k7;
   TEXT(cx, yb - 50, th2 * 1.3, 'DETAY 7 · Kelepçe kesiti (taşıyıcıya dik) · 1:5', 'METIN', 1);
-  TEXT(cx, yb - 50 - th2 * 2, th2 * 0.9, 'Eyer 8 mm 140° + üst kabuk 5 mm 220° + 5 mm keçe; 2×4 M16 kulak cıvatası', 'METIN', 1);
-  TEXT(cx, yb - 50 - th2 * 3.6, th2 * 0.9, 'Ağ levhası 10 mm; bağlantı plakası 300×400×12; eğim dış kulakları plakaya kaynaklı', 'METIN', 1);
-  DIM(ox - 150 * k7, yb, ox + 150 * k7, yb, ox, yb - 25, '300');
-  DIM(ox - 215 * k7, oy, ox + 215 * k7, oy, ox, oy + 130, 'Ø430 iç (keçe dahil)');
+  const CL = C.CLAMP, pw = CL.PLATE_W * 1000, cr = (C.CARRIER_R + 0.005) * 1000;
+  TEXT(cx, yb - 50 - th2 * 2, th2 * 0.9, IS_G
+    ? `Eyer ${mmv(CL.SADDLE_T)} mm + 2 lama çember ${mmv(CL.BAND_W)}×${mmv(CL.BAND_T)} + 5 mm keçe; çember başına 2×${CL.bolt.name} kulak cıvatası`
+    : `Eyer ${mmv(CL.SADDLE_T)} mm 140° + üst kabuk ${mmv(CL.SHELL_T)} mm 220° + 5 mm keçe; 2×4 ${CL.bolt.name} kulak cıvatası`, 'METIN', 1);
+  TEXT(cx, yb - 50 - th2 * 3.6, th2 * 0.9, `Ağ levhası ${mmv(CL.WEB_T)} mm; bağlantı plakası ${pw}×${mmv(CL.SADDLE_L)}×${mmv(CL.PLATE_T)}; eğim dış kulakları plakaya kaynaklı`, 'METIN', 1);
+  DIM(ox - pw / 2 * k7, yb, ox + pw / 2 * k7, yb, ox, yb - 25, String(pw));
+  DIM(ox - cr * k7, oy, ox + cr * k7, oy, ox, oy + 130, `Ø${Math.round(cr * 2)} iç (keçe dahil)`);
   NOTE(ox + 60, oy + 40, ox + 200, oy + 110, 'Ø420 taşıyıcı (hayalet)', th2 * 0.9);
   H.carrierGroup.rotation.x = savedRot; H.root.updateMatrixWorld(true);
   [_triCache, _edgeCache].forEach(c => clampMeshes.forEach(m => c.delete(m)));
@@ -680,7 +716,8 @@ if (tongue) {
 // ÇIKTI
 // ---------------------------------------------------------------------------
 fs.writeFileSync(DXF_PATH, buildDxf(), 'latin1');
-const lw = [['APARAT', '0.50'], ['CIVATA_PIM', '0.35'], ['KECE', '0.25'], ['TASIYICI_REF', '0.25'], ['ANTEN_HAYALET', '0.18'], ['GIZLI', '0.18'],
+const DXF_DIM_PATH = path.join(OUT_DIR, BASE + '_olculu.dxf');   // AutoCAD'den ölçüleriyle kaydedilen DXF (ara ad)
+const lw = [['APARAT', '0.50'], ['CIVATA_PIM', '0.35'], ['KECE', '0.25'], ['TASIYICI_REF', '0.25'], ['ANTEN_HAYALET', '0.18'], ['ANTEN', '0.35'], ['GIZLI', '0.18'],
   ['EKSEN', '0.18'], ['TARAMA', '0.13'], ['KESIT_HATTI', '0.50'], ['OLCU', '0.18'], ['METIN', '0.25'], ['CERCEVE', '0.70'], ['ANTET', '0.35']];
 const script = [
   '_.FILEDIA', '0', '_.CMDECHO', '0',
@@ -693,8 +730,11 @@ const script = [
   '_.DIMSCALE', '2',
   ...scr.slice(scr.indexOf('__P2__') + 1),
   '_.ZOOM', '_E',
-  '_.SAVEAS', '2018', '"' + DWG_PATH + '"'
+  '_.SAVEAS', '2018', '"' + DWG_PATH + '"',
+  // Seçenekli çalıştırmada ölçüler DXF'te de olsun diye AutoCAD'den DXF olarak da kaydedilir
+  ...(IS_DEFAULT ? [] : ['_.DXFOUT', '"' + DXF_DIM_PATH + '"', '16'])
 ];
+if (fs.existsSync(DXF_DIM_PATH)) fs.unlinkSync(DXF_DIM_PATH);
 fs.writeFileSync(SCR_PATH, script.join('\r\n') + '\r\n', 'latin1');
 console.log('DXF:', DXF_PATH, (fs.statSync(DXF_PATH).size / 1e6).toFixed(1), 'MB,', ents.length, 'nesne');
 if (fs.existsSync(ACCORE)) {
@@ -702,6 +742,8 @@ if (fs.existsSync(ACCORE)) {
   try { execFileSync(ACCORE, ['/i', DXF_PATH, '/s', SCR_PATH, '/l', 'en-US'], { stdio: 'ignore', timeout: 600000, cwd: OUT_DIR }); } catch (e) { console.log('accoreconsole çıkış kodu', e.status); }
   console.log(fs.existsSync(DWG_PATH) ? 'DWG: ' + DWG_PATH : 'DWG üretilemedi (DXF ve .scr hazır)');
   if (fs.existsSync(DWG_PATH)) fs.unlinkSync(SCR_PATH);   // ara dosya; DWG yoksa elle çalıştırmak için kalır
+  if (fs.existsSync(DXF_DIM_PATH)) { fs.renameSync(DXF_DIM_PATH, DXF_PATH); console.log('DXF ölçüleriyle yeniden kaydedildi (AutoCAD 2018 biçimi)'); }
+  else if (!IS_DEFAULT) console.log('UYARI: ölçülü DXF kaydedilemedi; DXF ölçüsüz (R12) kaldı');
 }
 
 // PDF önizleme (AutoCAD DWG To PDF, monochrome.ctb): Pafta 1 A0, Pafta 2 A1

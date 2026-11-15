@@ -885,7 +885,9 @@ export function createAntennaHanger(MODEL = 'matsing', { labels: withLabels = tr
 
   const C = {
     ANT, CLAMP, CARRIER_R, FLANGE_R, FLANGE_T, FLANGE_NAME, FIX_FLANGE_TOP, AZ_BOLT, AZ_BOLT_R, AZ_SLOT_HALF,
-    AZ_SPIGOT_R, AZ_FRICTION, SLOPE_MAX, TILT_FRONT, TILT_BACK, DROP_RANGE, DROP_PIPE, MAST_PIPE
+    AZ_SPIGOT_R, AZ_FRICTION, SLOPE_MAX, TILT_FRONT, TILT_BACK, DROP_RANGE, DROP_PIPE, MAST_PIPE,
+    // Pafta üretici betiği (generate_matsing_aski_aparati_dwg.mjs) not ve detay metinleri için
+    SLOPE, PIN, CLEVIS_R, CLEVIS_T, MAST_X, TILT_BOLT, TILT_SLOT_R, TONGUE, AZ_BUSH_R
   };
   return {
     model: MODEL, isG: IS_G, M, root, carrier, carrierGroup, levelHead, azGroup, tiltGroup, antenna, labels, C, state,
